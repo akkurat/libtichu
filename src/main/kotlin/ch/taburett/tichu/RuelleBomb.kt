@@ -1,3 +1,5 @@
+package ch.taburett.tichu
+
 class RuelleBomb(cards: Collection<PlayCard>) : ConcretePattern(TichuPattern.RUELBOMB, cards) {
     companion object : PatternFactory {
         override fun pattern(cards: Collection<PlayCard>): ConcretePattern? {

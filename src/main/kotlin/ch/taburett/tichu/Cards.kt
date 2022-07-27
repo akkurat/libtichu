@@ -1,4 +1,6 @@
-import Type.REGULAR
+package ch.taburett.tichu
+
+import ch.taburett.tichu.Type.REGULAR
 
 class NumberCard(val value: Int, val color: Color, val points: Int = 0, val name: String) : PlayCard {
 
@@ -76,7 +78,7 @@ interface PlayCard : HandCard {
 
     /**
      * Effective Value
-     * e.g value Phoenix simulates
+     * e.g value ch.taburett.tichu.Phoenix simulates
      */
     fun value(): Int
 }
@@ -99,9 +101,9 @@ enum class Color(val offset: Double, val type: Type, val short: String, val colo
 
 
 val PHX = Phoenix()
-val DRG = SpecialCard("Dragon", "DRG", 17, 25);
-val MAJ = SpecialCard("MahJong", "MAJ", 1);
-val DOG = SpecialCard("Dog","DOG", 0);
+val DRG = SpecialCard("Dragon", "ch.taburett.tichu.getDRG", 17, 25);
+val MAJ = SpecialCard("MahJong", "ch.taburett.tichu.getMAJ", 1);
+val DOG = SpecialCard("Dog","ch.taburett.tichu.getDOG", 0);
 
 val J2 = NumberCard(2, Color.JADE)
 val J3 = NumberCard(3, Color.JADE)
@@ -178,7 +180,7 @@ class Phoenix : HandCard {
     }
 
     override fun name(): String {
-        return "Phoenix"
+        return "ch.taburett.tichu.Phoenix"
     }
 
     override fun sort(): Double {
@@ -193,13 +195,13 @@ class Phoenix : HandCard {
 
 }
 
-class PhoenixPlaycard(private val phoenix: Phoenix, val value: Int) : HandCard by phoenix, PlayCard{
+class PhoenixPlaycard(private val phoenix: Phoenix, val value: Int) : HandCard by phoenix, PlayCard {
     override fun value(): Int {
         return value
     }
 
     override fun toString(): String {
-        return "PHX[$value]"
+        return "ch.taburett.tichu.getPHX[$value]"
     }
 
     override fun equals(other: Any?): Boolean {

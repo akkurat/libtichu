@@ -1,3 +1,5 @@
+package ch.taburett.tichu
+
 import java.util.*
 
 fun main() {

@@ -1,3 +1,6 @@
+package ch.taburett.tichu
+
+import ch.taburett.tichu.*
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -33,8 +36,8 @@ internal class TripleTest {
             TichuTriple.of(J2, D2, S2),
             TichuTriple.of(J2, D2, PHX.asPlayCard(2)),
             TichuTriple.of(J2, S2, PHX.asPlayCard(2)),
-            TichuTriple.of(D2,S2, PHX.asPlayCard(2)),
-            TichuTriple.of(S5,D5, PHX.asPlayCard(5))
+            TichuTriple.of(D2, S2, PHX.asPlayCard(2)),
+            TichuTriple.of(S5, D5, PHX.asPlayCard(5))
         )
         Assertions.assertThat(out).hasSameElementsAs(expect)
     }

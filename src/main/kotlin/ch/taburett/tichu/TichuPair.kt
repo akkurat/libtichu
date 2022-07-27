@@ -1,4 +1,6 @@
-import OneHeight.OneHeight
+package ch.taburett.tichu
+
+import ch.taburett.tichu.OneHeight.OneHeight
 import org.paukov.combinatorics3.Generator
 
 class TichuPair private constructor(cards: Collection<PlayCard>, private val height: Int) : ConcretePattern(TichuPattern.PAIR, cards),
@@ -29,7 +31,7 @@ class TichuPair private constructor(cards: Collection<PlayCard>, private val hei
                 .map { it as PlayCard }
                 .groupBy { it.value() }
             val result = groups.values.filter { it.size >= 2 }
-                .flatMap { Generator.combination(it).simple(2).map(::of) }
+                .flatMap { Generator.combination(it).simple(2).map(Companion::of) }
                 .toSet()
 
             if (cards.contains(PHX)) {

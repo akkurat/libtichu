@@ -1,3 +1,5 @@
+package ch.taburett.tichu
+
 class Single(val card: PlayCard) : ConcretePattern(TichuPattern.SINGLDE, setOf(card)) {
     companion object : PatternFactory {
         override fun pattern(cards: Collection<PlayCard>): ConcretePattern? {

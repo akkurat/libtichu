@@ -1,4 +1,6 @@
-import OneHeight.OneHeight
+package ch.taburett.tichu
+
+import ch.taburett.tichu.OneHeight.OneHeight
 import org.paukov.combinatorics3.Generator
 
 class TichuTriple private constructor(cards: Collection<PlayCard>, private val height: Int) :

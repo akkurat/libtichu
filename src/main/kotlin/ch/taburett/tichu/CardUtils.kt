@@ -1,8 +1,10 @@
+package ch.taburett.tichu
+
 fun count(cards: Iterable<HandCard>): Int {
     return cards.sumOf { c -> c.points() }
 }
 
-//fun validMove(tableCards: Set<PlayCard>, toPlayCards: Set<PlayCard>): Boolean {
+//fun validMove(tableCards: Set<ch.taburett.tichu.PlayCard>, toPlayCards: Set<ch.taburett.tichu.PlayCard>): Boolean {
 //
 //}
 

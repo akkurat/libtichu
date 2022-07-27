@@ -1,3 +1,5 @@
+package ch.taburett.tichu
+
 fun main(args: Array<String>) {
     println("Hello World!")
 

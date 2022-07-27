@@ -1,3 +1,5 @@
+package ch.taburett.tichu
+
 import org.paukov.combinatorics3.Generator
 
 class Ruelle(cards: Iterable<PlayCard>) : ConcretePattern(TichuPattern.RUELLE, cards) {

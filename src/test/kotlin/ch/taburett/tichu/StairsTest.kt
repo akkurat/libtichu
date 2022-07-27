@@ -1,3 +1,6 @@
+package ch.taburett.tichu
+
+import ch.taburett.tichu.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
