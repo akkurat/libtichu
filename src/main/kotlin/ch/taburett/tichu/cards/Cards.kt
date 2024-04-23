@@ -1,6 +1,6 @@
-package ch.taburett.tichu
+package ch.taburett.tichu.cards
 
-import ch.taburett.tichu.Type.REGULAR
+import ch.taburett.tichu.cards.Type.REGULAR
 
 class NumberCard(val value: Int, val color: Color, val points: Int = 0, val name: String) : PlayCard {
 
@@ -78,7 +78,7 @@ interface PlayCard : HandCard {
 
     /**
      * Effective Value
-     * e.g value ch.taburett.tichu.Phoenix simulates
+     * e.g value ch.taburett.tichu.cards.Phoenix simulates
      */
     fun value(): Int
 }
@@ -180,7 +180,7 @@ class Phoenix : HandCard {
     }
 
     override fun name(): String {
-        return "ch.taburett.tichu.Phoenix"
+        return "ch.taburett.tichu.cards.Phoenix"
     }
 
     override fun sort(): Double {

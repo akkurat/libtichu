@@ -1,4 +1,4 @@
-package ch.taburett.tichu
+package ch.taburett.tichu.cards
 
 class Bomb(cards: Collection<PlayCard>) : ConcretePattern(TichuPattern.BOMB,cards) {
     companion object : PatternFactory {

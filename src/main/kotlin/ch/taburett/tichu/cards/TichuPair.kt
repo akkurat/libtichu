@@ -1,6 +1,6 @@
-package ch.taburett.tichu
+package ch.taburett.tichu.cards
 
-import ch.taburett.tichu.OneHeight.OneHeight
+import ch.taburett.tichu.cards.OneHeight.OneHeight
 import org.paukov.combinatorics3.Generator
 
 class TichuPair private constructor(cards: Collection<PlayCard>, private val height: Int) : ConcretePattern(TichuPattern.PAIR, cards),

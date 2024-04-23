@@ -1,4 +1,4 @@
-package ch.taburett.tichu
+package ch.taburett.tichu.cards
 
 fun main(args: Array<String>) {
     println("Hello World!")

@@ -15,8 +15,8 @@ repositories {
 dependencies {
     testImplementation(kotlin("test"))
     // https://mvnrepository.com/artifact/com.google.guava/guava
-    implementation("com.github.dpaukov:combinatoricslib3:3.3.0")
-    implementation("org.assertj:assertj-core:3.16.1")
+    implementation("com.github.dpaukov:combinatoricslib3:3.3.3")
+    implementation("org.assertj:assertj-core:3.23.1")
 
 }
 

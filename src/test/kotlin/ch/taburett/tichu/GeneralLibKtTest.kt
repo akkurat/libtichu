@@ -1,5 +1,6 @@
 package ch.taburett.tichu
 
+import ch.taburett.tichu.cards.pickK
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 

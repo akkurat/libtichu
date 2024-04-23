@@ -1,4 +1,4 @@
-package ch.taburett.tichu
+package ch.taburett.tichu.cards
 
 import kotlin.math.abs
 
