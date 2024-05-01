@@ -11,21 +11,21 @@ internal class CardUtilsKtTest {
     fun patternFh() {
         val p = pattern(listOf(J2, D2, J11, D11, PHX.asPlayCard(11)))
         assertNotNull(p)
-        assertEquals(TichuPattern.FULLHOUSE, p.type)
+        assertEquals(TichuPatternType.FULLHOUSE, p.type)
     }
 
     @Test
     fun patternSingle() {
         val p = pattern(listOf(PHX.asPlayCard(1)))
         assertNotNull(p)
-        assertEquals(TichuPattern.SINGLDE, p.type)
+        assertEquals(TichuPatternType.SINGLDE, p.type)
     }
 
     @Test
     fun patternRelMajon() {
         val p = pattern(listOf(MAJ, S2, S3, D4, P5))
         assertNotNull(p)
-        assertEquals(TichuPattern.RUELLE, p.type)
+        assertEquals(TichuPatternType.RUELLE, p.type)
     }
 
     @Test
@@ -42,7 +42,7 @@ internal class CardUtilsKtTest {
             .map { Executable {
                 val pattern = pattern(listOf(it))
                 assertNotNull(pattern)
-                assertEquals(TichuPattern.SINGLDE, pattern.type)
+                assertEquals(TichuPatternType.SINGLDE, pattern.type)
             } }
 
         assertAll(execs)
@@ -55,7 +55,7 @@ internal class CardUtilsKtTest {
         assertAll( valid.map { Executable {
             val pattern = pattern(it)
             assertNotNull(pattern)
-            assertEquals(TichuPattern.PAIR, pattern.type)
+            assertEquals(TichuPatternType.PAIR, pattern.type)
         } })
     }
 
@@ -80,7 +80,7 @@ internal class CardUtilsKtTest {
     fun tripleValid() {
         val valid = listOf(listOf(J2, D2, P2), listOf(S13, PHX.asPlayCard(13), P13))
         assertAll( valid.map{ pattern(it) }
-            .map { Executable{ assertNotNull(it); assertEquals(it.type, TichuPattern.TRIPLE) }
+            .map { Executable{ assertNotNull(it); assertEquals(it.type, TichuPatternType.TRIPLE) }
        })
     }
 

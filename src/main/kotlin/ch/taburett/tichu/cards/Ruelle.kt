@@ -2,12 +2,12 @@ package ch.taburett.tichu.cards
 
 import org.paukov.combinatorics3.Generator
 
-class Ruelle(cards: Iterable<PlayCard>) : ConcretePattern(TichuPattern.RUELLE, cards) {
+class Ruelle(cards: Iterable<PlayCard>) : TichuPattern(TichuPatternType.RUELLE, cards) {
 
     constructor(vararg cards: PlayCard) : this(cards.asIterable())
 
-    companion object : PatternFactory {
-        override fun pattern(cards: Collection<PlayCard>): ConcretePattern? {
+    companion object : PatternImplFactory {
+        override fun pattern(cards: Collection<PlayCard>): TichuPattern? {
             if (!isValidRuelle(cards)) return null
             return Ruelle(cards)
         }
@@ -22,7 +22,7 @@ class Ruelle(cards: Iterable<PlayCard>) : ConcretePattern(TichuPattern.RUELLE, c
             return true
         }
 
-        override fun allPatterns(cards: Collection<HandCard>): Set<ConcretePattern> {
+        override fun allPatterns(cards: Collection<HandCard>): Set<TichuPattern> {
             return wPhx(cards)
         }
 

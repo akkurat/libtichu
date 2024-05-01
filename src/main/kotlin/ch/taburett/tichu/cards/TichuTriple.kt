@@ -4,10 +4,10 @@ import ch.taburett.tichu.cards.OneHeight.OneHeight
 import org.paukov.combinatorics3.Generator
 
 class TichuTriple private constructor(cards: Collection<PlayCard>, private val height: Int) :
-    ConcretePattern(TichuPattern.TRIPLE, cards), OneHeight {
+    TichuPattern(TichuPatternType.TRIPLE, cards), OneHeight {
 
 
-    companion object : PatternFactory {
+    companion object : PatternImplFactory {
         fun of(card1: PlayCard, card2: PlayCard, card3: PlayCard): TichuTriple {
             return of(setOf(card1, card2, card3))
         }

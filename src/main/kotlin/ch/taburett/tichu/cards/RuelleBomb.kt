@@ -1,8 +1,8 @@
 package ch.taburett.tichu.cards
 
-class RuelleBomb(cards: Collection<PlayCard>) : ConcretePattern(TichuPattern.RUELBOMB, cards) {
-    companion object : PatternFactory {
-        override fun pattern(cards: Collection<PlayCard>): ConcretePattern? {
+class RuelleBomb(cards: Collection<PlayCard>) : TichuPattern(TichuPatternType.RUELBOMB, cards) {
+    companion object : PatternImplFactory {
+        override fun pattern(cards: Collection<PlayCard>): TichuPattern? {
             if (Ruelle.isValidRuelle(cards)) {
                 if (cards.all { it.color() == cards.first().color() }) {
                     return RuelleBomb(cards)
@@ -11,7 +11,7 @@ class RuelleBomb(cards: Collection<PlayCard>) : ConcretePattern(TichuPattern.RUE
             return null
         }
 
-        override fun allPatterns(cards: Collection<HandCard>): Set<ConcretePattern> {
+        override fun allPatterns(cards: Collection<HandCard>): Set<TichuPattern> {
             TODO("Not yet implemented")
         }
     }

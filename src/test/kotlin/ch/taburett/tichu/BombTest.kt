@@ -17,6 +17,6 @@ internal class BombTest
     fun okBomb() {
         val deck = listOf(S14, D14, J14, P14)
         val out = Bomb.pattern(deck)
-        assertThat(out?.type).isEqualTo(TichuPattern.BOMB)
+        assertThat(out?.type).isEqualTo(TichuPatternType.BOMB)
     }
 }

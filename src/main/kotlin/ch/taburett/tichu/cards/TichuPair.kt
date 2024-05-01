@@ -3,12 +3,12 @@ package ch.taburett.tichu.cards
 import ch.taburett.tichu.cards.OneHeight.OneHeight
 import org.paukov.combinatorics3.Generator
 
-class TichuPair private constructor(cards: Collection<PlayCard>, private val height: Int) : ConcretePattern(TichuPattern.PAIR, cards),
+class TichuPair private constructor(cards: Collection<PlayCard>, private val height: Int) : TichuPattern(TichuPatternType.PAIR, cards),
     OneHeight {
 
     // todo: move to companion
 
-    companion object : PatternFactory {
+    companion object : PatternImplFactory {
 
         fun of(c1: PlayCard, c2: PlayCard): TichuPair {
             return pattern(setOf(c1,c2) )!!

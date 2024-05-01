@@ -7,7 +7,7 @@ class Game {
 
     fun start() {
         currentRound = MutableRound()
-        currentRound.start()
+//        currentRound.start()
     }
 
 

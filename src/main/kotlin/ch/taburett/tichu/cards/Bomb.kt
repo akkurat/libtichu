@@ -1,8 +1,8 @@
 package ch.taburett.tichu.cards
 
-class Bomb(cards: Collection<PlayCard>) : ConcretePattern(TichuPattern.BOMB,cards) {
-    companion object : PatternFactory {
-        override fun pattern(cards: Collection<PlayCard>): ConcretePattern? {
+class Bomb(cards: Collection<PlayCard>) : TichuPattern(TichuPatternType.BOMB,cards) {
+    companion object : PatternImplFactory {
+        override fun pattern(cards: Collection<PlayCard>): TichuPattern? {
             val valueToMatch = cards.first().value()
             if (cards.all { c -> c.value() == valueToMatch && c.color() != Color.SPECIAL }) {
                 return Bomb(cards);
@@ -10,7 +10,7 @@ class Bomb(cards: Collection<PlayCard>) : ConcretePattern(TichuPattern.BOMB,card
             return null
         }
 
-        override fun allPatterns(cards: Collection<HandCard>): Set<ConcretePattern> {
+        override fun allPatterns(cards: Collection<HandCard>): Set<TichuPattern> {
             val useableCards = cards.filterIsInstance<NumberCard>()
             val patterns = useableCards.groupBy { it.value() }.values
                 .filter{ it.size == 4 }

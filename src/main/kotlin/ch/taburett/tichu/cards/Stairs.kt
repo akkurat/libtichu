@@ -2,9 +2,9 @@ package ch.taburett.tichu.cards
 
 import kotlin.math.abs
 
-class Stairs private constructor(cards: List<PlayCard>) : ConcretePattern(TichuPattern.STAIRS, cards) {
-    companion object : PatternFactory {
-        override fun pattern(cards: Collection<PlayCard>): ConcretePattern? {
+class Stairs private constructor(cards: List<PlayCard>) : TichuPattern(TichuPatternType.STAIRS, cards) {
+    companion object : PatternImplFactory {
+        override fun pattern(cards: Collection<PlayCard>): TichuPattern? {
             if (cards.size % 2 != 0) {
                 return null
             }
@@ -23,7 +23,7 @@ class Stairs private constructor(cards: List<PlayCard>) : ConcretePattern(TichuP
             return Stairs(sortedcards)
         }
 
-        override fun allPatterns(cards: Collection<HandCard>): Set<ConcretePattern> {
+        override fun allPatterns(cards: Collection<HandCard>): Set<TichuPattern> {
             TODO("Not yet implemented")
         }
     }

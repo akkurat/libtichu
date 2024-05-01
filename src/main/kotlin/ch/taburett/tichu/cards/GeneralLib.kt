@@ -32,7 +32,7 @@ fun <T> pickK(input: List<T>, k: Int): Set<Set<T>> {
         throw IllegalArgumentException("To pick k, k must be <= size ")
     }
 
-    // cheap way: reuse permuations
+    // cheap way: reuse permutations
 
     val indices = permutations( input.indices.toList() )
 
