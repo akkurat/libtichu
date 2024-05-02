@@ -1,33 +1,33 @@
-package ch.taburett.tichu.cards
+package ch.taburett.tichu.patterns
 
-import ch.taburett.tichu.cards.OneHeight.OneHeight
+import ch.taburett.tichu.cards.*
 import org.paukov.combinatorics3.Generator
 
-class TichuTriple private constructor(cards: Collection<PlayCard>, private val height: Int) :
+class Triple private constructor(cards: Collection<PlayCard>, private val height: Int) :
     TichuPattern(TichuPatternType.TRIPLE, cards), OneHeight {
 
 
     companion object : PatternImplFactory {
-        fun of(card1: PlayCard, card2: PlayCard, card3: PlayCard): TichuTriple {
+        fun of(card1: PlayCard, card2: PlayCard, card3: PlayCard): Triple {
             return of(setOf(card1, card2, card3))
         }
 
-        fun of(cards: Collection<PlayCard>): TichuTriple {
+        fun of(cards: Collection<PlayCard>): Triple {
             return pattern(cards)
                 ?: throw IllegalArgumentException("All Cards must have same height")
         }
 
-        override fun pattern(cards: Collection<PlayCard>): TichuTriple? {
+        override fun pattern(cards: Collection<PlayCard>): Triple? {
             if (cards.size == 3) {
                 val allSameValue = allSameValue(cards)
                 if (allSameValue != null) {
-                    return TichuTriple(cards, allSameValue);
+                    return Triple(cards, allSameValue);
                 }
             }
             return null
         }
 
-        override fun allPatterns(cards: Collection<HandCard>): Set<TichuTriple> {
+        override fun allPatterns(cards: Collection<HandCard>): Set<Triple> {
 
             val groups = cards.filter{it is NumberCard || it is PlayCard }
                 .map { it as PlayCard }

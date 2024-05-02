@@ -1,4 +1,4 @@
-package ch.taburett.tichu
+package ch.taburett.tichu.patterns
 
 import ch.taburett.tichu.cards.*
 import org.assertj.core.api.Assertions
@@ -8,14 +8,14 @@ internal class TripleTest {
     @Test
     fun allTriples() {
         val input = listOf(J2, D2, S2, D11, P11, J14, D14, S14, P14)
-        val out = TichuTriple.allPatterns(input)
+        val out = Triple.allPatterns(input)
         println(out)
         val expect = setOf(
-            TichuTriple.of(J2, D2, S2),
-            TichuTriple.of(J14, D14, S14),
-            TichuTriple.of(J14, D14, P14),
-            TichuTriple.of(J14, S14, P14),
-            TichuTriple.of(D14, S14, P14)
+            Triple.of(J2, D2, S2),
+            Triple.of(J14, D14, S14),
+            Triple.of(J14, D14, P14),
+            Triple.of(J14, S14, P14),
+            Triple.of(D14, S14, P14)
         )
         Assertions.assertThat(out).hasSameElementsAs(expect)
     }
@@ -23,21 +23,21 @@ internal class TripleTest {
     @Test
     fun testOnePhx() {
         val input = listOf(J2, D2, S5, PHX, S10)
-        val out = TichuTriple.allPatterns(input)
-        val expect = setOf(TichuTriple.of(J2, D2, PHX.asPlayCard(2)))
+        val out = Triple.allPatterns(input)
+        val expect = setOf(Triple.of(J2, D2, PHX.asPlayCard(2)))
         Assertions.assertThat(out).hasSameElementsAs(expect)
     }
 
     @Test
     fun testMultiPhx() {
         val input = listOf(J2, D2, S2, S5, D5, PHX, S10)
-        val out = TichuTriple.allPatterns(input)
+        val out = Triple.allPatterns(input)
         val expect = setOf(
-            TichuTriple.of(J2, D2, S2),
-            TichuTriple.of(J2, D2, PHX.asPlayCard(2)),
-            TichuTriple.of(J2, S2, PHX.asPlayCard(2)),
-            TichuTriple.of(D2, S2, PHX.asPlayCard(2)),
-            TichuTriple.of(S5, D5, PHX.asPlayCard(5))
+            Triple.of(J2, D2, S2),
+            Triple.of(J2, D2, PHX.asPlayCard(2)),
+            Triple.of(J2, S2, PHX.asPlayCard(2)),
+            Triple.of(D2, S2, PHX.asPlayCard(2)),
+            Triple.of(S5, D5, PHX.asPlayCard(5))
         )
         Assertions.assertThat(out).hasSameElementsAs(expect)
     }
@@ -45,7 +45,7 @@ internal class TripleTest {
     @Test
     fun testnone() {
         val input = listOf(J2, MAJ, S5, PHX, S10)
-        val out = TichuTriple.allPatterns(input)
+        val out = Triple.allPatterns(input)
         Assertions.assertThat(out).hasSameElementsAs(listOf())
     }
 

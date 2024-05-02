@@ -1,32 +1,33 @@
-package ch.taburett.tichu.cards
+package ch.taburett.tichu.patterns
 
-import ch.taburett.tichu.cards.OneHeight.OneHeight
+import ch.taburett.tichu.cards.*
 import org.paukov.combinatorics3.Generator
 
-class TichuPair private constructor(cards: Collection<PlayCard>, private val height: Int) : TichuPattern(TichuPatternType.PAIR, cards),
+class Pair private constructor(cards: Collection<PlayCard>, private val height: Int) : TichuPattern(
+    TichuPatternType.PAIR, cards),
     OneHeight {
 
     // todo: move to companion
 
     companion object : PatternImplFactory {
 
-        fun of(c1: PlayCard, c2: PlayCard): TichuPair {
+        fun of(c1: PlayCard, c2: PlayCard): Pair {
             return pattern(setOf(c1,c2) )!!
         }
-        fun of(cards: Collection<PlayCard>): TichuPair {
+        fun of(cards: Collection<PlayCard>): Pair {
             return pattern(cards)!!
         }
-        override fun pattern(cards: Collection<PlayCard>): TichuPair? {
+        override fun pattern(cards: Collection<PlayCard>): Pair? {
             if (cards.size == 2) {
                 val allSameValue = allSameValue(cards)
                 if (allSameValue!=null) {
-                    return TichuPair(cards, allSameValue)
+                    return Pair(cards, allSameValue)
                 }
             }
             return null
         }
 
-        override fun allPatterns(cards: Collection<HandCard>): Set<TichuPair> {
+        override fun allPatterns(cards: Collection<HandCard>): Set<Pair> {
             val groups = cards.filter { it is NumberCard || it is PhoenixPlaycard }
                 .map { it as PlayCard }
                 .groupBy { it.value() }

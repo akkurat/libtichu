@@ -1,5 +1,6 @@
-package ch.taburett.tichu.cards
+package ch.taburett.tichu.patterns
 
+import ch.taburett.tichu.cards.*
 import org.paukov.combinatorics3.Generator
 
 class FullHouse private constructor(three: Collection<PlayCard>, two: Collection<PlayCard>) :
@@ -21,8 +22,8 @@ class FullHouse private constructor(three: Collection<PlayCard>, two: Collection
         }
 
         private fun allFullhouses(cards: Collection<PlayCard>): Set<TichuPattern> {
-            val allPairs = TichuPair.allPatterns(cards)
-            val allTriples = TichuTriple.allPatterns(cards)
+            val allPairs = Pair.allPatterns(cards)
+            val allTriples = Triple.allPatterns(cards)
             return Generator.cartesianProduct( allTriples.toList(), allPairs.toList() )
                 .filter { it.first().getHeight() != it.last().getHeight() }
                 .map { FullHouse(it.first().cards, it.last().cards) }

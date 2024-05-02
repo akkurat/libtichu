@@ -1,15 +1,16 @@
-package ch.taburett.tichu.cards
+package ch.taburett.tichu.patterns
 
+import ch.taburett.tichu.cards.*
 import org.paukov.combinatorics3.Generator
 
-class Ruelle(cards: Iterable<PlayCard>) : TichuPattern(TichuPatternType.RUELLE, cards) {
+class Straight(cards: Iterable<PlayCard>) : TichuPattern(TichuPatternType.STRAIGHT, cards) {
 
     constructor(vararg cards: PlayCard) : this(cards.asIterable())
 
     companion object : PatternImplFactory {
         override fun pattern(cards: Collection<PlayCard>): TichuPattern? {
             if (!isValidRuelle(cards)) return null
-            return Ruelle(cards)
+            return Straight(cards)
         }
 
         fun isValidRuelle(cards: Collection<PlayCard>): Boolean {
@@ -26,7 +27,7 @@ class Ruelle(cards: Iterable<PlayCard>) : TichuPattern(TichuPatternType.RUELLE, 
             return wPhx(cards)
         }
 
-        private fun wPhx(cards: Collection<HandCard>): Set<Ruelle> {
+        private fun wPhx(cards: Collection<HandCard>): Set<Straight> {
             val byValue = cards.filter { it is NumberCard || it == MAJ }
                 .map { it as PlayCard }
                 .groupBy { it.value() }
@@ -37,7 +38,7 @@ class Ruelle(cards: Iterable<PlayCard>) : TichuPattern(TichuPatternType.RUELLE, 
             // 4 more cards needed for a ruel
             val heights = byValue.entries.toList()
 
-            val lesRuelles = ArrayList<Ruelle>()
+            val lesStraights = ArrayList<Straight>()
             if (heights.size >= 5) {
                 var i = 0;
                 while (i < heights.size - 4) {
@@ -73,23 +74,17 @@ class Ruelle(cards: Iterable<PlayCard>) : TichuPattern(TichuPatternType.RUELLE, 
                         }
                         if (possibleRuelle.size >= 5) {
                             val cartesianProduct = Generator.cartesianProduct(*possibleRuelle.toTypedArray())
-                            val elements = cartesianProduct.map { Ruelle(it) }
-                            lesRuelles.addAll(elements)
+                            val elements = cartesianProduct.map { Straight(it) }
+                            lesStraights.addAll(elements)
                         }
                     }
 
                 }
             }
 
-            return lesRuelles.toSet()
+            return lesStraights.toSet()
         }
 
     }
-
-    override fun toString(): String {
-        return cards.toString();
-    }
-
-
 
 }

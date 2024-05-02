@@ -2,13 +2,6 @@ package ch.taburett.tichu.cards
 
 import java.util.*
 
-fun main() {
-    println(permutations(listOf("A", "B", "C")))
-
-    println( permutations(listOf(1,2,3)))
-}
-
-
 fun <T> permutations(input: List<T>): List<List<T>> {
     val solutions = mutableListOf<List<T>>()
     permutationsRecursive(input, 0, solutions)

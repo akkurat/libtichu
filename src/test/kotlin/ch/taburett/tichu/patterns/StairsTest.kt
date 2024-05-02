@@ -1,4 +1,4 @@
-package ch.taburett.tichu
+package ch.taburett.tichu.patterns
 
 import ch.taburett.tichu.cards.*
 import org.junit.jupiter.api.Assertions.*

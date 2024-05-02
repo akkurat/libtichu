@@ -1,4 +1,4 @@
-package ch.taburett.tichu.cards.OneHeight
+package ch.taburett.tichu.patterns
 
 interface OneHeight {
     fun getHeight(): Int

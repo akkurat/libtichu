@@ -1,4 +1,6 @@
-package ch.taburett.tichu.cards
+package ch.taburett.tichu.patterns
+
+import ch.taburett.tichu.cards.*
 
 class Empty() : TichuPattern(TichuPatternType.EMPTY, setOf()) {
     companion object : PatternImplFactory {

@@ -4,7 +4,7 @@ import ch.taburett.tichu.cards.pickK
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-internal class GeneralLibKtTest
+internal class PermuteKtTest
 {
     @Test
     fun pickK_all(){

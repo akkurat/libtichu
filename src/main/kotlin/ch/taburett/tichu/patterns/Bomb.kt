@@ -1,4 +1,6 @@
-package ch.taburett.tichu.cards
+package ch.taburett.tichu.patterns
+
+import ch.taburett.tichu.cards.*
 
 class Bomb(cards: Collection<PlayCard>) : TichuPattern(TichuPatternType.BOMB,cards) {
     companion object : PatternImplFactory {

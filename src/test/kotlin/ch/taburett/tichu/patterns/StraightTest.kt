@@ -1,22 +1,22 @@
-package ch.taburett.tichu
+package ch.taburett.tichu.patterns
 
 import ch.taburett.tichu.cards.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-internal class RuelleTest {
+internal class StraightTest {
 
     @Test
     fun findRuelleWithoutPhx() {
         val deck = listOf(MAJ, S2, D2, S3, P3, D4, P5, J8, J9, D10, P11, S12, P13, D14)
-        val out = Ruelle.allPatterns(deck)
+        val out = Straight.allPatterns(deck)
 
         val expect = setOf(
-            Ruelle(MAJ, D2, S3, D4, P5),
-            Ruelle(MAJ, D2, P3, D4, P5),
-            Ruelle(MAJ, S2, S3, D4, P5),
-            Ruelle(MAJ, S2, P3, D4, P5),
-            Ruelle(J8, J9, D10, P11, S12, P13, D14)
+            Straight(MAJ, D2, S3, D4, P5),
+            Straight(MAJ, D2, P3, D4, P5),
+            Straight(MAJ, S2, S3, D4, P5),
+            Straight(MAJ, S2, P3, D4, P5),
+            Straight(J8, J9, D10, P11, S12, P13, D14)
         )
 
         assertThat(out).hasSameElementsAs(expect)
@@ -25,10 +25,10 @@ internal class RuelleTest {
     @Test
     fun findRuelleWithPhx() {
         val deck = listOf(PHX, MAJ, S2, S3, P3, D4, P5, D7, J8, J9)
-        val out = Ruelle.allPatterns(deck)
+        val out = Straight.allPatterns(deck)
         val expect = setOf(
-            Ruelle(MAJ, S2, S3, D4, P5, PHX.asPlayCard(6), D7, J8, J9),
-            Ruelle(MAJ, S2, P3, D4, P5, PHX.asPlayCard(6), D7, J8, J9)
+            Straight(MAJ, S2, S3, D4, P5, PHX.asPlayCard(6), D7, J8, J9),
+            Straight(MAJ, S2, P3, D4, P5, PHX.asPlayCard(6), D7, J8, J9)
         )
 
 

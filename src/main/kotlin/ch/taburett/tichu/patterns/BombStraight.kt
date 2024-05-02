@@ -1,11 +1,13 @@
-package ch.taburett.tichu.cards
+package ch.taburett.tichu.patterns
 
-class RuelleBomb(cards: Collection<PlayCard>) : TichuPattern(TichuPatternType.RUELBOMB, cards) {
+import ch.taburett.tichu.cards.*
+
+class BombStraight(cards: Collection<PlayCard>) : TichuPattern(TichuPatternType.BOMBSTRAIGHT, cards) {
     companion object : PatternImplFactory {
         override fun pattern(cards: Collection<PlayCard>): TichuPattern? {
-            if (Ruelle.isValidRuelle(cards)) {
+            if (Straight.isValidRuelle(cards)) {
                 if (cards.all { it.color() == cards.first().color() }) {
-                    return RuelleBomb(cards)
+                    return BombStraight(cards)
                 }
             }
             return null

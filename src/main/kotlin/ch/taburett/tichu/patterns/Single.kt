@@ -1,6 +1,8 @@
-package ch.taburett.tichu.cards
+package ch.taburett.tichu.patterns
 
-class Single(val card: PlayCard) : TichuPattern(TichuPatternType.SINGLDE, setOf(card)) {
+import ch.taburett.tichu.cards.*
+
+class Single(val card: PlayCard) : TichuPattern(TichuPatternType.SINGLE, setOf(card)) {
     companion object : PatternImplFactory {
         override fun pattern(cards: Collection<PlayCard>): TichuPattern? {
             if (cards.size == 1) {

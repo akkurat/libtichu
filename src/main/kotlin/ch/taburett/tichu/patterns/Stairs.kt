@@ -1,5 +1,6 @@
-package ch.taburett.tichu.cards
+package ch.taburett.tichu.patterns
 
+import ch.taburett.tichu.cards.*
 import kotlin.math.abs
 
 class Stairs private constructor(cards: List<PlayCard>) : TichuPattern(TichuPatternType.STAIRS, cards) {
