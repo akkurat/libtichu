@@ -2,9 +2,9 @@ package ch.taburett.tichu
 
 import ch.taburett.tichu.cards.fulldeck
 import ch.taburett.tichu.game.MutableRound
-import ch.taburett.tichu.game.MutableRound.Player.*
+import ch.taburett.tichu.game.Player
+import ch.taburett.tichu.game.Player.*
 import ch.taburett.tichu.game.SchupfEvent
-import ch.taburett.tichu.game.States
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertAll
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -62,14 +62,14 @@ class MutableRoundTest {
         val state2 = round.machine.activeStates()
 
         assertAll(
-            { assertThat(state1).hasSameElementsAs(setOf(States.schupf)) },
-            { assertThat(state2).hasSameElementsAs(setOf(States.postSchupf)) },
+            { assertThat(state1).hasSameElementsAs(setOf(MutableRound.schupf)) },
+            { assertThat(state2).hasSameElementsAs(setOf(round.postSchupf)) },
         )
 
 
     }
 
-    private fun randomShupf(round: MutableRound, player: MutableRound.Player) {
+    private fun randomShupf(round: MutableRound, player: Player) {
         val input = round.cardMap.get(player)
         if (input != null) {
             val toSchupf = input.take(3)

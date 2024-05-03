@@ -4,33 +4,29 @@ import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.PlayCard
 import ch.taburett.tichu.cards.fulldeck
 import ru.nsk.kstatemachine.*
-
-sealed class States : DefaultState() {
-    object bTichu : States()
-    object preSchupf : States()
-    object schupf : States()
-    object postSchupf : States(), FinalState
+import java.util.EnumMap
 
 
-}
 
-object SwitchEvent : Event
-object AckEvent : Event
+//
+//class AckEvent(override val data: PlayerMessage) : DataEvent<PlayerMessage> {}
+object AckEvent: Event
 
 class MutableRound//                        .groupByTo(mutableMapOf(), { z -> z.first }, {z -> z.second.toMutableList()} )
 
     (start: Boolean = true) {
 
-    var machine: StateMachine
+    object bTichu : DefaultState()
 
-    val tricks: List<Trick> = ArrayList()
-
-    enum class Player(val value: String, val group: String) {
-        A1("A1", "A"),
-        B1("B1", "B"),
-        A2("A2", "A"),
-        B2("B2", "B")
+    lateinit var preSchupf : State
+    object schupf: DefaultState () {
+        val players: MutableMap<Player,Map<Player,HandCard>> = mutableMapOf()
     }
+
+
+    lateinit var postSchupf: DataState<Map<Player, HandCard>>
+
+    var machine: StateMachine
 
     val players = Player.entries.toList()
 
@@ -44,8 +40,10 @@ class MutableRound//                        .groupByTo(mutableMapOf(), { z -> z.
 
     init {
         val (first8, last6) = fulldeck.chunked(32)
-        machine = createStdLibStateMachine("TStateRound", start = start) {
-            addInitialState(States.bTichu) {
+        machine = createStdLibStateMachine(
+            "TStateRound", start = start
+        ) {
+            addInitialState(bTichu) {
                 onEntry {
                     cardMap = players.zip(first8.chunked(8))
 //                        .groupByTo(mutableMapOf(), { z -> z.first }, {z -> z.second.toMutableList()} )
@@ -59,30 +57,33 @@ class MutableRound//                        .groupByTo(mutableMapOf(), { z -> z.
                     }
                     println("14 cards")
                 }
-                transition<AckEvent> {
-                    targetState = States.preSchupf
+                transitionOn<AckEvent> {
+
+                    targetState = {preSchupf}
                     guard = { ackG8.containsAll(players) }
                 }
             }
 
-            addState(States.preSchupf) {
-                transition<AckEvent> {
+
+            preSchupf = state() {
+                transition<AckEvent>  {
                     onTriggered { println("preSchupf Trans") }
-                    targetState = States.schupf
+                    targetState = schupf
                     guard = { ack14.containsAll(players) }
                 }
             }
 
-            addState(States.schupf) {
-                transitionOn<SchupfEvent> {
-                    onTriggered { se ->
-                        onTriggered { println("schupfed") }
-                    }
-                    targetState = { if (schupfed.keys.containsAll(players)) States.postSchupf else States.schupf }
-                }
+            addState( schupf ) {
 
+                dataTransitionOn<SchupfEvent, Map<Player, HandCard>> {
+                    onTriggered { schupf.players.put(it.event.user, it.event.cards) }
+                    targetState = {postSchupf}
+                    guard = { schupf.players.size == 4}
+//                    targetState = { if (schupf.players.size == 4) postSchupf else schupf }
+                }
             }
-            addFinalState(States.postSchupf) {
+
+            postSchupf = finalDataState {
                 onEntry {
                     println("postSchupf")
                 }
@@ -104,15 +105,18 @@ class MutableRound//                        .groupByTo(mutableMapOf(), { z -> z.
     }
 }
 
-class SchupfEvent(val user: MutableRound.Player, val cards: Map<MutableRound.Player, HandCard>) : Event {
+class SchupfEvent(val user: Player, val cards: Map<Player, HandCard>) : DataEvent<Map<Player, HandCard>> {
     init {
         if (cards.containsKey(user)) {
             throw IllegalArgumentException("")
         }
-        if (cards.size != MutableRound.Player.entries.size - 1) {
+        if (cards.size != Player.entries.size - 1) {
             throw IllegalArgumentException("")
         }
     }
+
+    override val data: Map<Player, HandCard>
+        get() = cards
 }
 
 
