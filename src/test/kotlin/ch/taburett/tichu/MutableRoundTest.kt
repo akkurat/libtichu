@@ -61,9 +61,13 @@ class MutableRoundTest {
 
         val state2 = round.machine.activeStates()
 
+        round.players.forEach { p -> round.ack(p, "PostSchupf") }
+        val state3 = round.machine.activeStates()
+
         assertAll(
             { assertThat(state1).hasSameElementsAs(setOf(MutableRound.schupf)) },
-            { assertThat(state2).hasSameElementsAs(setOf(round.postSchupf)) },
+            { assertThat(state2).hasSameElementsAs(setOf(MutableRound.postSchupf)) },
+            { assertThat(state3).containsAnyElementsOf(round.playerStates.values) },
         )
 
 
@@ -80,4 +84,6 @@ class MutableRoundTest {
             throw NullPointerException("")
         }
     }
+
+
 }

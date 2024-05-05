@@ -1,38 +1,39 @@
 package ch.taburett.tichu.game
 
-import ch.taburett.tichu.cards.HandCard
-import ch.taburett.tichu.cards.PlayCard
-import ch.taburett.tichu.cards.fulldeck
+import ch.taburett.tichu.cards.*
 import ru.nsk.kstatemachine.*
-import java.util.EnumMap
-
 
 
 //
 //class AckEvent(override val data: PlayerMessage) : DataEvent<PlayerMessage> {}
-object AckEvent: Event
+
 
 class MutableRound//                        .groupByTo(mutableMapOf(), { z -> z.first }, {z -> z.second.toMutableList()} )
 
     (start: Boolean = true) {
 
-    object bTichu : DefaultState()
-
-    lateinit var preSchupf : State
-    object schupf: DefaultState () {
-        val players: MutableMap<Player,Map<Player,HandCard>> = mutableMapOf()
+    sealed class AckState : DefaultState() {
+        val ack = mutableSetOf<Player>()
     }
 
+    object bTichu : AckState()
+    object preSchupf : AckState()
+    object postSchupf : AckState()
+    object AckEvent : Event
 
-    lateinit var postSchupf: DataState<Map<Player, HandCard>>
+    object schupf : DefaultState() {
+        val schupfBuffer: MutableMap<Player, Map<Player, HandCard>> = mutableMapOf()
+    }
+
+    class PlayerState(val player: Player) : DefaultState()
+    class RegularMoveEvent : Event
+    class BombMoveEvent(val player: Player) : Event
+
+    val playerStates: Map<Player, PlayerState> = Player.entries.associateBy({ it }) { PlayerState(it) }
 
     var machine: StateMachine
 
     val players = Player.entries.toList()
-
-    val ackG8 = mutableListOf<Player>()
-    val ack14 = mutableListOf<Player>()
-    val schupfed = mutableMapOf<Player, Map<Player, HandCard>>()
 
     var cardMap: Map<Player, MutableList<HandCard>> = mutableMapOf()
 
@@ -53,54 +54,104 @@ class MutableRound//                        .groupByTo(mutableMapOf(), { z -> z.
                 }
                 onExit {
                     for ((k, v) in players.zip((last6).chunked(6))) {
-                        cardMap.get(k)!!.addAll(v)
+                        cardMap[k]!!.addAll(v)
                     }
                     println("14 cards")
                 }
                 transitionOn<AckEvent> {
-
-                    targetState = {preSchupf}
-                    guard = { ackG8.containsAll(players) }
+                    targetState = { preSchupf }
+                    guard = { this@addInitialState.ack.containsAll(players) }
                 }
             }
 
 
-            preSchupf = state() {
-                transition<AckEvent>  {
+            addState(preSchupf) {
+                transition<AckEvent> {
                     onTriggered { println("preSchupf Trans") }
                     targetState = schupf
-                    guard = { ack14.containsAll(players) }
+                    guard = { this@addState.ack.containsAll(players) }
                 }
             }
 
-            addState( schupf ) {
+            val selectStartPlayer = choiceState {
+                println(this)
 
-                dataTransitionOn<SchupfEvent, Map<Player, HandCard>> {
-                    onTriggered { schupf.players.put(it.event.user, it.event.cards) }
-                    targetState = {postSchupf}
-                    guard = { schupf.players.size == 4}
+                val key = cardMap
+                    .filter { it.value.contains(MAJ) }
+                    .map { it.key }
+                    .first()
+
+                playerStates[key]!!
+            }
+
+            playerStates.values.map { addState(it) }
+                .forEach {
+                    transition<RegularMoveEvent> {
+                        targetState = playerStates[nextPlayer(it)]
+                    }
+                    transitionOn<BombMoveEvent> {
+                        // todo: go to player who played the bomb
+
+                        targetState = { playerStates[event.player]!! }
+                    }
+                }
+
+            addState(schupf) {
+                onEntry { println("hello") }
+                transition<SchupfEvent> {
+                    onTriggered { this@addState.schupfBuffer.put(it.event.user, it.event.cards) }
+                    targetState = postSchupf
+                    guard = { this@addState.schupfBuffer.size == 4 }
 //                    targetState = { if (schupf.players.size == 4) postSchupf else schupf }
                 }
+                onExit { switchCards(schupfBuffer) }
             }
 
-            postSchupf = finalDataState {
+            addState(postSchupf) {
                 onEntry {
                     println("postSchupf")
                 }
+                transition<AckEvent> {
+                    targetState = selectStartPlayer
+                    guard = { this@addState.ack.size == 4 }
+                }
+            }
+
+            onFinished { println("finished") }
+        }
+    }
+
+    private fun nextPlayer(it: PlayerState): Player {
+        val nextIdx = ((players.indexOf(it.player)) + 1) % players.size
+        return players[nextIdx]
+    }
+
+    private fun switchCards(schupfBuffer: MutableMap<Player, Map<Player, HandCard>>) {
+        // remove cards
+        val copy = cardMap.toMutableMap()
+
+        for (e in schupfBuffer) {
+            val myCards = copy[e.key]
+            for ((u, c) in e.value) {
+                myCards!!.remove(c)
+                copy[u]!!.add(c)
             }
         }
+        cardMap = copy
     }
 
     fun ack(u: Player, s: String) {
         when (s) {
-            "G8" -> ackG8.add(u)
-            "14" -> ack14.add(u)
+            // todo: more consistent naming
+            "G8" -> bTichu.ack.add(u)
+            "14" -> preSchupf.ack.add(u)
+            "PostSchupf" -> postSchupf.ack.add(u)
         }
         machine.processEventBlocking(AckEvent)
     }
 
     fun schupf(payload: SchupfEvent) {
-        schupfed[payload.user] = payload.cards
+        schupf.schupfBuffer[payload.user] = payload.cards
         machine.processEventBlocking(payload)
     }
 }
