@@ -3,7 +3,7 @@ package ch.taburett.tichu.game
 import ch.taburett.tichu.cards.DRG
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.PlayCard
-import ch.taburett.tichu.game.GameStage.Stage.*
+import ch.taburett.tichu.game.AckGameStage.Stage.*
 import ch.taburett.tichu.patterns.Bomb
 import ch.taburett.tichu.patterns.BombStraight
 
@@ -21,13 +21,14 @@ sealed class PlayerMessage : Message()
  * SCHUPFED: [1 2 3 ... 14]
  * GIFT_DRAGON [5,As,DRG]
  */
-data class GameStage(val stage: Stage, val cards: List<HandCard>) : ServerMessage() {
-    enum class Stage { EIGHT_CARDS, ALL_CARDS, SCHUPFED, GIFT_DRAGON }
+data class AckGameStage(val stage: Stage, val cards: List<HandCard>) : ServerMessage() {
+    enum class Stage { EIGHT_CARDS, PRE_SCHUPF, POST_SCHUPF, GIFT_DRAGON, SCHUPF }
     init {
         when(stage) {
             EIGHT_CARDS -> if (cards.size != 8) throw IllegalArgumentException("Not eight cards")
-            ALL_CARDS, SCHUPFED -> if(cards.size != 14) throw IllegalArgumentException("Not 14 cards")
             GIFT_DRAGON -> if( !cards.contains(DRG) ) throw IllegalArgumentException("Dragon is not part of the cards")
+            // assuming 14 cards send for all other events
+            else -> if(cards.size != 14) throw IllegalArgumentException("Not 14 cards")
         }
     }
 }
@@ -43,6 +44,7 @@ data class Wish(val value: Int): PlayerMessage()
 
 // id or not?
 // try first without ids and go with implicit
+// or jsut an event and just say tichu independently?
 sealed class Ack(val answer: Boolean ): PlayerMessage() {
     class BigTichu(answer: Boolean) : Ack(answer)
     class TichuBeforeSchupf(answer: Boolean) : Ack(answer)
@@ -63,8 +65,8 @@ data class Bomb(val cards: List<PlayCard>) : PlayerMessage() {
     }
 }
 
-object Tichu: PlayerMessage()
-object BigTichu: PlayerMessage()
+//object Tichu: PlayerMessage()
+//object BigTichu: PlayerMessage()
 
 data class Move(val cards: List<HandCard>) : PlayerMessage()
 

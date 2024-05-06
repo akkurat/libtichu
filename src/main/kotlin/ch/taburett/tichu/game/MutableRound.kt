@@ -8,9 +8,7 @@ import ru.nsk.kstatemachine.*
 //class AckEvent(override val data: PlayerMessage) : DataEvent<PlayerMessage> {}
 
 
-class MutableRound//                        .groupByTo(mutableMapOf(), { z -> z.first }, {z -> z.second.toMutableList()} )
-
-    (start: Boolean = true) {
+class MutableRound(val com: Out, start: Boolean = true) {
 
     sealed class AckState : DefaultState() {
         val ack = mutableSetOf<Player>()
@@ -37,7 +35,6 @@ class MutableRound//                        .groupByTo(mutableMapOf(), { z -> z.
 
     var cardMap: Map<Player, MutableList<HandCard>> = mutableMapOf()
 
-    val playedCars = mutableListOf<PlayCard>()
 
     init {
         val (first8, last6) = fulldeck.chunked(32)
@@ -49,14 +46,8 @@ class MutableRound//                        .groupByTo(mutableMapOf(), { z -> z.
                     cardMap = players.zip(first8.chunked(8))
 //                        .groupByTo(mutableMapOf(), { z -> z.first }, {z -> z.second.toMutableList()} )
                         .associateBy({ z -> z.first }, { z -> z.second.toMutableList() })
+                    sendStage(AckGameStage.Stage.EIGHT_CARDS)
 
-                    println("8 Cards")
-                }
-                onExit {
-                    for ((k, v) in players.zip((last6).chunked(6))) {
-                        cardMap[k]!!.addAll(v)
-                    }
-                    println("14 cards")
                 }
                 transitionOn<AckEvent> {
                     targetState = { preSchupf }
@@ -66,6 +57,12 @@ class MutableRound//                        .groupByTo(mutableMapOf(), { z -> z.
 
 
             addState(preSchupf) {
+                onEntry {
+                    for ((k, v) in players.zip((last6).chunked(6))) {
+                        cardMap[k]!!.addAll(v)
+                    }
+                    sendStage(AckGameStage.Stage.PRE_SCHUPF)
+                }
                 transition<AckEvent> {
                     onTriggered { println("preSchupf Trans") }
                     targetState = schupf
@@ -74,13 +71,10 @@ class MutableRound//                        .groupByTo(mutableMapOf(), { z -> z.
             }
 
             val selectStartPlayer = choiceState {
-                println(this)
-
                 val key = cardMap
                     .filter { it.value.contains(MAJ) }
                     .map { it.key }
                     .first()
-
                 playerStates[key]!!
             }
 
@@ -97,7 +91,10 @@ class MutableRound//                        .groupByTo(mutableMapOf(), { z -> z.
                 }
 
             addState(schupf) {
-                onEntry { println("hello") }
+                onEntry {
+                    println("hello")
+                    sendStage(AckGameStage.Stage.SCHUPF)
+                }
                 transition<SchupfEvent> {
                     onTriggered { this@addState.schupfBuffer.put(it.event.user, it.event.cards) }
                     targetState = postSchupf
@@ -109,7 +106,7 @@ class MutableRound//                        .groupByTo(mutableMapOf(), { z -> z.
 
             addState(postSchupf) {
                 onEntry {
-                    println("postSchupf")
+                    sendStage(AckGameStage.Stage.POST_SCHUPF)
                 }
                 transition<AckEvent> {
                     targetState = selectStartPlayer
@@ -118,6 +115,13 @@ class MutableRound//                        .groupByTo(mutableMapOf(), { z -> z.
             }
 
             onFinished { println("finished") }
+        }
+    }
+
+    private fun sendStage(stage: AckGameStage.Stage) {
+        for ((u, c) in cardMap) {
+            val message = AckGameStage(stage, c)
+            sendMessage(WrappedServerMessage(u, message))
         }
     }
 
@@ -140,12 +144,12 @@ class MutableRound//                        .groupByTo(mutableMapOf(), { z -> z.
         cardMap = copy
     }
 
-    fun ack(u: Player, s: String) {
+    fun ack(u: Player, s: Ack) {
         when (s) {
             // todo: more consistent naming
-            "G8" -> bTichu.ack.add(u)
-            "14" -> preSchupf.ack.add(u)
-            "PostSchupf" -> postSchupf.ack.add(u)
+            is Ack.BigTichu -> bTichu.ack.add(u)
+            is Ack.TichuBeforeSchupf -> preSchupf.ack.add(u)
+            is Ack.TichuBeforePlay -> postSchupf.ack.add(u)
         }
         machine.processEventBlocking(AckEvent)
     }
@@ -153,6 +157,34 @@ class MutableRound//                        .groupByTo(mutableMapOf(), { z -> z.
     fun schupf(payload: SchupfEvent) {
         schupf.schupfBuffer[payload.user] = payload.cards
         machine.processEventBlocking(payload)
+    }
+
+    fun sendMessage(wrappedServerMessage: WrappedServerMessage) {
+        com.send(wrappedServerMessage)
+    }
+
+    fun receive(wrappedUserMessage: WrappedUserMessage) {
+        // todo: shouldn't switching happen inside state machine?
+        val u = wrappedUserMessage.u
+        when (val m = wrappedUserMessage.message) {
+            is Ack -> ack(wrappedUserMessage.u, m)
+            is Bomb -> TODO()
+            is GiftDragon -> TODO()
+            is Move -> TODO()
+            is Schupf -> schupf(mapSchupfEvent(u, m))
+            is Wish -> TODO()
+        }
+//        machine.processEventBlocking(wrappedUserMessage)
+    }
+
+    private fun mapSchupfEvent(u: Player, schupf: Schupf): SchupfEvent {
+        val cards = mapOf(
+            u.partner() to schupf.partner,
+            u.li() to schupf.li,
+            u.re() to schupf.re,
+        )
+        return SchupfEvent(u, cards)
+
     }
 }
 
