@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="libTichu-jvm">
+    <output-path>$PROJECT_DIR$/build/libs</output-path>
+    <root id="archive" name="libTichu-jvm.jar">
+      <element id="module-output" name="libTichu.jvmMain" />
+    </root>
+  </artifact>
+</component>
