@@ -62,7 +62,7 @@ abstract class TichuPattern(val type: TichuPatternType, cards: Iterable<PlayCard
             return message("pattern differ in lenght")
         }
         if (rank() <= other.rank()) {
-            return message("get higher")
+            return message("$this is not higher than $other")
         }
         return ok();
 

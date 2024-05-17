@@ -1,13 +1,14 @@
 package tichu
 
 import ch.taburett.tichu.cards.*
+import ch.taburett.tichu.game.playedCardsValid
 import ch.taburett.tichu.patterns.LegalType
 import ch.taburett.tichu.patterns.LegalType.*
 import ch.taburett.tichu.patterns.LegalityAnswer
 import ch.taburett.tichu.patterns.ok
-import game.playedCardsValid
 import org.junit.jupiter.api.Assertions.assertAll
 import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.function.Executable
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.Arguments.arguments
@@ -37,7 +38,7 @@ class MoveLegalityCheckerTest {
         exp: LegalType,
         table: List<PlayCard>,
         played: List<PlayCard>,
-        hand: List<HandCard>
+        hand: List<HandCard>,
     ) {
         assertEquals(exp, playedCardsValid(table, played, hand).type)
     }
@@ -113,7 +114,7 @@ class MoveLegalityCheckerTest {
         table: List<PlayCard>,
         played: List<PlayCard>,
         hand: List<HandCard>,
-        wish: Int
+        wish: Int,
     ) {
         assertEquals(exp, playedCardsValid(table, played, hand, wish))
     }
@@ -133,6 +134,33 @@ class MoveLegalityCheckerTest {
     @MethodSource
     fun testWishOk(table: List<PlayCard>, played: List<PlayCard>, hand: List<HandCard>, wish: Int) {
         assertEquals(ok(), playedCardsValid(table, played, hand, wish))
+    }
+
+    @Test
+    fun dog() {
+        assertAll(
+            "Doggy dog",
+            {
+                assertEquals(
+                    LegalityAnswer(ILLEGAL, "Dog only beats empty table"),
+                    playedCardsValid(listOf(MAH), listOf(DOG), listOf(DOG), 6),
+                    "Dog"
+                )
+            },
+            {
+                assertEquals(
+                    LegalityAnswer(WISH, ""),
+                    playedCardsValid(listOf(), listOf(DOG), listOf(DOG, J6), 6),
+                    "Wish"
+                )
+            },
+            {
+                assertEquals(
+                    ok(),
+                    playedCardsValid(listOf(), listOf(DOG), listOf(DOG), 6),
+                    "quark"
+                )
+            })
     }
 
 }

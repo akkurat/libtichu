@@ -1,9 +1,8 @@
 package tichu
 
 import ch.taburett.tichu.cards.fulldeck
-import game.*
-import game.Ack.BigTichu
-import game.Player.*
+import ch.taburett.tichu.game.*
+import ch.taburett.tichu.game.Player.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertAll
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -36,7 +35,7 @@ class MutableRoundTest {
     @Test
     fun transtionToAllCards() {
         val round = MutableRound(out)
-        round.players.forEach { a -> round.ack(a, BigTichu(true)) }
+        round.players.forEach { a -> round.ack(a, Ack.BigTichu()) }
         val cardsCheck = round.cardMap.values
             .map { c -> Executable { assertEquals(14, c.size) } }
             .toList()
@@ -56,8 +55,8 @@ class MutableRoundTest {
     fun transtionPostSchupf() {
         val round = MutableRound(out)
 //        round.machine.startFromBlocking(States.schupf)
-        round.players.forEach { a -> round.ack(a, BigTichu(false)) }
-        round.players.forEach { a -> round.ack(a, Ack.TichuBeforeSchupf(false)) }
+        round.players.forEach { a -> round.ack(a, Ack.BigTichu()) }
+        round.players.forEach { a -> round.ack(a, Ack.TichuBeforeSchupf()) }
         // todo: where to check validity of schupf payload?
         // assumming it's only occuring deliberately
         //
@@ -67,7 +66,7 @@ class MutableRoundTest {
 
         val state2 = round.machine.activeStates()
 
-        round.players.forEach { p -> round.ack(p, Ack.TichuBeforePlay(true)) }
+        round.players.forEach { p -> round.ack(p, Ack.TichuBeforePlay()) }
         val state3 = round.machine.activeStates()
 
         assertAll(

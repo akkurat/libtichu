@@ -31,6 +31,7 @@ class MutableRound(val com: Out, start: Boolean = true) {
     class PlayerState(val player: Player) : DefaultState()
 
     class RegularMoveEvent(val player: Player, val cards: Collection<PlayCard>) : Event
+    class DogMoveEvent(val player: Player) : Event
     class BombMoveEvent(val player: Player) : Event
     class TichuEvent(player: Player) : Event
 
@@ -99,6 +100,10 @@ class MutableRound(val com: Out, start: Boolean = true) {
                 {
                     onEntry {
                         sendTable(this.player)
+                    }
+
+                    transition<DogMoveEvent> {
+                        targetState = playerStates[nextPlayer(ps, 2)]
                     }
 
                     transition<RegularMoveEvent> {
@@ -176,8 +181,8 @@ class MutableRound(val com: Out, start: Boolean = true) {
         }
     }
 
-    private fun nextPlayer(it: PlayerState): Player {
-        val nextIdx = ((players.indexOf(it.player)) + 1) % players.size
+    private fun nextPlayer(it: PlayerState, step: Int = 1): Player {
+        val nextIdx = ((players.indexOf(it.player)) + step) % players.size
         return players[nextIdx]
     }
 
