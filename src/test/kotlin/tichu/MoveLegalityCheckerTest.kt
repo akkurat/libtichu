@@ -163,4 +163,9 @@ class MoveLegalityCheckerTest {
             })
     }
 
+    @Test
+    fun endRound() {
+
+    }
+
 }

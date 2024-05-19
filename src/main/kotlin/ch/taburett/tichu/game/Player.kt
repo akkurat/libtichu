@@ -20,6 +20,8 @@ enum class Player(val value: String, val group: String) {
     }
 }
 
+val playerList = Player.entries.toList()
+
 
 
 

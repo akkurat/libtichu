@@ -57,8 +57,8 @@ data class Wish(val value: Int) : PlayerMessage {
 sealed class Ack : PlayerMessage {
     class BigTichu : Ack()
     class TichuBeforeSchupf : Ack()
-    class TichuBeforePlay : Ack()
     class SchupfcardReceived : Ack()
+    class TichuBeforePlay : Ack()
 }
 
 data class MakeYourMove(
