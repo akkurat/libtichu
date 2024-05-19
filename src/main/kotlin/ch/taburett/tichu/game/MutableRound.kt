@@ -1,9 +1,6 @@
 package ch.taburett.tichu.game
 
-import ch.taburett.tichu.cards.HandCard
-import ch.taburett.tichu.cards.MAH
-import ch.taburett.tichu.cards.PlayCard
-import ch.taburett.tichu.cards.fulldeck
+import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.patterns.LegalType
 import ru.nsk.kstatemachine.*
 
@@ -17,23 +14,23 @@ class MutableRound(val com: Out, start: Boolean = true) {
     sealed class AckState : DefaultState() {
         val ack = mutableSetOf<Player>()
     }
-
     object bTichu : AckState()
     object preSchupf : AckState()
     object schupfed : AckState()
     object postSchupf : AckState()
-    object AckEvent : Event
+    class PlayerState(val player: Player) : DefaultState()
 
     object schupf : DefaultState() {
         val schupfBuffer: MutableMap<Player, Map<Player, HandCard>> = mutableMapOf()
     }
 
-    class PlayerState(val player: Player) : DefaultState()
+
+    object AckEvent : Event
+    class TichuEvent(player: Player) : Event
 
     class RegularMoveEvent(val player: Player, val cards: Collection<PlayCard>) : Event
     class DogMoveEvent(val player: Player) : Event
     class BombMoveEvent(val player: Player) : Event
-    class TichuEvent(player: Player) : Event
 
     val playerStates: Map<Player, PlayerState> = Player.entries.associateBy({ it }) { PlayerState(it) }
 
@@ -95,6 +92,14 @@ class MutableRound(val com: Out, start: Boolean = true) {
                 playerStates[key]!!
             }
 
+            val endGame = choiceState {
+                // round ends
+                // todo game ends
+                tricks.add(table.toList())
+                table = ArrayList()
+                bTichu
+            }
+
             playerStates.values.forEach() { ps ->
                 addState(ps)
                 {
@@ -104,26 +109,44 @@ class MutableRound(val com: Out, start: Boolean = true) {
 
                     transition<DogMoveEvent> {
                         targetState = playerStates[nextPlayer(ps, 2)]
+                        onTriggered {
+                            val playerCards = cardMap.getValue(it.event.player)
+                            playerCards.remove(DOG)
+                        }
                     }
 
-                    transition<RegularMoveEvent> {
-                        guard = { event.player == this@addState.player }
-                        onTriggered {
-                            cardMap.getValue(it.event.player)
-                                .removeAll(it.event.cards)
-                            table.add(Played(it.event.player, it.event.cards.toList()))
+                    transitionConditionally<RegularMoveEvent> {
+                        direction = {
+                            if (event.player != this@addState.player) {
+                                noTransition()
+                            }
+                            if(cardMap.values.count { it.isEmpty() } == 3 ) {
+                                targetState(endGame)
+                            }
+
+                            val playerCards = cardMap.getValue(event.player)
+                            if (playerCards.isEmpty()) {
+                                targetState(playerStates.getValue(nextPlayer(ps)))
+                            }
+                            playerCards.removeAll(event.cards)
+                            table.add(Played(event.player, event.cards.toList()))
                             if (table.takeLast(3).all { it.cards.isEmpty() }
                             ) {
                                 tricks.add(table.toList())
                                 table = ArrayList()
+                                stay()
+                            } else {
+                                targetState(playerStates.getValue(nextPlayer(ps)))
                             }
                         }
-                        targetState = playerStates[nextPlayer(ps)]
-                        // todo: guard only react to events from the correct player
                     }
+
                     transitionOn<BombMoveEvent> {
                         // todo: go to player who played the bomb
                         targetState = { playerStates.getValue(event.player) }
+                    }
+                    onExit {
+                        sendTable(this.player)
                     }
                 }
             }
@@ -162,6 +185,7 @@ class MutableRound(val com: Out, start: Boolean = true) {
 
             onFinished { println("finished") }
         }
+
     }
 
     private fun sendTable(player: Player) {
@@ -248,7 +272,11 @@ class MutableRound(val com: Out, start: Boolean = true) {
         )
 
         if (res.type == LegalType.OK) {
-            machine.processEventBlocking(RegularMoveEvent(player, move.cards))
+            if (move.cards.contains(DOG)) {
+                machine.processEventBlocking(DogMoveEvent(player))
+            } else {
+                machine.processEventBlocking(RegularMoveEvent(player, move.cards))
+            }
         } else {
 //            sendMessage(Error)
         }
