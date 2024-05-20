@@ -4,10 +4,9 @@ import ch.taburett.tichu.game.Ack
 import ch.taburett.tichu.game.Ack.BigTichu
 import ch.taburett.tichu.game.Ack.TichuBeforeSchupf
 import ch.taburett.tichu.game.Game
-import ch.taburett.tichu.game.WrappedUserMessage
+import ch.taburett.tichu.game.WrappedPlayerMessage
 import ch.taburett.tichu.game.playerList
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.assertAll
 import kotlin.test.Test
@@ -20,11 +19,11 @@ class GameTest {
             val game = Game(out)
             game.start()
             for (p in playerList) {
-                game.receive(WrappedUserMessage(p, BigTichu()))
+                game.receive(WrappedPlayerMessage(p, BigTichu()))
             }
             delay(10)
             for (p in playerList) {
-                game.receive(WrappedUserMessage(p, TichuBeforeSchupf()))
+                game.receive(WrappedPlayerMessage(p, TichuBeforeSchupf()))
             }
             delay(10)
             for (p in playerList) {
@@ -32,14 +31,14 @@ class GameTest {
             }
             delay(10)
             for (p in playerList) {
-                game.receive(WrappedUserMessage(p, Ack.SchupfcardReceived()))
+                game.receive(WrappedPlayerMessage(p, Ack.SchupfcardReceived()))
             }
             delay(10)
             for (p in playerList) {
-                game.receive(WrappedUserMessage(p, Ack.TichuBeforePlay()))
+                game.receive(WrappedPlayerMessage(p, Ack.TichuBeforePlay()))
             }
             assertAll(
-                { assertTrue { game.p.machine.isFinished } },
+                { assertTrue { game.p.isFinished } },
                 { assertTrue { game.round.machine.isRunning } },
             )
         }

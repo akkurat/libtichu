@@ -22,7 +22,9 @@ interface PlayerMessage : Message
  * SCHUPFED: [1 2 3 ... 14]
  * GIFT_DRAGON [5,As,DRG]
  */
-enum class Stage { EIGHT_CARDS, PRE_SCHUPF, POST_SCHUPF, GIFT_DRAGON, SCHUPF,SCHUPFED, GAME, YOURTURN }
+enum class Stage { EIGHT_CARDS, PRE_SCHUPF, POST_SCHUPF, GIFT_DRAGON, SCHUPF, SCHUPFED, GAME, YOURTURN }
+
+data class Rejected(val msg: String, val orginal: PlayerMessage) : ServerMessage
 
 data class AckGameStage(val stage: Stage, val cards: List<HandCard>) : ServerMessage {
 

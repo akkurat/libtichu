@@ -189,19 +189,4 @@ class MutableRound(val com: Out, var cardMap: Map<Player, MutableList<out HandCa
 
 }
 
-class SchupfEvent(val user: Player, val cards: Map<Player, HandCard>) : DataEvent<Map<Player, HandCard>> {
-    init {
-        if (cards.containsKey(user)) {
-            throw IllegalArgumentException("")
-        }
-        if (cards.size != Player.entries.size - 1) {
-            throw IllegalArgumentException("")
-        }
-    }
-
-    override val data: Map<Player, HandCard>
-        get() = cards
-}
-
-
 data class Played(val player: Player, val cards: List<PlayCard>)

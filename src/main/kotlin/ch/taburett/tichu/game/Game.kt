@@ -1,39 +1,33 @@
 package ch.taburett.tichu.game
 
-import ru.nsk.kstatemachine.*
+import ru.nsk.kstatemachine.startBlocking
 
 class Game(val com: Out) {
 
 
+    enum class GameState { PREPARE, GAME, END }
+
     lateinit var p: PrepareRound
-    lateinit var round : MutableRound
+    lateinit var round: MutableRound
+
+
+    lateinit var state: GameState
 
     fun start() {
-
-//        createStdLibStateMachine {
-//            val start = addInitialState( p.machine)
-//            addState( round.machine ) {
-//                transition<FinishedEvent> {
-//                    targetState = start
-//                }
-//            }
-//        }
+        state = GameState.PREPARE
         p = PrepareRound(com)
-        p.machine.startBlocking()
-        round = MutableRound(com, mapOf())
-        round.machine.startBlocking()
-
+        p.start()
     }
 
-    fun receiveUserMessage(msg: WrappedUserMessage) {
+    fun receiveUserMessage(msg: WrappedPlayerMessage) {
         receive(msg)
     }
-    fun receive(wrappedUserMessage: WrappedUserMessage) {
+
+    fun receive(wrappedPlayerMessage: WrappedPlayerMessage) {
         // todo: shouldn't switching happen inside state machine?
-        val u = wrappedUserMessage.u
-        when (val m = wrappedUserMessage.message) {
-            is Ack -> p.ack(u, m)
-            is Schupf -> p.schupf(mapSchupfEvent(u, m))
+        val u = wrappedPlayerMessage.u
+        when (val m = wrappedPlayerMessage.message) {
+            is Ack, is Schupf -> p.react(u, m)
             is Bomb -> TODO()
             is GiftDragon -> TODO()
             is Move -> round.move(u, m)
@@ -41,18 +35,27 @@ class Game(val com: Out) {
             BigTichu -> TODO()
             Tichu -> TODO()
         }
-//        machine.processEventBlocking(wrappedUserMessage)
-    }
+        checkTransition()
 
-    private fun mapSchupfEvent(u: Player, schupf: Schupf): SchupfEvent {
-        val cards = mapOf(
-            u.partner() to schupf.partner,
-            u.li() to schupf.li,
-            u.re() to schupf.re,
-        )
-        return SchupfEvent(u, cards)
 
     }
+
+    private fun checkTransition() {
+        if (state == GameState.PREPARE) {
+            if (p.isFinished) {
+                state = GameState.GAME
+                round = MutableRound(com, p.cardMap)
+                round.machine.startBlocking()
+            }
+        } else if (state == GameState.GAME) {
+            if (round.machine.isFinished) {
+                state = GameState.PREPARE
+                p = PrepareRound(com)
+            }
+        }
+
+    }
+
 
 }
 

@@ -2,30 +2,90 @@ package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.fulldeck
-import ch.taburett.tichu.game.MutableRound.*
-import ru.nsk.kstatemachine.*
+import kotlin.reflect.KClass
 
-sealed class AckState : DefaultState() {
-    val ack = mutableSetOf<Player>()
+interface State {
+    fun complete(): Boolean
+    fun reactsTo(value: PlayerMessage): Boolean
+    fun react(u: Player, s: PlayerMessage)
 }
-
 
 class PrepareRound(val com: Out) {
 
-    object bTichu : AckState()
-    object preSchupf : AckState()
-    object schupfed : AckState()
-    object preGame : AckState()
+    sealed class AckState(val reactsTo: KClass<out Ack>) : State {
+        val ack = mutableSetOf<Player>()
+        override fun complete(): Boolean {
+            return ack.size == playerList.size
+        }
+
+        override fun reactsTo(value: PlayerMessage): Boolean {
+            return value::class == reactsTo
+        }
+
+        override fun react(u: Player, s: PlayerMessage) {
+            assert(s::class == reactsTo)
+            ack.add(u)
+        }
+    }
+
+    // enum would actually be fine....
+    class bTichu : AckState(Ack.BigTichu::class)
+    class preSchupf : AckState(Ack.TichuBeforeSchupf::class)
+    class schupfed : AckState(Ack.SchupfcardReceived::class)
+    class preGame : AckState(Ack.TichuBeforePlay::class)
+
+
     // theory all players could have their own state....
-    object schupf : DefaultState() {
+    object schupf : State {
+        //                           <from, Map<to, handcar>>
         val schupfBuffer: MutableMap<Player, Map<Player, HandCard>> = mutableMapOf()
+        override fun complete(): Boolean {
+            return schupfBuffer.size == playerList.size
+        }
+
+        override fun reactsTo(value: PlayerMessage): Boolean {
+            return Schupf::class.isInstance(value)
+        }
+
+        override fun react(u: Player, s: PlayerMessage) {
+            if (s is Schupf) {
+                schupfBuffer[u] = mapSchupfEvent(u, s)
+            }
+        }
+    }
+
+    var isFinished: Boolean = false
+    lateinit var currentState: State
+    val states = listOf(
+        { bTichu() } to {
+            cardMap = playerList.zip(first8.chunked(8))
+                //                        .groupByTo(mutableMapOf(), { z -> z.first }, {z -> z.second.toMutableList()} )
+                .associateBy({ z -> z.first }, { z -> z.second.toMutableList() })
+            sendStage(Stage.EIGHT_CARDS)
+        },
+        { preSchupf() } to {
+            for ((k, v) in playerList.zip((last6).chunked(6))) {
+                cardMap[k]!!.addAll(v)
+            }
+            sendStage(Stage.PRE_SCHUPF)
+        },
+        { schupf } to { sendStage(Stage.SCHUPF) },
+        { schupfed() } to { switchCards(schupf.schupfBuffer) },
+        { preGame() } to { sendStage(Stage.POST_SCHUPF) }
+    )
+    val stateIterator = states.iterator()
+
+    fun start() {
+        val sa = stateIterator.next()
+        sa.second()
+        currentState = sa.first()
     }
 
     fun sendMessage(wrappedServerMessage: WrappedServerMessage) {
         com.send(wrappedServerMessage)
     }
 
-    fun sendStage(stage: Stage, cardMap: Map<Player, MutableList<HandCard>>) {
+    fun sendStage(stage: Stage) {
         for ((u, c) in cardMap) {
             val message = AckGameStage(stage, c)
             sendMessage(WrappedServerMessage(u, message))
@@ -33,15 +93,21 @@ class PrepareRound(val com: Out) {
     }
 
     lateinit var cardMap: Map<Player, MutableList<HandCard>>
-    fun ack(u: Player, s: Ack) {
-        when (s) {
-            // todo: more consistent naming
-            is Ack.BigTichu -> bTichu.ack.add(u)
-            is Ack.TichuBeforeSchupf -> preSchupf.ack.add(u)
-            is Ack.SchupfcardReceived -> schupfed.ack.add(u)
-            is Ack.TichuBeforePlay -> preGame.ack.add(u)
+    fun react(u: Player, s: PlayerMessage) {
+        if (currentState.reactsTo(s)) {
+            currentState.react(u, s)
+            if (currentState.complete()) {
+                if (stateIterator.hasNext()) {
+                    val sa = stateIterator.next()
+                    sa.second()
+                    currentState = sa.first()
+                } else {
+                    isFinished = true
+                }
+            }
+        } else {
+            sendMessage(WrappedServerMessage(u, Rejected("Current State is ${currentState}", s)))
         }
-        machine.processEventBlocking(AckEvent)
     }
 
     val first8: List<HandCard>
@@ -53,108 +119,42 @@ class PrepareRound(val com: Out) {
         last6 = _last6
     }
 
-    val machine = createStdLibStateMachine("PrepareRound", start = false) {
+    fun switchCards(
+        schupfBuffer: MutableMap<Player, Map<Player, HandCard>>,
+    ) {
+        val copy = cardMap.toMutableMap()
+        // hm... maybe tables?
+        val received: Map<Player, MutableMap<Player, HandCard>> =
+            cardMap.keys.associateBy({ k -> k }, { mutableMapOf() })
 
-        addInitialState(bTichu) {
-            onEntry {
-                cardMap = playerList.zip(first8.chunked(8))
-                    //                        .groupByTo(mutableMapOf(), { z -> z.first }, {z -> z.second.toMutableList()} )
-                    .associateBy({ z -> z.first }, { z -> z.second.toMutableList() })
-                sendStage(Stage.EIGHT_CARDS, cardMap)
-            }
-
-            transitionOn<AckEvent> {
-                targetState = { preSchupf }
-                guard = { this@addInitialState.ack.containsAll(playerList) }
-            }
-
-//                transitionOn<TichuEvent> {
-//                    onTriggered {  }
-//                    targetState = { preSchupf }
-//                }
-
-        }
-
-        addState(preSchupf) {
-            onEntry {
-                for ((k, v) in playerList.zip((last6).chunked(6))) {
-                    cardMap[k]!!.addAll(v)
-                }
-                sendStage(Stage.PRE_SCHUPF, cardMap)
-            }
-            transition<AckEvent> {
-                onTriggered { println("preSchupf Trans") }
-                targetState = schupf
-                guard = { this@addState.ack.containsAll(playerList) }
-            }
-        }
-        addState(schupf) {
-            onEntry {
-                println("hello")
-                sendStage(Stage.SCHUPF, cardMap)
-            }
-            transition<SchupfEvent> {
-                onTriggered { this@addState.schupfBuffer.put(it.event.user, it.event.cards) }
-                targetState = schupfed
-                guard = { this@addState.schupfBuffer.size == 4 }
-//                    targetState = { if (schupf.playerList.size == 4) postSchupf else schupf }
-            }
-            // sends schupfed cards
-            onExit { switchCards(this@PrepareRound, schupfBuffer, cardMap) }
-        }
-
-        addState(schupfed) {
-            transition<AckEvent> {
-                targetState = preGame
-                guard = { this@addState.ack.size == 4 }
+        for ((from, cards) in schupfBuffer) {
+            val myCards = copy[from]
+            for ((to, card) in cards) {
+                myCards!!.remove(card)
+                copy[to]!!.add(card)
+                received[to]!![from] = card
             }
         }
 
-        val end = finalState { }
-        addState(preGame) {
-            onEntry {
-                sendStage(Stage.POST_SCHUPF, cardMap)
-            }
-            transition<AckEvent> {
-                targetState = end
-                guard = { this@addState.ack.size == 4 }
-            }
+        for ((u, c) in received) {
+            val msg = Schupf(
+                c[u.re()]!!,
+                c[u.li()]!!,
+                c[u.partner()]!!
+            )
+            sendMessage(WrappedServerMessage(u, msg))
         }
-    }
+        cardMap = copy
 
-    fun schupf(payload: SchupfEvent) {
-        schupf.schupfBuffer[payload.user] = payload.cards
-        machine.processEventBlocking(payload)
     }
 
 }
 
 
-fun switchCards(
-    prepareRound: PrepareRound, schupfBuffer: MutableMap<Player, Map<Player, HandCard>>,
-    cardMap: Map<Player, MutableList<HandCard>>,
-) {
-    val copy = cardMap.toMutableMap()
-    // hm... maybe tables?
-    val received: Map<Player, MutableMap<Player, HandCard>> =
-        cardMap.keys.associateBy({ k -> k }, { mutableMapOf() })
-
-    for ((from, cards) in schupfBuffer) {
-        val myCards = copy[from]
-        for ((to, card) in cards) {
-            myCards!!.remove(card)
-            copy[to]!!.add(card)
-            received[to]!![from] = card
-        }
-    }
-
-    for ((u, c) in received) {
-        val msg = Schupf(
-            c[u.re()]!!,
-            c[u.li()]!!,
-            c[u.partner()]!!
-        )
-        prepareRound.sendMessage(WrappedServerMessage(u, msg))
-    }
-
+fun mapSchupfEvent(u: Player, schupf: Schupf): Map<Player, HandCard> {
+    return mapOf(
+        u.partner() to schupf.partner,
+        u.li() to schupf.li,
+        u.re() to schupf.re,
+    )
 }
