@@ -8,7 +8,7 @@ import ru.nsk.kstatemachine.*
 //
 //class AckEvent(override val data: PlayerMessage) : DataEvent<PlayerMessage> {}
 
-typealias Tricks = ArrayList<List<Played>>
+typealias MutableTricks = ArrayList<List<Played>>
 
 class MutableRound(val com: Out, var cardMap: Map<Player, MutableList<out HandCard>>) {
 
@@ -28,10 +28,12 @@ class MutableRound(val com: Out, var cardMap: Map<Player, MutableList<out HandCa
 
     var table = ArrayList<Played>()
 
-    var tricks = Tricks()
+    var tricks = MutableTricks()
+
+    lateinit var dragonGift: Player
+    // todo  big tichus and such
 
 
-    // todo: split round logic and trick logic
     init {
         machine = createStdLibStateMachine("TStateRound", start = false)
         {
@@ -48,7 +50,6 @@ class MutableRound(val com: Out, var cardMap: Map<Player, MutableList<out HandCa
 
             val finish = finalState { }
 
-
             val endGame = choiceState {
                 // round ends
                 // todo game ends
@@ -57,11 +58,12 @@ class MutableRound(val com: Out, var cardMap: Map<Player, MutableList<out HandCa
                 finish
             }
 
+
             playerStates.values.forEach() { ps ->
                 addState(ps)
                 {
                     onEntry {
-                        sendTable(this.player)
+                        sendTableAndHandcards(this.player)
                     }
 
                     transition<DogMoveEvent> {
@@ -73,24 +75,27 @@ class MutableRound(val com: Out, var cardMap: Map<Player, MutableList<out HandCa
                     }
 
                     transitionConditionally<RegularMoveEvent> {
+                        onTriggered { println("trigger reg move") }
                         direction = {
+                            // should be outside
                             if (event.player != this@addState.player) {
                                 noTransition()
-                            }
-                            val playerCards = cardMap.getValue(event.player)
-                            playerCards.removeAll(event.cards.map { it.asHandcard() })
-                            table.add(Played(event.player, event.cards.toList()))
-
-                            // that must be possible more easily
-                            if (cardMap.values.count { it.isEmpty() } == 3) {
-                                targetState(endGame)
                             } else {
-                                if (table.takeLast(3).all { it.cards.isEmpty() }
-                                ) {
-                                    tricks.add(table.toList())
-                                    table = ArrayList()
-                                    stay()
+                                val playerCards = cardMap.getValue(event.player)
+                                playerCards.removeAll(event.cards.map { it.asHandcard() })
+                                table.add(Played(event.player, event.cards.toList()))
+
+                                // that must be possible more easily
+                                if (cardMap.values.count { it.isEmpty() } == 3) {
+                                    targetState(endGame)
                                 } else {
+
+
+                                    if (table.takeLast(activePlayers()-1).all { it.cards.isEmpty() }) {
+                                        sendTrick(event.player)
+                                        tricks.add(table.toList())
+                                        table = ArrayList()
+                                    }
                                     targetState(playerStates.getValue(nextPlayer(ps.player)))
                                 }
                             }
@@ -101,9 +106,6 @@ class MutableRound(val com: Out, var cardMap: Map<Player, MutableList<out HandCa
                         // todo: go to player who played the bomb
                         targetState = { playerStates.getValue(event.player) }
                     }
-                    onExit {
-                        sendTable(this.player)
-                    }
                 }
             }
 
@@ -113,13 +115,17 @@ class MutableRound(val com: Out, var cardMap: Map<Player, MutableList<out HandCa
 
     }
 
+    private fun activePlayers(): Int {
+        return cardMap.values.count { it.isNotEmpty() }
+    }
+
     private fun checkTricks(value: ArrayList<List<Played>>) {
         // iterate through checks basically via statemachine without being connected to outside
         // idea: create shadow round, play through and crate real one afterwards in order not to have
         // a faulty state (i.e. fail fast)
     }
 
-    private fun sendTable(player: Player) {
+    private fun sendTableAndHandcards(player: Player) {
         sendMessage(WrappedServerMessage(player, MakeYourMove(cardMap[player]!!, table)))
         // in theory we could use topic or so...
         // but boah...
@@ -129,12 +135,19 @@ class MutableRound(val com: Out, var cardMap: Map<Player, MutableList<out HandCa
             }
     }
 
+    private fun sendTrick(player: Player) {
+        playerList.forEach {
+            sendMessage(WrappedServerMessage(it, WhosTurn(player, cardMap.getValue(it), table.toList())))
+        }
+    }
+
     private fun sendStage(stage: Stage) {
         for ((u, c) in cardMap) {
             val message = AckGameStage(stage, c)
             sendMessage(WrappedServerMessage(u, message))
         }
     }
+
 
     private fun nextPlayer(player_in: Player, step: Int = 1, cnt: Int = 0): Player {
         if (cnt == 4) {
@@ -187,6 +200,16 @@ class MutableRound(val com: Out, var cardMap: Map<Player, MutableList<out HandCa
         com.send(wrappedServerMessage)
     }
 
+    fun getRoundInfo(): RoundInfo {
+        // todo: tichu, drgn and so on
+        return RoundInfo(tricks.toList())
+    }
+
 }
+
+data class RoundInfo(val tricks: Tricks) {
+    // todo count
+}
+
 
 data class Played(val player: Player, val cards: List<PlayCard>)

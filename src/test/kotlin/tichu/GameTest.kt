@@ -8,9 +8,9 @@ import ch.taburett.tichu.game.WrappedPlayerMessage
 import ch.taburett.tichu.game.playerList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertAll
 import kotlin.test.Test
-import kotlin.test.assertTrue
 
 class GameTest {
     @Test
@@ -27,7 +27,7 @@ class GameTest {
             }
             delay(10)
             for (p in playerList) {
-                randomShupf(game.p, p)
+                randomShupf(game.prepareRound!!, p)
             }
             delay(10)
             for (p in playerList) {
@@ -38,8 +38,8 @@ class GameTest {
                 game.receive(WrappedPlayerMessage(p, Ack.TichuBeforePlay()))
             }
             assertAll(
-                { assertTrue { game.p.isFinished } },
-                { assertTrue { game.round.machine.isRunning } },
+                { assertThat(game.prepareRound).isNull() },
+                { assertThat(game.playRound!!.machine.isRunning).isTrue() },
             )
         }
     }

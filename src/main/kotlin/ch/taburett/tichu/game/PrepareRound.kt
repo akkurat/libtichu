@@ -2,6 +2,7 @@ package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.fulldeck
+import kotlinx.coroutines.internal.synchronized
 import kotlin.reflect.KClass
 
 interface State {
@@ -77,8 +78,8 @@ class PrepareRound(val com: Out) {
 
     fun start() {
         val sa = stateIterator.next()
-        sa.second()
         currentState = sa.first()
+        sa.second()
     }
 
     fun sendMessage(wrappedServerMessage: WrappedServerMessage) {
@@ -93,14 +94,15 @@ class PrepareRound(val com: Out) {
     }
 
     lateinit var cardMap: Map<Player, MutableList<HandCard>>
+
     fun react(u: Player, s: PlayerMessage) {
         if (currentState.reactsTo(s)) {
             currentState.react(u, s)
             if (currentState.complete()) {
                 if (stateIterator.hasNext()) {
                     val sa = stateIterator.next()
-                    sa.second()
-                    currentState = sa.first()
+                        currentState = sa.first()
+                        sa.second()
                 } else {
                     isFinished = true
                 }

@@ -150,7 +150,7 @@ class Phoenix : HandCard {
     }
 
     fun asPlayCard(value: Int): PhoenixPlaycard {
-        if (MAH.getValue() < value && value <= J14.getValue())
+        if (MAH.getValue() <= value && value <= J14.getValue())
             return PhoenixPlaycard(this, value)
         throw IllegalArgumentException("Naughty boy")
     }

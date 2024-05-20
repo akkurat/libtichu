@@ -1,62 +1,75 @@
 package ch.taburett.tichu.game
 
+import org.jetbrains.annotations.VisibleForTesting
 import ru.nsk.kstatemachine.startBlocking
+import ru.nsk.kstatemachine.stopBlocking
+import java.util.concurrent.Executors
 
-class Game(val com: Out) {
+typealias Tricks = List<List<Played>>
 
+class Game(com: Out) {
+    val executor = Executors.newCachedThreadPool()
 
-    enum class GameState { PREPARE, GAME, END }
+    val com = Out { msg ->
+        executor.execute {
+            try {
+                com.send(msg)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 
-    lateinit var p: PrepareRound
-    lateinit var round: MutableRound
+    val playLog = mutableListOf<RoundInfo>()
 
+    @VisibleForTesting
+    var prepareRound: PrepareRound? = null
 
-    lateinit var state: GameState
+    @VisibleForTesting
+    var playRound: MutableRound? = null
 
     fun start() {
-        state = GameState.PREPARE
-        p = PrepareRound(com)
-        p.start()
+        prepareRound = PrepareRound(com)
+        prepareRound!!.start()
     }
 
     fun receiveUserMessage(msg: WrappedPlayerMessage) {
         receive(msg)
     }
 
+    @Synchronized
     fun receive(wrappedPlayerMessage: WrappedPlayerMessage) {
         // todo: shouldn't switching happen inside state machine?
         val u = wrappedPlayerMessage.u
         when (val m = wrappedPlayerMessage.message) {
-            is Ack, is Schupf -> p.react(u, m)
+            is Ack, is Schupf -> prepareRound?.react(u, m)
             is Bomb -> TODO()
             is GiftDragon -> TODO()
-            is Move -> round.move(u, m)
+            is Move -> playRound?.move(u, m)
             is Wish -> TODO()
             BigTichu -> TODO()
             Tichu -> TODO()
         }
         checkTransition()
-
-
     }
 
     private fun checkTransition() {
-        if (state == GameState.PREPARE) {
-            if (p.isFinished) {
-                state = GameState.GAME
-                round = MutableRound(com, p.cardMap)
-                round.machine.startBlocking()
+        if (prepareRound != null && prepareRound!!.isFinished) {
+            playRound = MutableRound(com, prepareRound!!.cardMap)
+            prepareRound = null
+            playRound?.machine?.startBlocking()
+        } else if (playRound != null && playRound!!.machine.isFinished) {
+            val roundInfo = playRound!!.getRoundInfo()
+            playLog.add(roundInfo)
+            playerList.forEach {
+                com.send(WrappedServerMessage(it, Points(roundInfo)))
             }
-        } else if (state == GameState.GAME) {
-            if (round.machine.isFinished) {
-                state = GameState.PREPARE
-                p = PrepareRound(com)
-            }
+            playRound?.machine?.stopBlocking()
+            playRound = null
+            prepareRound = PrepareRound(com)
+            prepareRound!!.start()
         }
-
     }
-
-
 }
 
 fun interface Out {
