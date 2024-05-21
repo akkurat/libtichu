@@ -3,15 +3,11 @@ package tichu
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.Move
 import ch.taburett.tichu.game.MutableRound
-import ch.taburett.tichu.game.Player
 import ch.taburett.tichu.game.Player.*
-import org.assertj.core.api.Assertions
+import ch.taburett.tichu.game.State
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertAll
-import ru.nsk.kstatemachine.activeStates
-import ru.nsk.kstatemachine.startBlocking
 import kotlin.test.Test
-import kotlin.test.assertEquals
 
 
 class MutableRoundTest {
@@ -26,8 +22,8 @@ class MutableRoundTest {
             B2 to mutableListOf(S2),
         )
         val round = MutableRound(out, map)
-        round.machine.startBlocking()
-        assertThat(round.machine.activeStates().first()).isEqualTo(round.playerStates.getValue(A2))
+        round.start()
+        assertThat(round.currentPlayer).isEqualTo(A2)
 
     }
 
@@ -40,10 +36,10 @@ class MutableRoundTest {
             B2 to mutableListOf(S2),
         )
         val round = MutableRound(out, map)
-        round.machine.startBlocking()
+        round.start()
         round.move(A1, Move(setOf(J5)))
 
-        assertThat(round.machine.activeStates().first()).isEqualTo(round.playerStates.getValue(A2))
+        assertThat(round.currentPlayer).isEqualTo(A2)
     }
 
     @Test
@@ -57,13 +53,13 @@ class MutableRoundTest {
 
         val round = MutableRound(out, map)
 
-        round.machine.startBlocking()
+        round.start()
         round.move(A2, Move(setOf(MAH)))
         round.move(B2, Move(setOf()))
         round.move(A1, Move(setOf()))
         round.move(B1, Move(setOf()))
 
-        assertThat(round.machine.activeStates().first()).isEqualTo(round.playerStates.getValue(A2))
+        assertThat(round.currentPlayer).isEqualTo(A2)
     }
 
     @Test
@@ -77,13 +73,13 @@ class MutableRoundTest {
 
         val round = MutableRound(out, map)
 
-        round.machine.startBlocking()
+        round.start()
         round.move(A2, Move(setOf(MAH)))
         round.move(B2, Move(setOf(S2)))
         round.move(A1, Move(setOf()))
         round.move(B1, Move(setOf()))
 
-        assertThat(round.machine.activeStates().first()).isEqualTo(round.playerStates.getValue(A1))
+        assertThat(round.currentPlayer).isEqualTo(A1)
     }
 
     @Test
@@ -97,7 +93,7 @@ class MutableRoundTest {
 
         val round = MutableRound(out, map)
 
-        round.machine.startBlocking()
+        round.start()
         round.move(A2, Move(setOf(MAH)))
         round.move(B2, Move(setOf(S2)))
         round.move(A1, Move(setOf(J5)))
@@ -105,8 +101,7 @@ class MutableRoundTest {
         round.move(A1, Move(setOf(PHX.asPlayCard(8))))
 
         assertAll(
-            {assertThat(round.machine.isFinished).isTrue()},
-            {assertThat(round.machine.isFinished).isTrue()},
+            { assertThat(round.state == MutableRound.State.FINISHED).isTrue() },
         )
     }
 

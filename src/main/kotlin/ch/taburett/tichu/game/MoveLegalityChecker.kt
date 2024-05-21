@@ -5,6 +5,8 @@ import ch.taburett.tichu.cards.NumberCard
 import ch.taburett.tichu.cards.PlayCard
 import ch.taburett.tichu.cards.pattern
 import ch.taburett.tichu.patterns.LegalType
+import ch.taburett.tichu.patterns.LegalType.ILLEGAL
+import ch.taburett.tichu.patterns.LegalType.WISH
 import ch.taburett.tichu.patterns.LegalityAnswer
 import ch.taburett.tichu.patterns.ok
 
@@ -16,7 +18,7 @@ fun playedCardsValid(
     _tableCards: List<PlayCard>,
     cardsTriedToPlay: Collection<PlayCard>,
     handCards: List<HandCard>,
-    wish: Int? = null
+    wish: Int? = null,
 ): LegalityAnswer {
 
     if (_tableCards.any(cardsTriedToPlay::contains)) {
@@ -27,10 +29,17 @@ fun playedCardsValid(
         return LegalityAnswer(LegalType.CHEATING, "You can only play cards of your hand")
     }
 
+    if (_tableCards.isEmpty() && cardsTriedToPlay.isEmpty()) {
+        return LegalityAnswer(ILLEGAL, "Cannot open with pass")
+    }
+
     val pTAble = pattern(_tableCards)
     val pPlayed = pattern(cardsTriedToPlay)
     if (wish != null && handCards.filterIsInstance<NumberCard>().any { c -> c.getValue() == wish }) {
         if (cardsTriedToPlay.none { c -> c.getValue() == wish }) {
+            if (_tableCards.isEmpty()) { // allready checked that player has wished card
+                return LegalityAnswer(WISH, "Wish $wish is pending. You're not allowed to play $cardsTriedToPlay")
+            }
             val allPatternsMatchingTable = pTAble.type.factory.allPatterns(handCards)
             val possiblePatterns = allPatternsMatchingTable
                 .filter { p -> p.cards.any { c -> c.getValue() == wish } }
@@ -40,7 +49,7 @@ fun playedCardsValid(
         }
     }
 
-    if( cardsTriedToPlay.isEmpty() ) {
+    if (cardsTriedToPlay.isEmpty()) {
         return ok()
     }
     return pPlayed.beats(pTAble);

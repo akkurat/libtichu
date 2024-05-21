@@ -11,6 +11,8 @@ class Empty() : TichuPattern(TichuPatternType.EMPTY, setOf()) {
             }
             return null
         }
+        // puh.. in theory this should return all possible pattern
+        // maybe it's better not to have Empty pattern at all
         override fun allPatterns(cards: Collection<HandCard>): Set<TichuPattern> {
             return setOf()
         }

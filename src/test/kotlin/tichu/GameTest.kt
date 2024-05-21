@@ -1,11 +1,8 @@
 package tichu
 
-import ch.taburett.tichu.game.Ack
+import ch.taburett.tichu.game.*
 import ch.taburett.tichu.game.Ack.BigTichu
 import ch.taburett.tichu.game.Ack.TichuBeforeSchupf
-import ch.taburett.tichu.game.Game
-import ch.taburett.tichu.game.WrappedPlayerMessage
-import ch.taburett.tichu.game.playerList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
@@ -39,7 +36,7 @@ class GameTest {
             }
             assertAll(
                 { assertThat(game.prepareRound).isNull() },
-                { assertThat(game.playRound!!.machine.isRunning).isTrue() },
+                { assertThat(game.playRound!!.state == MutableRound.State.RUNNING).isTrue() },
             )
         }
     }

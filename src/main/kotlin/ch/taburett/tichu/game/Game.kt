@@ -1,8 +1,7 @@
 package ch.taburett.tichu.game
 
+import ch.taburett.tichu.cards.fulldeck
 import org.jetbrains.annotations.VisibleForTesting
-import ru.nsk.kstatemachine.startBlocking
-import ru.nsk.kstatemachine.stopBlocking
 import java.util.concurrent.Executors
 
 typealias Tricks = List<List<Played>>
@@ -28,13 +27,25 @@ class Game(com: Out) {
     @VisibleForTesting
     var playRound: MutableRound? = null
 
+    // todo: deserialize a stored game
     fun start() {
-        prepareRound = PrepareRound(com)
-        prepareRound!!.start()
+//        prepareRound = PrepareRound(com)
+//        prepareRound!!.start()
+        // no shupf for quick testing
+        val cardmap = playerList.zip(fulldeck.shuffled().chunked(14)).toMap()
+        playRound = MutableRound(com, cardmap)
+        playRound!!.start()
+
     }
 
     fun receiveUserMessage(msg: WrappedPlayerMessage) {
         receive(msg)
+    }
+
+    internal fun resendStatus() {
+        if(playRound != null ) {
+            playRound!!.sendTableAndHandcards(playRound!!.currentPlayer);
+        }
     }
 
     @Synchronized
@@ -57,14 +68,13 @@ class Game(com: Out) {
         if (prepareRound != null && prepareRound!!.isFinished) {
             playRound = MutableRound(com, prepareRound!!.cardMap)
             prepareRound = null
-            playRound?.machine?.startBlocking()
-        } else if (playRound != null && playRound!!.machine.isFinished) {
+            playRound!!.start()
+        } else if (playRound != null && playRound!!.state == MutableRound.State.FINISHED) {
             val roundInfo = playRound!!.getRoundInfo()
             playLog.add(roundInfo)
             playerList.forEach {
                 com.send(WrappedServerMessage(it, Points(roundInfo)))
             }
-            playRound?.machine?.stopBlocking()
             playRound = null
             prepareRound = PrepareRound(com)
             prepareRound!!.start()

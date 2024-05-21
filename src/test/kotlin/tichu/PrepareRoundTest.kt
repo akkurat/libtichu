@@ -19,7 +19,6 @@ class PrepareRoundTest {
     @Test
     fun test8Cards() {
 
-
         val round = PrepareRound(out)
         round.start()
 
@@ -81,9 +80,7 @@ class PrepareRoundTest {
             { assertTrue("finished", round.isFinished) }
         )
 
-
     }
-
 
 }
 

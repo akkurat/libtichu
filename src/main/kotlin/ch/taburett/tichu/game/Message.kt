@@ -24,9 +24,10 @@ interface PlayerMessage : Message
  */
 enum class Stage { EIGHT_CARDS, PRE_SCHUPF, POST_SCHUPF, GIFT_DRAGON, SCHUPF, SCHUPFED, GAME, YOURTURN }
 
+// info class
 data class Points( val points: Any): ServerMessage
 
-data class Rejected(val msg: String, val orginal: PlayerMessage) : ServerMessage
+data class Rejected(val msg: String, val orginal: PlayerMessage? = null) : ServerMessage
 
 data class AckGameStage(val stage: Stage, val cards: List<HandCard>) : ServerMessage {
 

@@ -142,14 +142,14 @@ class MoveLegalityCheckerTest {
             "Doggy dog",
             {
                 assertEquals(
-                    LegalityAnswer(ILLEGAL, "Dog only beats empty table"),
+                    LegalityAnswer(ILLEGAL, "SINGLE[DOG] is not higher than SINGLE[MAH]"),
                     playedCardsValid(listOf(MAH), listOf(DOG), listOf(DOG), 6),
                     "Dog"
                 )
             },
             {
                 assertEquals(
-                    LegalityAnswer(WISH, ""),
+                    LegalityAnswer(WISH, "Wish 6 is pending. You're not allowed to play [DOG]"),
                     playedCardsValid(listOf(), listOf(DOG), listOf(DOG, J6), 6),
                     "Wish"
                 )
@@ -166,6 +166,14 @@ class MoveLegalityCheckerTest {
     @Test
     fun endRound() {
 
+    }
+
+    @Test
+    fun cannotPassAusspiel() {
+        assertEquals(
+            LegalityAnswer(ILLEGAL, "Cannot open with pass"),
+            playedCardsValid(listOf(), listOf(), listOf(MAH, S5))
+        )
     }
 
 }
