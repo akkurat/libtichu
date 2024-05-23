@@ -14,6 +14,9 @@ class Straight(cards: Iterable<PlayCard>) : TichuPattern(TichuPatternType.STRAIG
         }
 
         fun isValidRuelle(cards: Collection<PlayCard>): Boolean {
+            if (cards.size < 5) {
+                return false
+            }
             val sorted = cards.sortedBy { it.getValue() }
             for (i in 0 until sorted.size - 1) {
                 if (sorted[i + 1].getValue() - sorted[i].getValue() != 1) {

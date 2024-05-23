@@ -3,6 +3,7 @@ package tichu.patterns
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.patterns.Straight
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.assertAll
 import kotlin.test.Test
 
 internal class StraightTest {
@@ -35,4 +36,16 @@ internal class StraightTest {
 
         assertThat(out).hasSameElementsAs(expect)
     }
+
+    @Test
+    fun rejectRuelle() {
+        val patterns = listOf(
+            listOf(J2, J3), listOf(J2, J3, J4), listOf(J2, J3, J4, S5), listOf(J3, J4, S5)
+        )
+        assertAll(
+            patterns.map { { assertThat(Straight.pattern(it)).isNull() } }
+        )
+    }
+
+
 }

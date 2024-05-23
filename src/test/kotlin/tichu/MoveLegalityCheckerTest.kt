@@ -5,8 +5,10 @@ import ch.taburett.tichu.game.playedCardsValid
 import ch.taburett.tichu.patterns.LegalType
 import ch.taburett.tichu.patterns.LegalType.*
 import ch.taburett.tichu.patterns.LegalityAnswer
+import ch.taburett.tichu.patterns.Stairs
 import ch.taburett.tichu.patterns.ok
 import org.junit.jupiter.api.Assertions.assertAll
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.function.Executable
 import org.junit.jupiter.params.ParameterizedTest
@@ -173,6 +175,14 @@ class MoveLegalityCheckerTest {
         assertEquals(
             LegalityAnswer(ILLEGAL, "Cannot open with pass"),
             playedCardsValid(listOf(), listOf(), listOf(MAH, S5))
+        )
+    }
+    @Test
+    fun rejectInvalid() {
+        val cards = listOf(J2, J3)
+        assertEquals(
+            LegalityAnswer(ILLEGAL, "[J2, J3] is not valid pattern"),
+            playedCardsValid(listOf(), cards, cards)
         )
     }
 

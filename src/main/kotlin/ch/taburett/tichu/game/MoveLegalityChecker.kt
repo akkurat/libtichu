@@ -34,23 +34,27 @@ fun playedCardsValid(
     }
 
     val pTAble = pattern(_tableCards)
-    val pPlayed = pattern(cardsTriedToPlay)
-    if (wish != null && handCards.filterIsInstance<NumberCard>().any { c -> c.getValue() == wish }) {
-        if (cardsTriedToPlay.none { c -> c.getValue() == wish }) {
-            if (_tableCards.isEmpty()) { // allready checked that player has wished card
-                return LegalityAnswer(WISH, "Wish $wish is pending. You're not allowed to play $cardsTriedToPlay")
-            }
-            val allPatternsMatchingTable = pTAble.type.factory.allPatterns(handCards)
-            val possiblePatterns = allPatternsMatchingTable
-                .filter { p -> p.cards.any { c -> c.getValue() == wish } }
-            if (possiblePatterns.isNotEmpty()) {
-                return LegalityAnswer(LegalType.WISH, possiblePatterns.first().toString())
+    try {
+        val pPlayed = pattern(cardsTriedToPlay)
+        if (wish != null && handCards.filterIsInstance<NumberCard>().any { c -> c.getValue() == wish }) {
+            if (cardsTriedToPlay.none { c -> c.getValue() == wish }) {
+                if (_tableCards.isEmpty()) { // allready checked that player has wished card
+                    return LegalityAnswer(WISH, "Wish $wish is pending. You're not allowed to play $cardsTriedToPlay")
+                }
+                val allPatternsMatchingTable = pTAble.type.factory.allPatterns(handCards)
+                val possiblePatterns = allPatternsMatchingTable
+                    .filter { p -> p.cards.any { c -> c.getValue() == wish } }
+                if (possiblePatterns.isNotEmpty()) {
+                    return LegalityAnswer(LegalType.WISH, possiblePatterns.first().toString())
+                }
             }
         }
-    }
 
-    if (cardsTriedToPlay.isEmpty()) {
-        return ok()
+        if (cardsTriedToPlay.isEmpty()) {
+            return ok()
+        }
+        return pPlayed.beats(pTAble);
+    } catch (e: IllegalArgumentException) {
+        return LegalityAnswer(ILLEGAL, "$cardsTriedToPlay is not valid pattern")
     }
-    return pPlayed.beats(pTAble);
 }

@@ -73,7 +73,7 @@ internal class CardUtilsKtTest {
         assertAll(
             { assertDoesNotThrow { PHX.asPlayCard(2) } },
             { assertDoesNotThrow { PHX.asPlayCard(14) } },
-            { assertThrows<IllegalArgumentException> { PHX.asPlayCard(1) } },
+            { assertThrows<IllegalArgumentException> { PHX.asPlayCard(0) } },
             { assertThrows<IllegalArgumentException> { PHX.asPlayCard(17) } },
         )
     }

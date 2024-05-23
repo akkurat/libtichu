@@ -50,9 +50,9 @@ internal class StairsTest {
         val cards = listOf(D3, P2, J3, J2, P3, J4, S5, S4)
         assertEquals(
             setOf(
-                pattern(listOf(D3, P2, J3, J2, J4,S4)),
-                pattern(listOf(D3, P2, P3, J2, J4,S4)),
-                pattern(listOf(P3, P2, J3, J2, J4,S4)),
+                pattern(listOf(D3, P2, J3, J2, J4, S4)),
+                pattern(listOf(D3, P2, P3, J2, J4, S4)),
+                pattern(listOf(P3, P2, J3, J2, J4, S4)),
             ),
             Stairs.allPatterns(cards)
         )

@@ -2,7 +2,6 @@ package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.fulldeck
-import kotlinx.coroutines.internal.synchronized
 import kotlin.reflect.KClass
 
 interface State {
@@ -37,7 +36,7 @@ class PrepareRound(val com: Out) {
 
 
     // theory all players could have their own state....
-    object schupf : State {
+    class SchupfState : State {
         //                           <from, Map<to, handcar>>
         val schupfBuffer: MutableMap<Player, Map<Player, HandCard>> = mutableMapOf()
         override fun complete(): Boolean {
@@ -57,29 +56,30 @@ class PrepareRound(val com: Out) {
 
     var isFinished: Boolean = false
     lateinit var currentState: State
+    val schupfState = SchupfState()
     val states = listOf(
-        { bTichu() } to {
+        bTichu() to {
             cardMap = playerList.zip(first8.chunked(8))
                 //                        .groupByTo(mutableMapOf(), { z -> z.first }, {z -> z.second.toMutableList()} )
                 .associateBy({ z -> z.first }, { z -> z.second.toMutableList() })
             sendStage(Stage.EIGHT_CARDS)
         },
-        { preSchupf() } to {
+        preSchupf() to {
             for ((k, v) in playerList.zip((last6).chunked(6))) {
                 cardMap[k]!!.addAll(v)
             }
             sendStage(Stage.PRE_SCHUPF)
         },
-        { schupf } to { sendStage(Stage.SCHUPF) },
-        { schupfed() } to { switchCards(schupf.schupfBuffer) },
-        { preGame() } to { sendStage(Stage.POST_SCHUPF) }
+        schupfState to { sendStage(Stage.SCHUPF) },
+        schupfed() to { switchCards(schupfState.schupfBuffer) },
+        preGame() to { sendStage(Stage.POST_SCHUPF) }
     )
     val stateIterator = states.iterator()
 
     fun start() {
-        val sa = stateIterator.next()
-        currentState = sa.first()
-        sa.second()
+        val (state, transition) = stateIterator.next()
+        currentState = state
+        transition()
     }
 
     fun sendMessage(wrappedServerMessage: WrappedServerMessage) {
@@ -100,9 +100,9 @@ class PrepareRound(val com: Out) {
             currentState.react(u, s)
             if (currentState.complete()) {
                 if (stateIterator.hasNext()) {
-                    val sa = stateIterator.next()
-                        currentState = sa.first()
-                        sa.second()
+                    val (state,transition) = stateIterator.next()
+                    currentState = state
+                    transition()
                 } else {
                     isFinished = true
                 }

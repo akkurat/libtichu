@@ -28,13 +28,17 @@ class Game(com: Out) {
     var playRound: MutableRound? = null
 
     // todo: deserialize a stored game
-    fun start() {
-//        prepareRound = PrepareRound(com)
-//        prepareRound!!.start()
-        // no shupf for quick testing
-        val cardmap = playerList.zip(fulldeck.shuffled().chunked(14)).toMap()
-        playRound = MutableRound(com, cardmap)
-        playRound!!.start()
+    @JvmOverloads
+    fun start(jumpPrepartion: Boolean = false) {
+        if (!jumpPrepartion) {
+            prepareRound = PrepareRound(com)
+            prepareRound!!.start()
+        } else {
+            // no shupf for quick testing
+            val cardmap = playerList.zip(fulldeck.shuffled().chunked(14)).toMap()
+            playRound = MutableRound(com, cardmap)
+            playRound!!.start()
+        }
 
     }
 
@@ -43,7 +47,7 @@ class Game(com: Out) {
     }
 
     internal fun resendStatus() {
-        if(playRound != null ) {
+        if (playRound != null) {
             playRound!!.sendTableAndHandcards(playRound!!.currentPlayer);
         }
     }

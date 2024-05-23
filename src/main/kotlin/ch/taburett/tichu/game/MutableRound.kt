@@ -122,7 +122,7 @@ class MutableRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
             }
         }
         val res = playedCardsValid(
-            if (table.isNotEmpty()) table.first().cards else listOf(), move.cards, playerCards // todo wish
+            if (table.isNotEmpty()) table.last { !it.pass }.cards else listOf(), move.cards, playerCards // todo wish
         )
 
         if (res.type == LegalType.OK) {
@@ -154,17 +154,18 @@ class MutableRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
             if (finishedPlayers().first().group == finishedPlayers().last().group) {
                 endRound()
                 return
-            } else if (finishedPlayers().size == 3) {
-                endRound()
-                return
             }
-        } else {
-            if (allPass()) {
-                endTrick()
-            }
-            currentPlayer = nextPlayer(player)
-            sendTableAndHandcards(currentPlayer)
         }
+        if (finishedPlayers().size == 3) {
+            endRound()
+            return
+        }
+        if (allPass()) {
+            sendTrick(player)
+            endTrick()
+        }
+        currentPlayer = nextPlayer(player)
+        sendTableAndHandcards(currentPlayer)
     }
 
     private fun allPass(): Boolean {
@@ -188,6 +189,7 @@ class MutableRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
         endTrick()
         leftoverHandcards = cardMap.mapValues { (_, v) -> v.toList() }
         state = State.FINISHED
+//        send
     }
 
     private fun _bomb() {

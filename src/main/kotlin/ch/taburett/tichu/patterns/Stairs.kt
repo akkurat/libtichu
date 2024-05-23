@@ -27,6 +27,7 @@ class Stairs private constructor(cards: List<PlayCard>) : TichuPattern(TichuPatt
 
         override fun allPatterns(cards: Collection<HandCard>): Set<TichuPattern> {
             val pairs = Pair.allPatterns(cards)
+            // TODO
             return setOf();
         }
     }

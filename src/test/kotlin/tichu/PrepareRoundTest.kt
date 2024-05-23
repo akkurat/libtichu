@@ -72,9 +72,8 @@ class PrepareRoundTest {
 
         playerList.forEach { p -> round.react(p, Ack.TichuBeforePlay()) }
 
-
         assertAll(
-            { assertThat(state1).isEqualTo(schupf) },
+            { assertThat(state1).isEqualTo(round.schupfState) },
             { assertThat(state2::class).isEqualTo(schupfed::class) },
             { assertThat(state3::class).isEqualTo(preGame::class) },
             { assertTrue("finished", round.isFinished) }
