@@ -11,7 +11,7 @@ import ru.nsk.kstatemachine.*
 
 typealias MutableTricks = ArrayList<List<Played>>
 
-class MutableRound(val com: Out, cardMap: Map<Player, List<out HandCard>>) {
+class MutableRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
 
     class TichuEvent(player: Player) : Event
 
@@ -19,6 +19,7 @@ class MutableRound(val com: Out, cardMap: Map<Player, List<out HandCard>>) {
 
     enum class State { INIT, RUNNING, FINISHED }
 
+    private lateinit var leftoverHandcards: Map<Player, List<HandCard>>
     var state = INIT
 
     var table = ArrayList<Played>()
@@ -29,6 +30,7 @@ class MutableRound(val com: Out, cardMap: Map<Player, List<out HandCard>>) {
     // todo  big tichus and such
 
     var currentPlayer: Player
+    val initalCardMap = cardMap.mapValues { (_, v) -> v.toList() }
     val cardMap: Map<Player, MutableList<HandCard>> = cardMap.mapValues { (_, l) -> l.toMutableList() }
 
     init {
@@ -52,8 +54,12 @@ class MutableRound(val com: Out, cardMap: Map<Player, List<out HandCard>>) {
         sendTableAndHandcards(currentPlayer)
     }
 
-    private fun activePlayers(): Int {
-        return cardMap.values.count { it.isNotEmpty() }
+    private fun activePlayers(): Set<Player> {
+        return cardMap.filter { (p, v) -> v.isNotEmpty() }.keys
+    }
+
+    private fun finishedPlayers(): Set<Player> {
+        return cardMap.filter { (p, v) -> v.isEmpty() }.keys
     }
 
     private fun checkTricks(value: ArrayList<List<Played>>) {
@@ -132,6 +138,9 @@ class MutableRound(val com: Out, cardMap: Map<Player, List<out HandCard>>) {
         }
     }
 
+    /**
+     *
+     */
     private fun _move(player: Player, cards: Collection<PlayCard>) {
         if (player != currentPlayer) {
             sendMessage(WrappedServerMessage(player, Rejected("not your turn yet")))
@@ -141,12 +150,16 @@ class MutableRound(val com: Out, cardMap: Map<Player, List<out HandCard>>) {
         playerCards.removeAll(cards.map { it.asHandcard() })
         table.add(Played(player, cards.toList()))
 
-        // that must be possible more easily
-        if (cardMap.values.count { it.isEmpty() } == 3) {
-            endRound()
-            return
+        if (finishedPlayers().size == 2) {
+            if (finishedPlayers().first().group == finishedPlayers().last().group) {
+                endRound()
+                return
+            } else if (finishedPlayers().size == 3) {
+                endRound()
+                return
+            }
         } else {
-            if (table.takeLast(activePlayers() - 1).all { it.cards.isEmpty() }) {
+            if (allPass()) {
                 endTrick()
             }
             currentPlayer = nextPlayer(player)
@@ -154,10 +167,27 @@ class MutableRound(val com: Out, cardMap: Map<Player, List<out HandCard>>) {
         }
     }
 
+    private fun allPass(): Boolean {
+
+        val passedPlayers = mutableSetOf<Player>()
+
+        for (p in table.reversed()) {
+            if (p.pass) {
+                passedPlayers.add(p.player)
+            } else {
+                val playerMove = p.player
+                return passedPlayers.containsAll(activePlayers().minus(playerMove))
+            }
+        }
+
+        return false
+
+    }
+
     private fun endRound() {
         endTrick()
+        leftoverHandcards = cardMap.mapValues { (_, v) -> v.toList() }
         state = State.FINISHED
-        // todo: handcards
     }
 
     private fun _bomb() {
@@ -178,14 +208,54 @@ class MutableRound(val com: Out, cardMap: Map<Player, List<out HandCard>>) {
 
     fun getRoundInfo(): RoundInfo {
         // todo: tichu, drgn and so on
-        return RoundInfo(tricks.toList())
+        return RoundInfo(tricks.toList(), initalCardMap, leftoverHandcards)
     }
 
 }
 
-data class RoundInfo(val tricks: Tricks) {
+data class RoundInfo(
+    val tricks: Tricks,
+    val initialCardmap: Map<Player, List<HandCard>>,
+    val leftoverHandcards: Map<Player, List<HandCard>>,
+) {
+
+    val orderOfWinning = tricks.flatten().filter { it.playerFinished }
+    val tricksByPlayer: Map<Player, List<List<PlayCard>>> = tricks
+        .map { it.filter { !it.pass } }
+        .map { it.last().player to it.flatMap { p -> p.cards } }
+        .groupBy({ it.first }, { it.second })
+
+    fun getPoints(): Map<Group, Int> {
+        val cards = getCards()
+        return cards.mapValues { (_, v) -> v.sumOf { c -> c.getPoints() } }
+            .mapValues { (_, v) -> if (v == 100) 200 else v }
+    }
+
+    fun getCards(): Map<Group, List<HandCard>> {
+        val (first, second, third, last) = orderOfWinning.map { it.player }
+        // double win
+        if (first.group == second.group) {
+            return mapOf(first.group to fulldeck, third.group to emptyList())
+        } else {
+            val cards: Map<Group, MutableList<HandCard>> =
+                mapOf(Group.A to mutableListOf(), Group.B to mutableListOf())
+            // first player keeps cards
+            cards[first.group]!!.addAll(tricksByPlayer[first]!!.flatten())
+            // last player tricks go to winner
+            cards[first.group]!!.addAll(tricksByPlayer[last]!!.flatten())
+            // handcards of last player go to opposite team
+            cards[last.group.other()]!!.addAll(leftoverHandcards[last]!!)
+
+            cards[second.group]!!.addAll(tricksByPlayer[second]!!.flatten())
+            cards[third.group]!!.addAll(tricksByPlayer[third]!!.flatten())
+
+            return cards;
+        }
+    }
     // todo count
 }
 
 
-data class Played(val player: Player, val cards: List<PlayCard>)
+data class Played(val player: Player, val cards: List<PlayCard>, val playerFinished: Boolean = false) {
+    val pass get() = cards.isEmpty()
+}

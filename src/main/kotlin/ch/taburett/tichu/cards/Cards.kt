@@ -1,7 +1,4 @@
-
 package ch.taburett.tichu.cards
-
-
 
 val PHX = Phoenix()
 val DRG = SpecialCard("Dragon", "DRG", 17, 25);

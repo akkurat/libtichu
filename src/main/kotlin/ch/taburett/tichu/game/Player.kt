@@ -1,10 +1,24 @@
 package ch.taburett.tichu.game
 
-enum class Player(val value: String, val group: String) {
-    A1("A1", "A"),
-    B1("B1", "B"),
-    A2("A2", "A"),
-    B2("B2", "B");
+import ch.taburett.tichu.game.Group.*
+
+enum class Group {
+
+    A {
+        override fun other(): Group = B
+    },
+    B {
+        override fun other(): Group = A
+    };
+
+    abstract fun other(): Group
+}
+
+enum class Player(val value: String, val group: Group) {
+    A1("A1", A),
+    B1("B1", B),
+    A2("A2", A),
+    B2("B2", B);
 
     // in theory also this could be an enum...
     fun li(): Player {
