@@ -1,10 +1,12 @@
 package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.fulldeck
+import ch.taburett.tichu.game.protocol.*
 import org.jetbrains.annotations.VisibleForTesting
 import java.util.concurrent.Executors
 
-typealias Tricks = List<List<Played>>
+typealias Tricks = List<Trick>
+
 
 class Game(com: Out) {
     val executor = Executors.newCachedThreadPool()
@@ -89,5 +91,4 @@ class Game(com: Out) {
 fun interface Out {
     fun send(wrappedServerMessage: WrappedServerMessage)
 }
-
 

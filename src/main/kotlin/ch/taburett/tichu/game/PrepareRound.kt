@@ -2,6 +2,7 @@ package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.fulldeck
+import ch.taburett.tichu.game.protocol.*
 import kotlin.reflect.KClass
 
 interface State {

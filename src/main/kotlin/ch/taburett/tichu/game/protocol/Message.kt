@@ -1,9 +1,11 @@
-package ch.taburett.tichu.game
+package ch.taburett.tichu.game.protocol
 
 import ch.taburett.tichu.cards.DRG
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.PlayCard
-import ch.taburett.tichu.game.Stage.*
+import ch.taburett.tichu.game.Played
+import ch.taburett.tichu.game.Player
+import ch.taburett.tichu.game.protocol.Stage.*
 import ch.taburett.tichu.patterns.Bomb
 import ch.taburett.tichu.patterns.BombStraight
 

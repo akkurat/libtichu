@@ -2,6 +2,7 @@ package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.PlayRound.State.INIT
+import ch.taburett.tichu.game.protocol.*
 import ch.taburett.tichu.patterns.LegalType
 import ru.nsk.kstatemachine.*
 
@@ -210,7 +211,7 @@ class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
 
     fun getRoundInfo(): RoundInfo {
         // todo: tichu, drgn and so on
-        return RoundInfo(tricks.toList(), initalCardMap, leftoverHandcards)
+        return RoundInfo(tricks.map { Trick(it) }, initalCardMap, leftoverHandcards)
     }
 
 }
@@ -221,11 +222,8 @@ data class RoundInfo(
     val leftoverHandcards: Map<Player, Collection<HandCard>>,
 ) {
 
-    val orderOfWinning = tricks.flatten().filter { it.playerFinished }
-    val tricksByPlayer: Map<Player, List<List<PlayCard>>> = tricks
-        .map { it.filter { !it.pass } }
-        .map { it.last().player to it.flatMap { p -> p.cards } }
-        .groupBy({ it.first }, { it.second })
+    val orderOfWinning = tricks.flatMap { it.playerFinished() }
+    val tricksByPlayer: Map<Player, List<Trick>> = tricks.groupBy { it.pointOwner() }
 
     fun getPoints(): Map<Group, Int> {
         val cards = getCards()
@@ -234,24 +232,24 @@ data class RoundInfo(
     }
 
     fun getCards(): Map<Group, List<HandCard>> {
-        val (first, second) = orderOfWinning.map { it.player }
+        val (first, second) = orderOfWinning
         // double win
         if (first.group == second.group) {
             return mapOf(first.group to fulldeck, first.group.other() to listOf())
         } else {
-            val third = orderOfWinning[2].player
+            val third = orderOfWinning[2]
             val last = Player.entries.minus(setOf(first, second, third))[0]
             val cards: Map<Group, MutableList<HandCard>> =
                 mapOf(Group.A to mutableListOf(), Group.B to mutableListOf())
             // first player keeps cards
-            cards[first.group]!!.addAll(tricksByPlayer[first]!!.flatten())
+            cards[first.group]!!.addAll(tricksByPlayer[first]!!.flatMap { it.allCards() })
             // last player tricks go to winner
-            tricksByPlayer[last]?.let { cards[first.group]!!.addAll(it.flatten()) }
+            tricksByPlayer[last]?.let { cards[first.group]!!.addAll(it.flatMap { it.allCards() }) }
             // handcards of last player go to opposite team
             cards[last.group.other()]!!.addAll(leftoverHandcards[last]!!)
 
-            cards[second.group]!!.addAll(tricksByPlayer[second]!!.flatten())
-            cards[third.group]!!.addAll(tricksByPlayer[third]!!.flatten())
+            cards[second.group]!!.addAll(tricksByPlayer[second]!!.flatMap { it.allCards() })
+            cards[third.group]!!.addAll(tricksByPlayer[third]!!.flatMap { it.allCards() })
 
             return cards;
         }
@@ -259,10 +257,37 @@ data class RoundInfo(
 }
 
 
-// todo: better class
+interface IPlayed {
+    val player: Player
+}
 
-data class Played(val player: Player, val cards: Collection<PlayCard> = listOf(), val playerFinished: Boolean = false) {
-    constructor(player: Player, card: PlayCard, fini: Boolean = false) : this(player, listOf(card), fini)
+data class Played(override val player: Player, val cards: Collection<PlayCard> = listOf()) : IPlayed {
+    constructor(player: Player, card: PlayCard) : this(player, listOf(card))
 
     val pass get() = cards.isEmpty()
+}
+
+data class PlayerFinished(override val player: Player) : IPlayed
+data class Wished(override val player: Player, val value: Int) : IPlayed
+data class DrgGift(override val player: Player, val to: Player) : IPlayed
+
+class Trick(val moves: List<IPlayed>) {
+    /**
+     * points
+     */
+    fun pointOwner(): Player {
+        // dragon or
+        val drg = moves.filterIsInstance<DrgGift>().firstOrNull()
+        return if (drg != null) {
+            drg.to;
+        } else {
+            moves.filterIsInstance<Played>().last { !it.pass }.player
+        }
+    }
+
+    fun playerFinished(): List<Player> {
+        return moves.filterIsInstance<PlayerFinished>().map { it.player }
+    }
+
+    fun allCards(): List<PlayCard> = moves.filterIsInstance<Played>().flatMap { it.cards }
 }

@@ -1,7 +1,7 @@
 package tichu
 
 import ch.taburett.tichu.cards.*
-import ch.taburett.tichu.game.Move
+import ch.taburett.tichu.game.protocol.Move
 import ch.taburett.tichu.game.PlayRound
 import ch.taburett.tichu.game.Player.*
 import org.assertj.core.api.Assertions.assertThat

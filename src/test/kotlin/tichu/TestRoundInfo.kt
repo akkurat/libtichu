@@ -18,19 +18,20 @@ class TestRoundInfo {
         val b1_str = setOf(P2, D3, D4, D5, J6, S7)
         val b1_fh = setOf(S9) + P9 + S14 + D14 + J14
         val b1 = b1_str + DRG + PHX + J13 + b1_fh
-        val a2 = (fulldeck - DOG - a1 - b1).shuffled().take(14)
-        val b2 = fulldeck - a1 - b1 - a2
+
+        @Suppress("UNCHECKED_CAST")
+        val a2 = (fulldeck - DOG - a1 - b1).shuffled().take(14) as List<PlayCard>
+
+        val b2: List<HandCard> = (fulldeck - a1 - b1 - a2)
 
         val tricks = listOf(
-            listOf(Played(A1, a1.toList(), true), p(B1), p(A2), p(B2)),
+            listOf(Played(A1, a1.toList()), PlayerFinished(A1), p(B1), p(A2), p(B2)),
             listOf(Played(B1, b1_str.toList()), p(A2), p(B2)),
             listOf(Played(B1, b1_fh.toList()), p(A2), p(B2)),
-            listOf(Played(B1, DRG), p(A2), p(B2)),
-            listOf(GiftDrg(A2)),
-            listOf(Played(B1, listOf(PHX.asPlayCard(13), J13), true))
-        ) + a2.filterIsInstance<NumberCard>()
-            .mapIndexed { i, it -> Played(A2, it, i == a2.lastIndex) }
-            .map { if (it.playerFinished) listOf(it) else listOf(it, Played(B2)) }
+            listOf(Played(B1, DRG), p(A2), p(B2), DrgGift(B1, A2)),
+            listOf(Played(B1, listOf(PHX.asPlayCard(13), J13)), PlayerFinished(B1), p(A2), p(B2))
+        ) + a2.dropLast(1).map { listOf(Played(A2, it), p(B2)) } + a2.takeLast(1)
+            .map { listOf(Played(B2, it), PlayerFinished(B2)) }
 
         val initMap = mapOf(
             A1 to a1,
@@ -44,10 +45,11 @@ class TestRoundInfo {
             A2 to listOf(),
             B2 to b2
         )
-        val ri = RoundInfo(tricks, initMap, laterMap)
+        val ri = RoundInfo(tricks.map { Trick(it) }, initMap, laterMap)
         val points = ri.getPoints()
 
-        val allCardsPlayed = tricks.flatten().flatMap { it.cards }
+        val allCardsPlayed = tricks.flatten().filterIsInstance<Played>().flatMap { it.cards }
+
         val allCardsLeft = laterMap.values.flatten()
         val sumA = a1.sumOf { it.getPoints() } + a2.sumOf { it.getPoints() }
         val sumB = b1.sumOf { it.getPoints() }
@@ -72,11 +74,11 @@ class TestRoundInfo {
 
         val tricks = listOf(
             listOf(Played(A1, a1 - DOG), p(B1), p(A2), p(B2)),
-            listOf(Played(A1, DOG, true), p(B1), p(A2), p(B2)),
+            listOf(Played(A1, DOG), PlayerFinished(A1), p(B1), p(A2), p(B2)),
             listOf(Played(A2, a2_str), p(B2), p(B1)),
             listOf(Played(A2, a2_fh.toList()), p(B2), p(B1)),
             listOf(Played(A2, DRG), p(B2), p(B1)),
-            listOf(Played(A2, setOf(PHX.asPlayCard(13), J13), true))
+            listOf(Played(A2, setOf(PHX.asPlayCard(13), J13)), PlayerFinished(A2))
         )
 
         val initMap = mapOf(
@@ -91,7 +93,7 @@ class TestRoundInfo {
             B1 to b1,
             B2 to b2
         )
-        val ri = RoundInfo(tricks, initMap, laterMap)
+        val ri = RoundInfo(tricks.map { Trick(it) }, initMap, laterMap)
         val points = ri.getPoints()
         assertThat(points).containsExactly(Entry(Group.A, 200), Entry(Group.B, 0))
     }

@@ -4,6 +4,8 @@ import ch.taburett.tichu.cards.fulldeck
 import ch.taburett.tichu.game.*
 import ch.taburett.tichu.game.Player.*
 import ch.taburett.tichu.game.PrepareRound.*
+import ch.taburett.tichu.game.protocol.Ack
+import ch.taburett.tichu.game.protocol.Schupf
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertAll
 import org.junit.jupiter.api.Assertions.assertEquals

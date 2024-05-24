@@ -1,8 +1,9 @@
 package tichu
 
 import ch.taburett.tichu.game.*
-import ch.taburett.tichu.game.Ack.BigTichu
-import ch.taburett.tichu.game.Ack.TichuBeforeSchupf
+import ch.taburett.tichu.game.protocol.Ack
+import ch.taburett.tichu.game.protocol.Ack.BigTichu
+import ch.taburett.tichu.game.protocol.Ack.TichuBeforeSchupf
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
