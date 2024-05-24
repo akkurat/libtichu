@@ -15,7 +15,7 @@ import ch.taburett.tichu.patterns.ok
  * hence we need to check if the player / user even had this card
  */
 fun playedCardsValid(
-    _tableCards: List<PlayCard>,
+    _tableCards: Collection<PlayCard>,
     cardsTriedToPlay: Collection<PlayCard>,
     handCards: List<HandCard>,
     wish: Int? = null,

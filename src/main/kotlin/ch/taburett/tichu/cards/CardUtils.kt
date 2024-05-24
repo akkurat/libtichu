@@ -3,6 +3,7 @@ package ch.taburett.tichu.cards
 import ch.taburett.tichu.patterns.TichuPattern
 import ch.taburett.tichu.patterns.TichuPatternType
 
+val lDRG = listOf(DRG)
 
 fun count(cards: Iterable<HandCard>): Int {
     return cards.sumOf { c -> c.getPoints() }

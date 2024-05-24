@@ -25,7 +25,7 @@ class Game(com: Out) {
     var prepareRound: PrepareRound? = null
 
     @VisibleForTesting
-    var playRound: MutableRound? = null
+    var playRound: PlayRound? = null
 
     // todo: deserialize a stored game
     @JvmOverloads
@@ -36,7 +36,7 @@ class Game(com: Out) {
         } else {
             // no shupf for quick testing
             val cardmap = playerList.zip(fulldeck.shuffled().chunked(14)).toMap()
-            playRound = MutableRound(com, cardmap)
+            playRound = PlayRound(com, cardmap)
             playRound!!.start()
         }
 
@@ -70,10 +70,10 @@ class Game(com: Out) {
 
     private fun checkTransition() {
         if (prepareRound != null && prepareRound!!.isFinished) {
-            playRound = MutableRound(com, prepareRound!!.cardMap)
+            playRound = PlayRound(com, prepareRound!!.cardMap)
             prepareRound = null
             playRound!!.start()
-        } else if (playRound != null && playRound!!.state == MutableRound.State.FINISHED) {
+        } else if (playRound != null && playRound!!.state == PlayRound.State.FINISHED) {
             val roundInfo = playRound!!.getRoundInfo()
             playLog.add(roundInfo)
             playerList.forEach {

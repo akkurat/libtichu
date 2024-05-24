@@ -1,7 +1,8 @@
 package ch.taburett.tichu.cards
 
+
 val PHX = Phoenix()
-val DRG = SpecialCard("Dragon", "DRG", 17, 25);
+val DRG = SpecialCard("Dragon", "DRG", 16, 25);
 val MAH = SpecialCard("MahJong", "MAH", 1);
 val DOG = SpecialCard("Dog", "DOG", 0);
 
@@ -62,7 +63,6 @@ val S13 = NumberCard(13, Color.STARS, 10, "K")
 val S14 = NumberCard(14, Color.STARS, 0, "A")
 
 val fulldeck = listOf(
-
     PHX, DRG, MAH, DOG,
     S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14,
     J2, J3, J4, J5, J6, J7, J8, J9, J10, J11, J12, J13, J14,
@@ -74,6 +74,9 @@ val fulldeck = listOf(
 val lookupByName = fulldeck.associateBy { k -> k.toString() }
 
 val lookupByCode = fulldeck.associateBy { k -> k.getCode() }
+
+
+
 
 fun parsePlayCard(code: String): PlayCard {
     if (code.startsWith("PHX", true)) {

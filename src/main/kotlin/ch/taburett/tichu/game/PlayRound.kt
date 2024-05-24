@@ -1,7 +1,7 @@
 package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.*
-import ch.taburett.tichu.game.MutableRound.State.INIT
+import ch.taburett.tichu.game.PlayRound.State.INIT
 import ch.taburett.tichu.patterns.LegalType
 import ru.nsk.kstatemachine.*
 
@@ -11,7 +11,7 @@ import ru.nsk.kstatemachine.*
 
 typealias MutableTricks = ArrayList<List<Played>>
 
-class MutableRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
+class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
 
     class TichuEvent(player: Player) : Event
 
@@ -217,8 +217,8 @@ class MutableRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
 
 data class RoundInfo(
     val tricks: Tricks,
-    val initialCardmap: Map<Player, List<HandCard>>,
-    val leftoverHandcards: Map<Player, List<HandCard>>,
+    val initialCardmap: Map<Player, Collection<HandCard>>,
+    val leftoverHandcards: Map<Player, Collection<HandCard>>,
 ) {
 
     val orderOfWinning = tricks.flatten().filter { it.playerFinished }
@@ -234,17 +234,19 @@ data class RoundInfo(
     }
 
     fun getCards(): Map<Group, List<HandCard>> {
-        val (first, second, third, last) = orderOfWinning.map { it.player }
+        val (first, second) = orderOfWinning.map { it.player }
         // double win
         if (first.group == second.group) {
-            return mapOf(first.group to fulldeck, third.group to emptyList())
+            return mapOf(first.group to fulldeck, first.group.other() to listOf())
         } else {
+            val third = orderOfWinning[2].player
+            val last = Player.entries.minus(setOf(first, second, third))[0]
             val cards: Map<Group, MutableList<HandCard>> =
                 mapOf(Group.A to mutableListOf(), Group.B to mutableListOf())
             // first player keeps cards
             cards[first.group]!!.addAll(tricksByPlayer[first]!!.flatten())
             // last player tricks go to winner
-            cards[first.group]!!.addAll(tricksByPlayer[last]!!.flatten())
+            tricksByPlayer[last]?.let { cards[first.group]!!.addAll(it.flatten()) }
             // handcards of last player go to opposite team
             cards[last.group.other()]!!.addAll(leftoverHandcards[last]!!)
 
@@ -254,10 +256,13 @@ data class RoundInfo(
             return cards;
         }
     }
-    // todo count
 }
 
 
-data class Played(val player: Player, val cards: List<PlayCard>, val playerFinished: Boolean = false) {
+// todo: better class
+
+data class Played(val player: Player, val cards: Collection<PlayCard> = listOf(), val playerFinished: Boolean = false) {
+    constructor(player: Player, card: PlayCard, fini: Boolean = false) : this(player, listOf(card), fini)
+
     val pass get() = cards.isEmpty()
 }

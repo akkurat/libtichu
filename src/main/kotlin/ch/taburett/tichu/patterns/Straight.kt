@@ -91,3 +91,4 @@ class Straight(cards: Iterable<PlayCard>) : TichuPattern(TichuPatternType.STRAIG
     }
 
 }
+

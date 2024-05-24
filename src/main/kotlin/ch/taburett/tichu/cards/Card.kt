@@ -2,6 +2,7 @@
 package ch.taburett.tichu.cards
 
 import ch.taburett.tichu.cards.Type.REGULAR
+import ch.taburett.tichu.game.Played
 
 
 class NumberCard(
@@ -114,6 +115,8 @@ interface PlayCard : HandCard {
     fun asHandcard(): HandCard {
         return this
     }
+
+
 }
 
 enum class Type {
@@ -150,7 +153,7 @@ class Phoenix : HandCard {
     }
 
     fun asPlayCard(value: Int): PhoenixPlaycard {
-        if (MAH.getValue() <= value && value <= J14.getValue())
+        if (MAH.getValue() <= value && value <= 15)
             return PhoenixPlaycard(this, value)
         throw IllegalArgumentException("Naughty boy")
     }

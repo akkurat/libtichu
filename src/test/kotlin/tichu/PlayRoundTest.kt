@@ -2,15 +2,14 @@ package tichu
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.Move
-import ch.taburett.tichu.game.MutableRound
+import ch.taburett.tichu.game.PlayRound
 import ch.taburett.tichu.game.Player.*
-import ch.taburett.tichu.game.State
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertAll
 import kotlin.test.Test
 
 
-class MutableRoundTest {
+class PlayRoundTest {
 
 
     @Test
@@ -21,7 +20,7 @@ class MutableRoundTest {
             A2 to mutableListOf(MAH),
             B2 to mutableListOf(S2),
         )
-        val round = MutableRound(out, map)
+        val round = PlayRound(out, map)
         round.start()
         assertThat(round.currentPlayer).isEqualTo(A2)
 
@@ -35,7 +34,7 @@ class MutableRoundTest {
             A2 to mutableListOf(MAH, D2),
             B2 to mutableListOf(S2),
         )
-        val round = MutableRound(out, map)
+        val round = PlayRound(out, map)
         round.start()
         round.move(A1, Move(setOf(J5)))
 
@@ -51,7 +50,7 @@ class MutableRoundTest {
             B2 to mutableListOf(S2),
         )
 
-        val round = MutableRound(out, map)
+        val round = PlayRound(out, map)
 
         round.start()
         round.move(A2, Move(setOf(MAH)))
@@ -71,7 +70,7 @@ class MutableRoundTest {
             B2 to mutableListOf(S2),
         )
 
-        val round = MutableRound(out, map)
+        val round = PlayRound(out, map)
 
         round.start()
         round.move(A2, Move(setOf(MAH)))
@@ -91,7 +90,7 @@ class MutableRoundTest {
             B2 to mutableListOf(S2),
         )
 
-        val round = MutableRound(out, map)
+        val round = PlayRound(out, map)
 
         round.start()
         round.move(A2, Move(setOf(MAH)))
@@ -101,7 +100,7 @@ class MutableRoundTest {
         round.move(A1, Move(setOf(PHX.asPlayCard(8))))
 
         assertAll(
-            { assertThat(round.state == MutableRound.State.FINISHED).isTrue() },
+            { assertThat(round.state == PlayRound.State.FINISHED).isTrue() },
         )
     }
 
