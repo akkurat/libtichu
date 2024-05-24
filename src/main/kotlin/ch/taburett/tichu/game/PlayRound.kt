@@ -251,6 +251,8 @@ data class RoundInfo(
             cards[second.group]!!.addAll(tricksByPlayer[second]!!.flatMap { it.allCards() })
             cards[third.group]!!.addAll(tricksByPlayer[third]!!.flatMap { it.allCards() })
 
+            cards.mapValues { (_,v)->v.sumOf { it.getPoints() } }
+
             return cards;
         }
     }
@@ -271,7 +273,7 @@ data class PlayerFinished(override val player: Player) : IPlayed
 data class Wished(override val player: Player, val value: Int) : IPlayed
 data class DrgGift(override val player: Player, val to: Player) : IPlayed
 
-class Trick(val moves: List<IPlayed>) {
+data class Trick(val moves: List<IPlayed>) {
     /**
      * points
      */

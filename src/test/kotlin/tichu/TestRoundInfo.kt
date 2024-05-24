@@ -29,9 +29,9 @@ class TestRoundInfo {
             listOf(Played(B1, b1_str.toList()), p(A2), p(B2)),
             listOf(Played(B1, b1_fh.toList()), p(A2), p(B2)),
             listOf(Played(B1, DRG), p(A2), p(B2), DrgGift(B1, A2)),
-            listOf(Played(B1, listOf(PHX.asPlayCard(13), J13)), PlayerFinished(B1), p(A2), p(B2))
+            listOf(Played(B1, listOf(PHX.asPlayCard(13), J13)), PlayerFinished(B1), p(A2), p(B2)),
         ) + a2.dropLast(1).map { listOf(Played(A2, it), p(B2)) } + a2.takeLast(1)
-            .map { listOf(Played(B2, it), PlayerFinished(B2)) }
+            .map { listOf(Played(A2, it), PlayerFinished(A2)) }
 
         val initMap = mapOf(
             A1 to a1,
@@ -39,26 +39,33 @@ class TestRoundInfo {
             B1 to b1,
             B2 to b2
         )
+
         val laterMap = mapOf(
             A1 to listOf(),
             B1 to listOf(),
             A2 to listOf(),
             B2 to b2
         )
+
         val ri = RoundInfo(tricks.map { Trick(it) }, initMap, laterMap)
         val points = ri.getPoints()
 
         val allCardsPlayed = tricks.flatten().filterIsInstance<Played>().flatMap { it.cards }
 
         val allCardsLeft = laterMap.values.flatten()
-        val sumA = a1.sumOf { it.getPoints() } + a2.sumOf { it.getPoints() }
-        val sumB = b1.sumOf { it.getPoints() }
+        allCardsLeft.sumOf { it.getPoints() }
+
+
+        val sumA = a1.sumOf { it.getPoints() } + a2.sumOf { it.getPoints() } + b2.sumOf { it.getPoints() } + 25
+        val sumB = b1.sumOf { it.getPoints() } - 25
         println(points)
         assertAll(
             { assertThat(allCardsLeft.size + allCardsPlayed.size).isEqualByComparingTo(fulldeck.size) },
             { assertThat(points.values.sum()).isEqualTo(100) },
             { assertThat(points[Group.A]).isEqualTo(sumA) },
             { assertThat(points[Group.B]).isEqualTo(sumB) },
+            { assertThat(ri.getCards().getValue(Group.A).contains(DRG)) },
+            { assertThat(ri.getCards().getValue(Group.B).contains(PHX)) },
         )
     }
 
