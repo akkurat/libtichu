@@ -3,6 +3,7 @@ package ch.taburett.tichu.game.protocol
 import ch.taburett.tichu.cards.DRG
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.PlayCard
+import ch.taburett.tichu.game.IPlayed
 import ch.taburett.tichu.game.Played
 import ch.taburett.tichu.game.Player
 import ch.taburett.tichu.game.protocol.Stage.*
@@ -43,7 +44,7 @@ data class AckGameStage(val stage: Stage, val cards: List<HandCard>) : ServerMes
     }
 }
 
-data class WhosTurn(val who: Player, val cards: Collection<HandCard>, val table: List<Played>) :
+data class WhosTurn(val who: Player, val cards: Collection<HandCard>, val table: List<IPlayed>) :
     ServerMessage {
     val stage = GAME
 }
@@ -70,7 +71,7 @@ sealed class Ack : PlayerMessage {
 
 data class MakeYourMove(
     val handcards: List<HandCard>,
-    val table: List<Played>,
+    val table: List<IPlayed>,
 ) : ServerMessage {
     val stage = YOURTURN
 }

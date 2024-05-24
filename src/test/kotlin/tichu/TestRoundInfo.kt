@@ -48,7 +48,7 @@ class TestRoundInfo {
         )
 
         val ri = RoundInfo(tricks.map { Trick(it) }, initMap, laterMap)
-        val points = ri.getPoints()
+        val points = ri.points
 
         val allCardsPlayed = tricks.flatten().filterIsInstance<Played>().flatMap { it.cards }
 
@@ -64,8 +64,8 @@ class TestRoundInfo {
             { assertThat(points.values.sum()).isEqualTo(100) },
             { assertThat(points[Group.A]).isEqualTo(sumA) },
             { assertThat(points[Group.B]).isEqualTo(sumB) },
-            { assertThat(ri.getCards().getValue(Group.A).contains(DRG)) },
-            { assertThat(ri.getCards().getValue(Group.B).contains(PHX)) },
+            { assertThat(ri.cards.getValue(Group.A).contains(DRG)) },
+            { assertThat(ri.cards.getValue(Group.B).contains(PHX)) },
         )
     }
 
@@ -101,7 +101,7 @@ class TestRoundInfo {
             B2 to b2
         )
         val ri = RoundInfo(tricks.map { Trick(it) }, initMap, laterMap)
-        val points = ri.getPoints()
+        val points = ri.points
         assertThat(points).containsExactly(Entry(Group.A, 200), Entry(Group.B, 0))
     }
 

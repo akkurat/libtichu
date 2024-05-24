@@ -4,13 +4,14 @@ import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.PlayRound.State.INIT
 import ch.taburett.tichu.game.protocol.*
 import ch.taburett.tichu.patterns.LegalType
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import ru.nsk.kstatemachine.*
 
 
 //
 //class AckEvent(override val data: PlayerMessage) : DataEvent<PlayerMessage> {}
 
-typealias MutableTricks = ArrayList<List<Played>>
+typealias MutableTricks = ArrayList<List<IPlayed>>
 
 class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
 
@@ -23,7 +24,7 @@ class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
     private lateinit var leftoverHandcards: Map<Player, List<HandCard>>
     var state = INIT
 
-    var table = ArrayList<Played>()
+    var table = ArrayList<IPlayed>()
 
     var tricks = MutableTricks()
 
@@ -123,7 +124,9 @@ class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
             }
         }
         val res = playedCardsValid(
-            if (table.isNotEmpty()) table.last { !it.pass }.cards else listOf(), move.cards, playerCards // todo wish
+            if (table.isNotEmpty()) table.filterIsInstance<Played>().last { !it.pass }.cards else listOf(),
+            move.cards,
+            playerCards // todo wish
         )
 
         if (res.type == LegalType.OK) {
@@ -150,6 +153,9 @@ class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
         val playerCards = cardMap.getValue(player)
         playerCards.removeAll(cards.map { it.asHandcard() })
         table.add(Played(player, cards.toList()))
+        if (playerCards.isEmpty()) {
+            table.add(PlayerFinished(player))
+        }
 
         if (finishedPlayers().size == 2) {
             if (finishedPlayers().first().group == finishedPlayers().last().group) {
@@ -173,7 +179,7 @@ class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
 
         val passedPlayers = mutableSetOf<Player>()
 
-        for (p in table.reversed()) {
+        for (p in table.reversed().filterIsInstance<Played>()) {
             if (p.pass) {
                 passedPlayers.add(p.player)
             } else {
@@ -213,7 +219,6 @@ class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
         // todo: tichu, drgn and so on
         return RoundInfo(tricks.map { Trick(it) }, initalCardMap, leftoverHandcards)
     }
-
 }
 
 data class RoundInfo(
@@ -222,44 +227,50 @@ data class RoundInfo(
     val leftoverHandcards: Map<Player, Collection<HandCard>>,
 ) {
 
-    val orderOfWinning = tricks.flatMap { it.playerFinished() }
-    val tricksByPlayer: Map<Player, List<Trick>> = tricks.groupBy { it.pointOwner() }
+    val orderOfWinning = tricks.flatMap { it.playerFinished }
+    val tricksByPlayer: Map<Player, List<Trick>> = tricks.groupBy { it.pointOwner }
 
-    fun getPoints(): Map<Group, Int> {
-        val cards = getCards()
-        return cards.mapValues { (_, v) -> v.sumOf { c -> c.getPoints() } }
-            .mapValues { (_, v) -> if (v == 100) 200 else v }
-    }
-
-    fun getCards(): Map<Group, List<HandCard>> {
-        val (first, second) = orderOfWinning
-        // double win
-        if (first.group == second.group) {
-            return mapOf(first.group to fulldeck, first.group.other() to listOf())
-        } else {
-            val third = orderOfWinning[2]
-            val last = Player.entries.minus(setOf(first, second, third))[0]
-            val cards: Map<Group, MutableList<HandCard>> =
-                mapOf(Group.A to mutableListOf(), Group.B to mutableListOf())
-            // first player keeps cards
-            cards[first.group]!!.addAll(tricksByPlayer[first]!!.flatMap { it.allCards() })
-            // last player tricks go to winner
-            tricksByPlayer[last]?.let { cards[first.group]!!.addAll(it.flatMap { it.allCards() }) }
-            // handcards of last player go to opposite team
-            cards[last.group.other()]!!.addAll(leftoverHandcards[last]!!)
-
-            cards[second.group]!!.addAll(tricksByPlayer[second]!!.flatMap { it.allCards() })
-            cards[third.group]!!.addAll(tricksByPlayer[third]!!.flatMap { it.allCards() })
-
-            cards.mapValues { (_,v)->v.sumOf { it.getPoints() } }
-
-            return cards;
+    val points: Map<Group, Int>
+        get() {
+            val cards = cards
+            return cards.mapValues { (_, v) -> v.sumOf { c -> c.getPoints() } }
+                .mapValues { (_, v) -> if (v == 100) 200 else v }
         }
-    }
+
+    val cards: Map<Group, List<HandCard>>
+        get() {
+            val (first, second) = orderOfWinning
+            // double win
+            if (first.group == second.group) {
+                return mapOf(first.group to fulldeck, first.group.other() to listOf())
+            } else {
+                val third = orderOfWinning[2]
+                val last = Player.entries.minus(setOf(first, second, third))[0]
+                val cards: Map<Group, MutableList<HandCard>> =
+                    mapOf(Group.A to mutableListOf(), Group.B to mutableListOf())
+                // first player keeps cards
+                cards[first.group]!!.addAll(tricksByPlayer[first]!!.flatMap { it.allCards })
+                // last player tricks go to winner
+                tricksByPlayer[last]?.let { cards[first.group]!!.addAll(it.flatMap { it.allCards }) }
+                // handcards of last player go to opposite team
+                cards[last.group.other()]!!.addAll(leftoverHandcards[last]!!)
+
+                cards[second.group]!!.addAll(tricksByPlayer[second]!!.flatMap { it.allCards })
+                cards[third.group]!!.addAll(tricksByPlayer[third]!!.flatMap { it.allCards })
+
+                cards.mapValues { (_, v) -> v.sumOf { it.getPoints() } }
+
+                return cards;
+            }
+        }
 }
 
 
 interface IPlayed {
+    // ugly but still need to figure out subtypes cleanly
+    // maybe afterall don't make multiple interfaces...
+    // just have type and nullable cards and stuff
+    val type: String
     val player: Player
 }
 
@@ -267,29 +278,41 @@ data class Played(override val player: Player, val cards: Collection<PlayCard> =
     constructor(player: Player, card: PlayCard) : this(player, listOf(card))
 
     val pass get() = cards.isEmpty()
+    override val type = "RegularMove"
 }
 
-data class PlayerFinished(override val player: Player) : IPlayed
-data class Wished(override val player: Player, val value: Int) : IPlayed
-data class DrgGift(override val player: Player, val to: Player) : IPlayed
+data class PlayerFinished(override val player: Player) : IPlayed {
+    override val type = "Finished"
+}
+
+data class Wished(override val player: Player, val value: Int) : IPlayed {
+    override val type = "Wished"
+}
+
+data class DrgGift(override val player: Player, val to: Player) : IPlayed {
+    override val type = "DrgGift"
+}
 
 data class Trick(val moves: List<IPlayed>) {
     /**
      * points
      */
-    fun pointOwner(): Player {
-        // dragon or
-        val drg = moves.filterIsInstance<DrgGift>().firstOrNull()
-        return if (drg != null) {
-            drg.to;
-        } else {
-            moves.filterIsInstance<Played>().last { !it.pass }.player
+    val pointOwner: Player
+        get() {
+            // dragon or
+            val drg = moves.filterIsInstance<DrgGift>().firstOrNull()
+            return if (drg != null) {
+                drg.to;
+            } else {
+                moves.filterIsInstance<Played>().last { !it.pass }.player
+            }
         }
-    }
 
-    fun playerFinished(): List<Player> {
-        return moves.filterIsInstance<PlayerFinished>().map { it.player }
-    }
+    val playerFinished: List<Player>
+        get() {
+            return moves.filterIsInstance<PlayerFinished>().map { it.player }
+        }
 
-    fun allCards(): List<PlayCard> = moves.filterIsInstance<Played>().flatMap { it.cards }
+    val allCards: List<PlayCard>
+        get() = moves.filterIsInstance<Played>().flatMap { it.cards }
 }
