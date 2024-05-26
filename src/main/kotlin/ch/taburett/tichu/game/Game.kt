@@ -48,7 +48,7 @@ class Game(com: Out) {
         receive(msg)
     }
 
-    internal fun resendStatus() {
+    fun resendStatus() {
         if (roundPlay != null) {
             roundPlay!!.sendTableAndHandcards(roundPlay!!.table.currentPlayer);
         }

@@ -198,6 +198,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
     }
 
     private fun dogMove(player: Player) {
+        table.add(Played(player, listOf(DOG)))
         cardMap.getValue(player).remove(DOG)
         table.currentPlayer = nextPlayer(player, 2)
         sendTableAndHandcards(table.currentPlayer)
