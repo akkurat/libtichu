@@ -27,7 +27,7 @@ class Game(com: Out) {
     var prepareRound: PrepareRound? = null
 
     @VisibleForTesting
-    var playRound: PlayRound? = null
+    var roundPlay: RoundPlay? = null
 
     // todo: deserialize a stored game
     @JvmOverloads
@@ -38,8 +38,8 @@ class Game(com: Out) {
         } else {
             // no shupf for quick testing
             val cardmap = playerList.zip(fulldeck.shuffled().chunked(14)).toMap()
-            playRound = PlayRound(com, cardmap)
-            playRound!!.start()
+            roundPlay = RoundPlay(com, cardmap, null)
+            roundPlay!!.start()
         }
 
     }
@@ -49,39 +49,31 @@ class Game(com: Out) {
     }
 
     internal fun resendStatus() {
-        if (playRound != null) {
-            playRound!!.sendTableAndHandcards(playRound!!.table.currentPlayer);
+        if (roundPlay != null) {
+            roundPlay!!.sendTableAndHandcards(roundPlay!!.table.currentPlayer);
         }
     }
 
     @Synchronized
     fun receive(wrappedPlayerMessage: WrappedPlayerMessage) {
         // todo: shouldn't switching happen inside state machine?
-        val u = wrappedPlayerMessage.u
-        when (val m = wrappedPlayerMessage.message) {
-            is Ack, is Schupf -> prepareRound?.react(u, m)
-            is Bomb -> TODO()
-            is GiftDragon -> TODO()
-            is Move -> playRound?.move(u, m)
-            is Wish -> TODO()
-            BigTichu -> TODO()
-            Tichu -> TODO()
-        }
+        prepareRound?.receive( wrappedPlayerMessage)
+        roundPlay?.receive( wrappedPlayerMessage)
         checkTransition()
     }
 
     private fun checkTransition() {
         if (prepareRound != null && prepareRound!!.isFinished) {
-            playRound = PlayRound(com, prepareRound!!.cardMap)
+            roundPlay = RoundPlay(com, prepareRound!!.cardMap, prepareRound!!.preparationInfo)
             prepareRound = null
-            playRound!!.start()
-        } else if (playRound != null && playRound!!.state == PlayRound.State.FINISHED) {
-            val roundInfo = playRound!!.getRoundInfo()
+            roundPlay!!.start()
+        } else if (roundPlay != null && roundPlay!!.state == RoundPlay.State.FINISHED) {
+            val roundInfo = roundPlay!!.getRoundInfo()
             playLog.add(roundInfo)
             playerList.forEach {
                 com.send(WrappedServerMessage(it, Points(roundInfo)))
             }
-            playRound = null
+            roundPlay = null
             prepareRound = PrepareRound(com)
             prepareRound!!.start()
         }
@@ -92,3 +84,6 @@ fun interface Out {
     fun send(wrappedServerMessage: WrappedServerMessage)
 }
 
+enum class TichuType {
+   BIG, SMALL
+}

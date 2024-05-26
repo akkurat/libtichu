@@ -15,7 +15,7 @@ interface Message
 interface ServerMessage : Message {
 }
 
-interface PlayerMessage : Message
+sealed interface PlayerMessage : Message
 
 /**
  * Serverside Communication
@@ -28,7 +28,7 @@ interface PlayerMessage : Message
 enum class Stage { EIGHT_CARDS, PRE_SCHUPF, POST_SCHUPF, GIFT_DRAGON, SCHUPF, SCHUPFED, GAME, YOURTURN }
 
 // info class
-data class Points( val points: Any): ServerMessage
+data class Points(val points: Any) : ServerMessage
 
 data class Rejected(val msg: String, val orginal: PlayerMessage? = null) : ServerMessage
 
@@ -73,11 +73,22 @@ data class MakeYourMove(
     val handcards: List<HandCard>,
     val table: Table,
     val last: Trick?,
-) : ServerMessage {
-    val stage = YOURTURN
-}
+    val stage: Stage = YOURTURN,
+) : ServerMessage
 
-data class GiftDragon(val who: Player) : PlayerMessage
+
+data class GiftDragon(val to: ReLi) : PlayerMessage {
+    enum class ReLi {
+        RE {
+            override fun map(u: Player): Player = u.re()
+        },
+        LI {
+            override fun map(u: Player): Player = u.li()
+        };
+
+        abstract fun map(u: Player): Player
+    }
+}
 
 data class Schupf(val re: HandCard, val li: HandCard, val partner: HandCard) : PlayerMessage, ServerMessage {
     val stage = SCHUPFED

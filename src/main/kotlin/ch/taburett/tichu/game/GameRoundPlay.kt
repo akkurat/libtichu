@@ -1,29 +1,36 @@
 package ch.taburett.tichu.game
 
-import ch.taburett.tichu.cards.DOG
-import ch.taburett.tichu.cards.HandCard
-import ch.taburett.tichu.cards.MAH
-import ch.taburett.tichu.cards.PlayCard
-import ch.taburett.tichu.game.PlayRound.State.INIT
+import ch.taburett.tichu.cards.*
+import ch.taburett.tichu.game.RoundPlay.State.INIT
 import ch.taburett.tichu.game.protocol.*
 import ch.taburett.tichu.patterns.LegalType
 
 
 typealias MutableTricks = ArrayList<Trick>
 
-class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
+class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparationInfo: PreparationInfo?) {
 
     enum class State { INIT, RUNNING, FINISHED }
 
     private lateinit var leftoverHandcards: Map<Player, List<HandCard>>
+
     var state = INIT
 
-    lateinit var table: Table
+    var table: Table
 
     var tricks = MutableTricks()
 
     val initalCardMap = cardMap.mapValues { (_, v) -> v.toList() }
     val cardMap: Map<Player, MutableList<HandCard>> = cardMap.mapValues { (_, l) -> l.toMutableList() }
+
+    // todo: init by external log
+    // also take protocol of schupf and so on into acccount...
+    val tichuAnnouncements = mutableMapOf<Player, TichuType>()
+
+    /**
+     * Can be reset by bomb or actually gifting
+     */
+    var dragonGiftPending = false
 
     init {
         val currentPlayer = cardMap
@@ -61,8 +68,13 @@ class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
         // a faulty state (i.e. fail fast)
     }
 
-    internal fun sendTableAndHandcards(player: Player) {
-        sendMessage(WrappedServerMessage(player, MakeYourMove(cardMap[player]!!, table, tricks.lastOrNull())))
+    internal fun sendTableAndHandcards(player: Player, dragon: Stage = Stage.YOURTURN) {
+        sendMessage(
+            WrappedServerMessage(
+                player,
+                MakeYourMove(cardMap[player]!!, table, tricks.lastOrNull(), dragon)
+            )
+        )
         // in theory we could use topic or so...
         // but boah...
         playerList.filter { it != player }
@@ -95,12 +107,9 @@ class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
     }
 
 
-    // todo: make legality checker accept move / bomb
     fun move(player: Player, move: Move) {
 
-        // check cards of player belong to it
-        // todo: logic should probably be all in state machine
-        /// but hey... as long as it is in a separate function
+
         val playerCards = cardMap[player]!!
 
         if (table.isNotEmpty()) {
@@ -134,15 +143,18 @@ class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
     /**
      *
      */
-    private fun _move(player: Player, cards: Collection<PlayCard>) {
+    private fun _move(player: Player, playedCards: Collection<PlayCard>) {
         if (player != table.currentPlayer) {
             sendMessage(WrappedServerMessage(player, Rejected("not your turn yet")))
             return
         }
-        val playerCards = cardMap.getValue(player)
-        playerCards.removeAll(cards.map { it.asHandcard() })
-        table.add(Played(player, cards.toList()))
-        if (playerCards.isEmpty()) {
+        val handCards = cardMap.getValue(player)
+        handCards.removeAll(playedCards.map { it.asHandcard() })
+        if (playedCards.isNotEmpty() && playedCards.first() == DRG) {
+            dragonGiftPending = true
+        }
+        table.add(Played(player, playedCards.toList()))
+        if (handCards.isEmpty()) {
             table.add(PlayerFinished(player))
         }
 
@@ -159,8 +171,14 @@ class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
             return
         }
         if (table.allPass(activePlayers())) {
-            sendTrick(player)
-            endTrick()
+            if (dragonGiftPending) {
+                table.currentPlayer = nextPlayer(player)
+                sendTableAndHandcards(table.currentPlayer, Stage.GIFT_DRAGON)
+                return
+            } else {
+                sendTrick(player)
+                endTrick()
+            }
         }
         // todo: logic inside table
         table.currentPlayer = nextPlayer(player)
@@ -190,9 +208,35 @@ class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
         com.send(wrappedServerMessage)
     }
 
+
+    // todo: maybe almost better if done in game class?
     fun getRoundInfo(): RoundInfo {
-        // todo: tichu, drgn and so on
-        return RoundInfo(tricks, initalCardMap, leftoverHandcards)
+        return RoundInfo(preparationInfo, tricks, initalCardMap, leftoverHandcards)
+    }
+
+    fun receive(wrappedPlayerMessage: WrappedPlayerMessage) {
+        val u = wrappedPlayerMessage.u
+        when (val m = wrappedPlayerMessage.message) {
+            is Move -> move(u, m)
+            is Wish -> TODO()
+            BigTichu -> TODO()
+            Tichu -> TODO()
+            is GiftDragon -> giftDragon(u, m)
+            else -> sendMessage(WrappedServerMessage(u, Rejected("Can't handle this message while playing", m)))
+        }
+
+    }
+
+    private fun giftDragon(u: Player, m: GiftDragon) {
+        val to = m.to.map(u)
+        if (to.playerGroup != u.playerGroup) {
+            table.add(DrgGift(u, to))
+            dragonGiftPending = false
+            endTrick()
+            sendTableAndHandcards(table.currentPlayer)
+        } else {
+            sendMessage(WrappedServerMessage(u, Rejected("drg must be gifted to opponent", m)))
+        }
     }
 }
 

@@ -2,14 +2,14 @@ package tichu
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.protocol.Move
-import ch.taburett.tichu.game.PlayRound
+import ch.taburett.tichu.game.RoundPlay
 import ch.taburett.tichu.game.Player.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertAll
 import kotlin.test.Test
 
 
-class PlayRoundTest {
+class RoundPlayTest {
 
 
     @Test
@@ -20,7 +20,7 @@ class PlayRoundTest {
             A2 to mutableListOf(MAH),
             B2 to mutableListOf(S2),
         )
-        val round = PlayRound(out, map)
+        val round = RoundPlay(out, map, null)
         round.start()
         assertThat(round.table.currentPlayer).isEqualTo(A2)
 
@@ -34,7 +34,7 @@ class PlayRoundTest {
             A2 to mutableListOf(MAH, D2),
             B2 to mutableListOf(S2),
         )
-        val round = PlayRound(out, map)
+        val round = RoundPlay(out, map, null)
         round.start()
         round.move(A1, Move(setOf(J5)))
 
@@ -50,7 +50,7 @@ class PlayRoundTest {
             B2 to mutableListOf(S2),
         )
 
-        val round = PlayRound(out, map)
+        val round = RoundPlay(out, map, null)
 
         round.start()
         round.move(A2, Move(setOf(MAH)))
@@ -70,7 +70,7 @@ class PlayRoundTest {
             B2 to mutableListOf(S2),
         )
 
-        val round = PlayRound(out, map)
+        val round = RoundPlay(out, map, null)
 
         round.start()
         round.move(A2, Move(setOf(MAH)))
@@ -90,7 +90,7 @@ class PlayRoundTest {
             B2 to mutableListOf(S2),
         )
 
-        val round = PlayRound(out, map)
+        val round = RoundPlay(out, map, null)
 
         round.start()
         round.move(A2, Move(setOf(MAH)))
@@ -100,7 +100,7 @@ class PlayRoundTest {
         round.move(A1, Move(setOf(PHX.asPlayCard(8))))
 
         assertAll(
-            { assertThat(round.state == PlayRound.State.FINISHED).isTrue() },
+            { assertThat(round.state == RoundPlay.State.FINISHED).isTrue() },
         )
     }
 

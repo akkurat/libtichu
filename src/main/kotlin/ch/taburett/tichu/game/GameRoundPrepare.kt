@@ -13,6 +13,10 @@ interface State {
 
 class PrepareRound(val com: Out) {
 
+    private lateinit var cards6: Map<Player, List<HandCard>>
+    private lateinit var cards8: Map<Player, MutableList<HandCard>>
+    private lateinit var schupfInfo: PreparationInfo.SchupfLog
+
     sealed class AckState(val reactsTo: KClass<out Ack>) : State {
         val ack = mutableSetOf<Player>()
         override fun complete(): Boolean {
@@ -63,12 +67,15 @@ class PrepareRound(val com: Out) {
             cardMap = playerList.zip(first8.chunked(8))
                 //                        .groupByTo(mutableMapOf(), { z -> z.first }, {z -> z.second.toMutableList()} )
                 .associateBy({ z -> z.first }, { z -> z.second.toMutableList() })
+            cards8= cardMap.toMap()
             sendStage(Stage.EIGHT_CARDS)
         },
         preSchupf() to {
-            for ((k, v) in playerList.zip((last6).chunked(6))) {
+            val zipped = playerList.zip((last6).chunked(6))
+            for ((k, v) in zipped) {
                 cardMap[k]!!.addAll(v)
             }
+            cards6 = zipped.toMap()
             sendStage(Stage.PRE_SCHUPF)
         },
         schupfState to { sendStage(Stage.SCHUPF) },
@@ -101,7 +108,7 @@ class PrepareRound(val com: Out) {
             currentState.react(u, s)
             if (currentState.complete()) {
                 if (stateIterator.hasNext()) {
-                    val (state,transition) = stateIterator.next()
+                    val (state, transition) = stateIterator.next()
                     currentState = state
                     transition()
                 } else {
@@ -147,12 +154,41 @@ class PrepareRound(val com: Out) {
             )
             sendMessage(WrappedServerMessage(u, msg))
         }
+
+        schupfInfo = PreparationInfo.SchupfLog(to = schupfBuffer, from = received)
         cardMap = copy
 
     }
 
+    fun receive(wrappedPlayerMessage: WrappedPlayerMessage) {
+
+        val u = wrappedPlayerMessage.u
+        when (val m = wrappedPlayerMessage.message) {
+            is Ack, is Schupf -> react(u, m)
+            else -> {
+                sendMessage(WrappedServerMessage(u, Rejected("Prepare round can't handle this message", m)))
+            }
+        }
+    }
+
+    val preparationInfo: PreparationInfo get() {
+        return PreparationInfo(cards8, cards6, schupfInfo)
+    }
+
+
 }
 
+
+data class PreparationInfo(
+    val cards8: Map<Player, MutableList<HandCard>>,
+    val cards6: Map<Player, List<HandCard>>,
+    val schupf: SchupfLog,
+) {
+    data class SchupfLog(
+        val to: Map<Player, Map<Player, HandCard>>,
+        val from: Map<Player, Map<Player, HandCard>>,
+    )
+}
 
 fun mapSchupfEvent(u: Player, schupf: Schupf): Map<Player, HandCard> {
     return mapOf(

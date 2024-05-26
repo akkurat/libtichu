@@ -37,7 +37,7 @@ class GameTest {
             }
             assertAll(
                 { assertThat(game.prepareRound).isNull() },
-                { assertThat(game.playRound!!.state == PlayRound.State.RUNNING).isTrue() },
+                { assertThat(game.roundPlay!!.state == RoundPlay.State.RUNNING).isTrue() },
             )
         }
     }

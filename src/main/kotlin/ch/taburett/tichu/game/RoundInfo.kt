@@ -4,6 +4,7 @@ import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.fulldeck
 
 data class RoundInfo(
+    val prepareLog: PreparationInfo?,
     val tricks: Tricks,
     val initialCardmap: Map<Player, Collection<HandCard>>,
     val leftoverHandcards: Map<Player, Collection<HandCard>>,

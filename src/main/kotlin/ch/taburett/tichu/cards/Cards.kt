@@ -1,9 +1,13 @@
 package ch.taburett.tichu.cards
 
 
+@JvmField
 val PHX = Phoenix()
+@JvmField
 val DRG = SpecialCard("Dragon", "DRG", 16, 25);
+@JvmField
 val MAH = SpecialCard("MahJong", "MAH", 1);
+@JvmField
 val DOG = SpecialCard("Dog", "DOG", 0);
 
 val J2 = NumberCard(2, Color.JADE)
