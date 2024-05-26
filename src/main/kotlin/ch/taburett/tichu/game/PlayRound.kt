@@ -1,50 +1,41 @@
 package ch.taburett.tichu.game
 
-import ch.taburett.tichu.cards.*
+import ch.taburett.tichu.cards.DOG
+import ch.taburett.tichu.cards.HandCard
+import ch.taburett.tichu.cards.MAH
+import ch.taburett.tichu.cards.PlayCard
 import ch.taburett.tichu.game.PlayRound.State.INIT
 import ch.taburett.tichu.game.protocol.*
 import ch.taburett.tichu.patterns.LegalType
-import com.fasterxml.jackson.annotation.JsonTypeInfo
-import ru.nsk.kstatemachine.*
 
 
-//
-//class AckEvent(override val data: PlayerMessage) : DataEvent<PlayerMessage> {}
-
-typealias MutableTricks = ArrayList<List<IPlayed>>
+typealias MutableTricks = ArrayList<Trick>
 
 class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
-
-    class TichuEvent(player: Player) : Event
-
-    class BombMoveEvent(val player: Player) : Event
 
     enum class State { INIT, RUNNING, FINISHED }
 
     private lateinit var leftoverHandcards: Map<Player, List<HandCard>>
     var state = INIT
 
-    var table = ArrayList<IPlayed>()
+    lateinit var table: Table
 
     var tricks = MutableTricks()
 
-    lateinit var dragonGift: Player
-    // todo  big tichus and such
-
-    var currentPlayer: Player
     val initalCardMap = cardMap.mapValues { (_, v) -> v.toList() }
     val cardMap: Map<Player, MutableList<HandCard>> = cardMap.mapValues { (_, l) -> l.toMutableList() }
 
     init {
-        currentPlayer = cardMap
-            .filter { it.value.contains(MAH) }
+        val currentPlayer = cardMap
+            .filterValues { it.contains(MAH) }
             .map { it.key }
             .first()
+        table = Table(currentPlayer)
     }
 
     private fun endTrick() {
-        tricks.add(table.toList())
-        table = ArrayList()
+        tricks.add(table.toTrick())
+        table = Table(table.currentPlayer)
     }
 
     fun start() {
@@ -53,7 +44,7 @@ class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
             throw IllegalStateException("running or finished")
         }
         state = State.RUNNING
-        sendTableAndHandcards(currentPlayer)
+        sendTableAndHandcards(table.currentPlayer)
     }
 
     private fun activePlayers(): Set<Player> {
@@ -71,26 +62,23 @@ class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
     }
 
     internal fun sendTableAndHandcards(player: Player) {
-        sendMessage(WrappedServerMessage(player, MakeYourMove(cardMap[player]!!, table)))
+        sendMessage(WrappedServerMessage(player, MakeYourMove(cardMap[player]!!, table, tricks.lastOrNull())))
         // in theory we could use topic or so...
         // but boah...
         playerList.filter { it != player }
             .forEach {
-                sendMessage(WrappedServerMessage(it, WhosTurn(player, cardMap.getValue(it), table)))
+                sendCardsForUser(it, player)
             }
     }
 
     private fun sendTrick(player: Player) {
         playerList.forEach {
-            sendMessage(WrappedServerMessage(it, WhosTurn(player, cardMap.getValue(it), table.toList())))
+            sendCardsForUser(it, player)
         }
     }
 
-    private fun sendStage(stage: Stage) {
-        for ((u, c) in cardMap) {
-            val message = AckGameStage(stage, c)
-            sendMessage(WrappedServerMessage(u, message))
-        }
+    private fun sendCardsForUser(it: Player, player: Player) {
+        sendMessage(WrappedServerMessage(it, WhosTurn(player, cardMap.getValue(it), table, tricks.lastOrNull())))
     }
 
     private fun nextPlayer(player_in: Player, step: Int = 1, cnt: Int = 0): Player {
@@ -116,15 +104,16 @@ class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
         val playerCards = cardMap[player]!!
 
         if (table.isNotEmpty()) {
-            val tablePlayer = table.last().player
+            val tablePlayer = table.toBeat().player
             if (tablePlayer == player) {
                 //
                 sendMessage(WrappedServerMessage(player, Rejected("can't beat your own trick with regular move", move)))
                 return
             }
         }
+
         val res = playedCardsValid(
-            if (table.isNotEmpty()) table.filterIsInstance<Played>().last { !it.pass }.cards else listOf(),
+            table.toBeatCards(),
             move.cards,
             playerCards // todo wish
         )
@@ -146,7 +135,7 @@ class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
      *
      */
     private fun _move(player: Player, cards: Collection<PlayCard>) {
-        if (player != currentPlayer) {
+        if (player != table.currentPlayer) {
             sendMessage(WrappedServerMessage(player, Rejected("not your turn yet")))
             return
         }
@@ -158,39 +147,26 @@ class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
         }
 
         if (finishedPlayers().size == 2) {
-            if (finishedPlayers().first().group == finishedPlayers().last().group) {
+            if (finishedPlayers().first().playerGroup == finishedPlayers().last().playerGroup) {
                 endRound()
                 return
             }
         }
+        // from here dragon matters
+
         if (finishedPlayers().size == 3) {
             endRound()
             return
         }
-        if (allPass()) {
+        if (table.allPass(activePlayers())) {
             sendTrick(player)
             endTrick()
         }
-        currentPlayer = nextPlayer(player)
-        sendTableAndHandcards(currentPlayer)
+        // todo: logic inside table
+        table.currentPlayer = nextPlayer(player)
+        sendTableAndHandcards(table.currentPlayer)
     }
 
-    private fun allPass(): Boolean {
-
-        val passedPlayers = mutableSetOf<Player>()
-
-        for (p in table.reversed().filterIsInstance<Played>()) {
-            if (p.pass) {
-                passedPlayers.add(p.player)
-            } else {
-                val playerMove = p.player
-                return passedPlayers.containsAll(activePlayers().minus(playerMove))
-            }
-        }
-
-        return false
-
-    }
 
     private fun endRound() {
         endTrick()
@@ -203,11 +179,10 @@ class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
 
     }
 
-
     private fun dogMove(player: Player) {
         cardMap.getValue(player).remove(DOG)
-        currentPlayer = nextPlayer(player, 2)
-        sendTableAndHandcards(currentPlayer)
+        table.currentPlayer = nextPlayer(player, 2)
+        sendTableAndHandcards(table.currentPlayer)
     }
 
 
@@ -217,52 +192,8 @@ class PlayRound(val com: Out, cardMap: Map<Player, List<HandCard>>) {
 
     fun getRoundInfo(): RoundInfo {
         // todo: tichu, drgn and so on
-        return RoundInfo(tricks.map { Trick(it) }, initalCardMap, leftoverHandcards)
+        return RoundInfo(tricks, initalCardMap, leftoverHandcards)
     }
-}
-
-data class RoundInfo(
-    val tricks: Tricks,
-    val initialCardmap: Map<Player, Collection<HandCard>>,
-    val leftoverHandcards: Map<Player, Collection<HandCard>>,
-) {
-
-    val orderOfWinning = tricks.flatMap { it.playerFinished }
-    val tricksByPlayer: Map<Player, List<Trick>> = tricks.groupBy { it.pointOwner }
-
-    val points: Map<Group, Int>
-        get() {
-            val cards = cards
-            return cards.mapValues { (_, v) -> v.sumOf { c -> c.getPoints() } }
-                .mapValues { (_, v) -> if (v == 100) 200 else v }
-        }
-
-    val cards: Map<Group, List<HandCard>>
-        get() {
-            val (first, second) = orderOfWinning
-            // double win
-            if (first.group == second.group) {
-                return mapOf(first.group to fulldeck, first.group.other() to listOf())
-            } else {
-                val third = orderOfWinning[2]
-                val last = Player.entries.minus(setOf(first, second, third))[0]
-                val cards: Map<Group, MutableList<HandCard>> =
-                    mapOf(Group.A to mutableListOf(), Group.B to mutableListOf())
-                // first player keeps cards
-                cards[first.group]!!.addAll(tricksByPlayer[first]!!.flatMap { it.allCards })
-                // last player tricks go to winner
-                tricksByPlayer[last]?.let { cards[first.group]!!.addAll(it.flatMap { it.allCards }) }
-                // handcards of last player go to opposite team
-                cards[last.group.other()]!!.addAll(leftoverHandcards[last]!!)
-
-                cards[second.group]!!.addAll(tricksByPlayer[second]!!.flatMap { it.allCards })
-                cards[third.group]!!.addAll(tricksByPlayer[third]!!.flatMap { it.allCards })
-
-                cards.mapValues { (_, v) -> v.sumOf { it.getPoints() } }
-
-                return cards;
-            }
-        }
 }
 
 
@@ -285,6 +216,14 @@ data class PlayerFinished(override val player: Player) : IPlayed {
     override val type = "Finished"
 }
 
+data class Tichu(override val player: Player) : IPlayed {
+    override val type = "Tichu"
+}
+
+data class BigTichu(override val player: Player) : IPlayed {
+    override val type = "BigTichu"
+}
+
 data class Wished(override val player: Player, val value: Int) : IPlayed {
     override val type = "Wished"
 }
@@ -293,6 +232,10 @@ data class DrgGift(override val player: Player, val to: Player) : IPlayed {
     override val type = "DrgGift"
 }
 
+/**
+ *  log
+ *
+ */
 data class Trick(val moves: List<IPlayed>) {
     /**
      * points

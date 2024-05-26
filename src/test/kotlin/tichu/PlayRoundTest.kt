@@ -22,7 +22,7 @@ class PlayRoundTest {
         )
         val round = PlayRound(out, map)
         round.start()
-        assertThat(round.currentPlayer).isEqualTo(A2)
+        assertThat(round.table.currentPlayer).isEqualTo(A2)
 
     }
 
@@ -38,7 +38,7 @@ class PlayRoundTest {
         round.start()
         round.move(A1, Move(setOf(J5)))
 
-        assertThat(round.currentPlayer).isEqualTo(A2)
+        assertThat(round.table.currentPlayer).isEqualTo(A2)
     }
 
     @Test
@@ -58,7 +58,7 @@ class PlayRoundTest {
         round.move(A1, Move(setOf()))
         round.move(B1, Move(setOf()))
 
-        assertThat(round.currentPlayer).isEqualTo(A2)
+        assertThat(round.table.currentPlayer).isEqualTo(A2)
     }
 
     @Test
@@ -78,7 +78,7 @@ class PlayRoundTest {
         round.move(A1, Move(setOf()))
         round.move(B1, Move(setOf()))
 
-        assertThat(round.currentPlayer).isEqualTo(A1)
+        assertThat(round.table.currentPlayer).isEqualTo(A1)
     }
 
     @Test

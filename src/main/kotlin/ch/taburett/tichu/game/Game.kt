@@ -50,7 +50,7 @@ class Game(com: Out) {
 
     internal fun resendStatus() {
         if (playRound != null) {
-            playRound!!.sendTableAndHandcards(playRound!!.currentPlayer);
+            playRound!!.sendTableAndHandcards(playRound!!.table.currentPlayer);
         }
     }
 

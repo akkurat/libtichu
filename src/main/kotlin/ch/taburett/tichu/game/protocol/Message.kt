@@ -3,9 +3,9 @@ package ch.taburett.tichu.game.protocol
 import ch.taburett.tichu.cards.DRG
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.PlayCard
-import ch.taburett.tichu.game.IPlayed
-import ch.taburett.tichu.game.Played
 import ch.taburett.tichu.game.Player
+import ch.taburett.tichu.game.Table
+import ch.taburett.tichu.game.Trick
 import ch.taburett.tichu.game.protocol.Stage.*
 import ch.taburett.tichu.patterns.Bomb
 import ch.taburett.tichu.patterns.BombStraight
@@ -44,7 +44,7 @@ data class AckGameStage(val stage: Stage, val cards: List<HandCard>) : ServerMes
     }
 }
 
-data class WhosTurn(val who: Player, val cards: Collection<HandCard>, val table: List<IPlayed>) :
+data class WhosTurn(val who: Player, val cards: Collection<HandCard>, val table: Table, val last: Trick?) :
     ServerMessage {
     val stage = GAME
 }
@@ -71,7 +71,8 @@ sealed class Ack : PlayerMessage {
 
 data class MakeYourMove(
     val handcards: List<HandCard>,
-    val table: List<IPlayed>,
+    val table: Table,
+    val last: Trick?,
 ) : ServerMessage {
     val stage = YOURTURN
 }

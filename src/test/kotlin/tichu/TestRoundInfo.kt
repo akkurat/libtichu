@@ -62,10 +62,10 @@ class TestRoundInfo {
         assertAll(
             { assertThat(allCardsLeft.size + allCardsPlayed.size).isEqualByComparingTo(fulldeck.size) },
             { assertThat(points.values.sum()).isEqualTo(100) },
-            { assertThat(points[Group.A]).isEqualTo(sumA) },
-            { assertThat(points[Group.B]).isEqualTo(sumB) },
-            { assertThat(ri.cards.getValue(Group.A).contains(DRG)) },
-            { assertThat(ri.cards.getValue(Group.B).contains(PHX)) },
+            { assertThat(points[PlayerGroup.A]).isEqualTo(sumA) },
+            { assertThat(points[PlayerGroup.B]).isEqualTo(sumB) },
+            { assertThat(ri.cards.getValue(PlayerGroup.A).contains(DRG)) },
+            { assertThat(ri.cards.getValue(PlayerGroup.B).contains(PHX)) },
         )
     }
 
@@ -102,7 +102,7 @@ class TestRoundInfo {
         )
         val ri = RoundInfo(tricks.map { Trick(it) }, initMap, laterMap)
         val points = ri.points
-        assertThat(points).containsExactly(Entry(Group.A, 200), Entry(Group.B, 0))
+        assertThat(points).containsExactly(Entry(PlayerGroup.A, 200), Entry(PlayerGroup.B, 0))
     }
 
     private fun p(player: Player): Played = Played(player)
