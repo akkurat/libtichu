@@ -2,6 +2,7 @@ package ch.taburett.tichu.game.protocol
 
 import ch.taburett.tichu.cards.DRG
 import ch.taburett.tichu.cards.HandCard
+import ch.taburett.tichu.cards.NumberCard
 import ch.taburett.tichu.cards.PlayCard
 import ch.taburett.tichu.game.Player
 import ch.taburett.tichu.game.Table
@@ -49,15 +50,6 @@ data class WhosTurn(val who: Player, val cards: Collection<HandCard>, val table:
     val stage = GAME
 }
 
-
-data class Wish(val value: Int) : PlayerMessage {
-    init {
-        if (value < 2 || value > 14) {
-            throw IllegalArgumentException("Value must be between 2 and 14, inclusive")
-        }
-    }
-}
-
 // id or not?
 // try first without ids and go with implicit
 // or jsut an event and just say tichu independently?
@@ -74,8 +66,10 @@ data class MakeYourMove(
     val table: Table,
     val last: Trick?,
     val stage: Stage = YOURTURN,
-) : ServerMessage
-
+    val wish: Int? = null,
+) : ServerMessage {
+    fun mustFullFillWish(): Boolean = handcards.filterIsInstance<NumberCard>().any { it.getValue() == wish }
+}
 
 data class GiftDragon(val to: ReLi) : PlayerMessage {
     enum class ReLi {
@@ -94,7 +88,6 @@ data class Schupf(val re: HandCard, val li: HandCard, val partner: HandCard) : P
     val stage = SCHUPFED
 }
 
-
 data class Bomb(val cards: List<PlayCard>) : PlayerMessage {
     init {
         val b = Bomb.pattern(cards)
@@ -108,7 +101,9 @@ data class Bomb(val cards: List<PlayCard>) : PlayerMessage {
 object Tichu : PlayerMessage
 object BigTichu : PlayerMessage
 
-data class Move(val cards: Collection<PlayCard>) : PlayerMessage
+data class Move(val cards: MutableCollection<out PlayCard>, val wish: Int? = null) : PlayerMessage {
+    constructor(cards: Collection<PlayCard>) : this(cards.toMutableList(), null)
+}
 
 
 /**

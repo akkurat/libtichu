@@ -31,6 +31,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
      * Can be reset by bomb or actually gifting
      */
     var dragonGiftPending = false
+    var pendingWish: Int? = null
 
     init {
         val currentPlayer = cardMap
@@ -62,7 +63,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         return cardMap.filter { (p, v) -> v.isEmpty() }.keys
     }
 
-    private fun checkTricks(value: ArrayList<List<Played>>) {
+    private fun checkTricks(value: ArrayList<List<PlayLogEntry>>) {
         // iterate through checks basically via statemachine without being connected to outside
         // idea: create shadow round, play through and crate real one afterwards in order not to have
         // a faulty state (i.e. fail fast)
@@ -72,7 +73,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         sendMessage(
             WrappedServerMessage(
                 player,
-                MakeYourMove(cardMap[player]!!, table, tricks.lastOrNull(), dragon)
+                MakeYourMove(cardMap[player]!!, table, tricks.lastOrNull(), dragon, pendingWish)
             )
         )
         // in theory we could use topic or so...
@@ -109,7 +110,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
 
     fun move(player: Player, move: Move) {
 
-
+        // TODO: make all logic external
         val playerCards = cardMap[player]!!
 
         if (table.isNotEmpty()) {
@@ -124,8 +125,24 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         val res = playedCardsValid(
             table.toBeatCards(),
             move.cards,
-            playerCards // todo wish
+            playerCards,
+            pendingWish
         )
+
+        if (move.wish != null) {
+            if (move.cards.contains(MAH)) {
+                if (2 <= move.wish && move.wish <= 14) {
+                    pendingWish = move.wish
+                    table.add(Wished(player, pendingWish!!))
+                } else {
+                    sendMessage(WrappedServerMessage(player, Rejected("illegal wish range", move)))
+                    return
+                }
+            } else {
+                sendMessage(WrappedServerMessage(player, Rejected("can't wish without mah jong", move)))
+                return
+            }
+        }
 
         if (res.type == LegalType.OK) {
             if (move.cards.contains(DOG)) {
@@ -150,10 +167,18 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         }
         val handCards = cardMap.getValue(player)
         handCards.removeAll(playedCards.map { it.asHandcard() })
+        if (pendingWish != null) {
+            if (playedCards.filterIsInstance<NumberCard>().any { it.getValue() == pendingWish }) {
+                table.add(WishFullfilled(player, pendingWish!!))
+                pendingWish = null
+            }
+        }
+
         if (playedCards.isNotEmpty() && playedCards.first() == DRG) {
             dragonGiftPending = true
         }
-        table.add(Played(player, playedCards.toList()))
+
+        table.add(PlayLogEntry(player, playedCards.toList()))
         if (handCards.isEmpty()) {
             table.add(PlayerFinished(player))
         }
@@ -198,7 +223,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
     }
 
     private fun dogMove(player: Player) {
-        table.add(Played(player, listOf(DOG)))
+        table.add(PlayLogEntry(player, listOf(DOG)))
         cardMap.getValue(player).remove(DOG)
         table.currentPlayer = nextPlayer(player, 2)
         sendTableAndHandcards(table.currentPlayer)
@@ -219,7 +244,8 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         val u = wrappedPlayerMessage.u
         when (val m = wrappedPlayerMessage.message) {
             is Move -> move(u, m)
-            is Wish -> TODO()
+            // wish async doesn't as you have to play the 1 in that trick
+//            is Wish -> placeWish()
             BigTichu -> TODO()
             Tichu -> TODO()
             is GiftDragon -> giftDragon(u, m)
@@ -242,7 +268,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
 }
 
 
-interface IPlayed {
+interface IPlayLogEntry {
     // ugly but still need to figure out subtypes cleanly
     // maybe afterall don't make multiple interfaces...
     // just have type and nullable cards and stuff
@@ -250,30 +276,34 @@ interface IPlayed {
     val player: Player
 }
 
-data class Played(override val player: Player, val cards: Collection<PlayCard> = listOf()) : IPlayed {
+data class PlayLogEntry(override val player: Player, val cards: Collection<PlayCard> = listOf()) : IPlayLogEntry {
     constructor(player: Player, card: PlayCard) : this(player, listOf(card))
 
     val pass get() = cards.isEmpty()
     override val type = "RegularMove"
 }
 
-data class PlayerFinished(override val player: Player) : IPlayed {
+data class PlayerFinished(override val player: Player) : IPlayLogEntry {
     override val type = "Finished"
 }
 
-data class Tichu(override val player: Player) : IPlayed {
+data class Tichu(override val player: Player) : IPlayLogEntry {
     override val type = "Tichu"
 }
 
-data class BigTichu(override val player: Player) : IPlayed {
+data class BigTichu(override val player: Player) : IPlayLogEntry {
     override val type = "BigTichu"
 }
 
-data class Wished(override val player: Player, val value: Int) : IPlayed {
+data class Wished(override val player: Player, val value: Int) : IPlayLogEntry {
     override val type = "Wished"
 }
 
-data class DrgGift(override val player: Player, val to: Player) : IPlayed {
+data class WishFullfilled(override val player: Player, val value: Int) : IPlayLogEntry {
+    override val type = "WishFullfilled"
+}
+
+data class DrgGift(override val player: Player, val to: Player) : IPlayLogEntry {
     override val type = "DrgGift"
 }
 
@@ -281,7 +311,7 @@ data class DrgGift(override val player: Player, val to: Player) : IPlayed {
  *  log
  *
  */
-data class Trick(val moves: List<IPlayed>) {
+data class Trick(val moves: List<IPlayLogEntry>) {
     /**
      * points
      */
@@ -292,7 +322,7 @@ data class Trick(val moves: List<IPlayed>) {
             return if (drg != null) {
                 drg.to;
             } else {
-                moves.filterIsInstance<Played>().last { !it.pass }.player
+                moves.filterIsInstance<PlayLogEntry>().last { !it.pass }.player
             }
         }
 
@@ -302,5 +332,5 @@ data class Trick(val moves: List<IPlayed>) {
         }
 
     val allCards: List<PlayCard>
-        get() = moves.filterIsInstance<Played>().flatMap { it.cards }
+        get() = moves.filterIsInstance<PlayLogEntry>().flatMap { it.cards }
 }

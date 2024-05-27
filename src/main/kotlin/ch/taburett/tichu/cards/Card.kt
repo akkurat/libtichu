@@ -2,7 +2,6 @@
 package ch.taburett.tichu.cards
 
 import ch.taburett.tichu.cards.Type.REGULAR
-import ch.taburett.tichu.game.Played
 
 
 class NumberCard(

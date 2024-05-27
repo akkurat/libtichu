@@ -7,21 +7,21 @@ import ch.taburett.tichu.cards.PlayCard
  */
 class Table( var currentPlayer: Player) {
 
-    fun toBeat(): Played {
-        return  moves.filterIsInstance<Played>().last { !it.pass }
+    fun toBeat(): PlayLogEntry {
+        return  moves.filterIsInstance<PlayLogEntry>().last { !it.pass }
     }
 
     fun toBeatCards(): Collection<PlayCard> {
         return if( isNotEmpty() ) toBeat().cards else emptyList()
     }
 
-    val moves = ArrayList<IPlayed>()
+    val moves = ArrayList<IPlayLogEntry>()
 
     fun toTrick(): Trick = Trick(moves.toList())
 
     fun isNotEmpty(): Boolean = moves.isNotEmpty()
     fun isEmpty(): Boolean = moves.isEmpty()
-    fun add(played: IPlayed) {
+    fun add(played: IPlayLogEntry) {
         moves.add(played)
     }
 
@@ -29,7 +29,7 @@ class Table( var currentPlayer: Player) {
 
         val passedPlayers = mutableSetOf<Player>()
 
-        for (p in moves.reversed().filterIsInstance<Played>()) {
+        for (p in moves.reversed().filterIsInstance<PlayLogEntry>()) {
             if (p.pass) {
                 passedPlayers.add(p.player)
             } else {
