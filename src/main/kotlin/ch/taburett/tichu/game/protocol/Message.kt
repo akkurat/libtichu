@@ -65,10 +65,11 @@ data class MakeYourMove(
     val handcards: List<HandCard>,
     val table: Table,
     val last: Trick?,
-    val stage: Stage = YOURTURN,
     val wish: Int? = null,
+    val dragonGift: Boolean = false,
 ) : ServerMessage {
     fun mustFullFillWish(): Boolean = handcards.filterIsInstance<NumberCard>().any { it.getValue() == wish }
+    val stage = if (dragonGift ) GIFT_DRAGON else YOURTURN
 }
 
 data class GiftDragon(val to: ReLi) : PlayerMessage {

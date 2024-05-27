@@ -69,11 +69,11 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         // a faulty state (i.e. fail fast)
     }
 
-    internal fun sendTableAndHandcards(player: Player, dragon: Stage = Stage.YOURTURN) {
+    internal fun sendTableAndHandcards(player: Player) {
         sendMessage(
             WrappedServerMessage(
                 player,
-                MakeYourMove(cardMap[player]!!, table, tricks.lastOrNull(), dragon, pendingWish)
+                MakeYourMove(cardMap[player]!!, table, tricks.lastOrNull(), pendingWish, dragonGiftPending)
             )
         )
         // in theory we could use topic or so...
@@ -174,9 +174,6 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
             }
         }
 
-        if (playedCards.isNotEmpty() && playedCards.first() == DRG) {
-            dragonGiftPending = true
-        }
 
         table.add(PlayLogEntry(player, playedCards.toList()))
         if (handCards.isEmpty()) {
@@ -196,9 +193,10 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
             return
         }
         if (table.allPass(activePlayers())) {
-            if (dragonGiftPending) {
-                table.currentPlayer = nextPlayer(player)
-                sendTableAndHandcards(table.currentPlayer, Stage.GIFT_DRAGON)
+            if( table.toBeatCards().contains(DRG)) {
+                dragonGiftPending = true
+                table.currentPlayer = table.toBeat().player
+                sendTableAndHandcards(table.currentPlayer)
                 return
             } else {
                 sendTrick(player)

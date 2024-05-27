@@ -1,6 +1,6 @@
 package ch.taburett.tichu.game
 
-import ch.taburett.tichu.cards.fulldeck
+import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.protocol.*
 import org.jetbrains.annotations.VisibleForTesting
 import java.util.concurrent.Executors
@@ -37,7 +37,10 @@ class Game(com: Out) {
             prepareRound!!.start()
         } else {
             // no shupf for quick testing
-            val cardmap = playerList.zip(fulldeck.shuffled().chunked(14)).toMap()
+            var specials = setOf(DRG, DOG, PHX, MAH)
+            val paeckli = ((fulldeck - specials).shuffled() + specials).chunked(14)
+            val cardmap = playerList.zip(paeckli).toMap()
+
             roundPlay = RoundPlay(com, cardmap, null)
             roundPlay!!.start()
         }
@@ -57,8 +60,8 @@ class Game(com: Out) {
     @Synchronized
     fun receive(wrappedPlayerMessage: WrappedPlayerMessage) {
         // todo: shouldn't switching happen inside state machine?
-        prepareRound?.receive( wrappedPlayerMessage)
-        roundPlay?.receive( wrappedPlayerMessage)
+        prepareRound?.receive(wrappedPlayerMessage)
+        roundPlay?.receive(wrappedPlayerMessage)
         checkTransition()
     }
 
@@ -85,5 +88,5 @@ fun interface Out {
 }
 
 enum class TichuType {
-   BIG, SMALL
+    BIG, SMALL
 }
