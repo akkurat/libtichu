@@ -8,6 +8,7 @@ import ch.taburett.tichu.game.Player
 import ch.taburett.tichu.game.Table
 import ch.taburett.tichu.game.Trick
 import ch.taburett.tichu.game.protocol.Stage.*
+import ch.taburett.tichu.game.wishPredicate
 import ch.taburett.tichu.patterns.Bomb
 import ch.taburett.tichu.patterns.BombStraight
 
@@ -69,7 +70,7 @@ data class MakeYourMove(
     val dragonGift: Boolean = false,
 ) : ServerMessage {
     // todo: this is wrong...
-    fun mightFullFillWish(): Boolean = handcards.filterIsInstance<NumberCard>().any { it.getValue() == wish }
+    fun mightFullFillWish(): Boolean = handcards.filterIsInstance<NumberCard>().any ( wishPredicate(wish) )
     val stage = if (dragonGift ) GIFT_DRAGON else YOURTURN
 }
 

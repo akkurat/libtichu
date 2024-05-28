@@ -33,13 +33,13 @@ abstract class TichuPattern(val type: TichuPatternType, cards: Iterable<PlayCard
         return cards.size;
     }
 
-    fun rank(): Int {
+    fun rank(): Double {
         return cards.maxOf { c -> c.getValue() }
     }
 
     fun beats(other: TichuPattern): LegalityAnswer {
         if (type != other.type) {
-            if (other.type == TichuPatternType.EMPTY) {
+            if (other.type == TichuPatternType.ANSPIEL) {
                 return ok()
             }
             if (type == TichuPatternType.BOMB) {
@@ -58,7 +58,6 @@ abstract class TichuPattern(val type: TichuPatternType, cards: Iterable<PlayCard
         }
 
         if (cardinality() != other.cardinality()) {
-
             return message("pattern differ in lenght")
         }
         if (rank() <= other.rank()) {

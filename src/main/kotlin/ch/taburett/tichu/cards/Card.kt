@@ -33,8 +33,8 @@ class NumberCard(
         return value + color.offset;
     }
 
-    override fun getValue(): Int {
-        return value
+    override fun getValue(): Double {
+        return value.toDouble()
     }
 
     override fun toString(): String {
@@ -63,8 +63,8 @@ class SpecialCard(
     private val value: Int,
     private val points: Int = 0,
 ) : PlayCard {
-    override fun getValue(): Int {
-        return value;
+    override fun getValue(): Double {
+        return value.toDouble();
     }
 
     override fun getPoints(): Int {
@@ -110,7 +110,7 @@ interface PlayCard : HandCard {
      * Effective Value
      * e.g value ch.taburett.tichu.cards.Phoenix simulates
      */
-    fun getValue(): Int
+    fun getValue(): Double
     fun asHandcard(): HandCard {
         return this
     }
@@ -151,9 +151,9 @@ class Phoenix : HandCard {
         return 15.0
     }
 
-    fun asPlayCard(value: Int): PhoenixPlaycard {
-        if (MAH.getValue() <= value && value <= 15)
-            return PhoenixPlaycard(this, value)
+    fun asPlayCard(value: Number): PhoenixPlaycard {
+        if (MAH.getValue() <= value.toDouble() && value.toDouble() <= 15)
+            return PhoenixPlaycard(this, value.toDouble())
         throw IllegalArgumentException("Naughty boy")
     }
 
@@ -168,8 +168,8 @@ class Phoenix : HandCard {
 
 }
 
-class PhoenixPlaycard(private val phoenix: Phoenix, private val value: Int) : HandCard by phoenix, PlayCard {
-    override fun getValue(): Int {
+class PhoenixPlaycard(private val phoenix: Phoenix, private val value: Double) : HandCard by phoenix, PlayCard {
+    override fun getValue(): Double {
         return value
     }
 
@@ -182,23 +182,6 @@ class PhoenixPlaycard(private val phoenix: Phoenix, private val value: Int) : Ha
     }
 
     override fun getSort(): Double {
-        return value.toDouble();
+        return value
     }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is PhoenixPlaycard) return false
-
-        if (phoenix != other.phoenix) return false
-        if (value != other.value) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = phoenix.hashCode()
-        result = 31 * result + value
-        return result
-    }
-
 }

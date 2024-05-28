@@ -19,7 +19,7 @@ class Straight(cards: Iterable<PlayCard>) : TichuPattern(TichuPatternType.STRAIG
             }
             val sorted = cards.sortedBy { it.getValue() }
             for (i in 0 until sorted.size - 1) {
-                if (sorted[i + 1].getValue() - sorted[i].getValue() != 1) {
+                if (sorted[i + 1].getValue() - sorted[i].getValue() != 1.0) {
                     return false
                 }
             }
@@ -52,9 +52,9 @@ class Straight(cards: Iterable<PlayCard>) : TichuPattern(TichuPatternType.STRAIG
                     while (i < heights.size) {
                         val (height, cs) = heights[i]
                         val diff = height - heights[i - 1].key
-                        if (diff == 1) {
+                        if (diff == 1.0) {
                             possibleRuelle.add(cs)
-                        } else if (diff == 2 && phxAvailable) {
+                        } else if (diff == 2.0 && phxAvailable) {
                             phxAvailable = false
                             possibleRuelle.add(cs)
                             possibleRuelle.add(listOf(PHX.asPlayCard(height - 1)))
@@ -65,7 +65,7 @@ class Straight(cards: Iterable<PlayCard>) : TichuPattern(TichuPatternType.STRAIG
                     }
                     if (possibleRuelle.size >= 4) {
                         if (phxAvailable) {
-                            val phxValues = ArrayList<Int>()
+                            val phxValues = ArrayList<Double>()
                             val lastValue = possibleRuelle.last().first().getValue()
                             if (lastValue < S14.getValue()) {
                                 phxValues.add(lastValue + 1)

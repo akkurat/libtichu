@@ -4,7 +4,7 @@ import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.PlayCard
 
 enum class TichuPatternType(val factory: PatternImplFactory) {
-    EMPTY(Empty),
+    ANSPIEL(Empty),
     SINGLE(Single),
     PAIR(Pair),
     TRIPLE(Triple),

@@ -168,7 +168,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         val handCards = cardMap.getValue(player)
         handCards.removeAll(playedCards.map { it.asHandcard() })
         if (pendingWish != null) {
-            if (playedCards.filterIsInstance<NumberCard>().any { it.getValue() == pendingWish }) {
+            if (playedCards.filterIsInstance<NumberCard>().any { it.getValue() - pendingWish!! == 0.0 }) {
                 table.add(WishFullfilled(player, pendingWish!!))
                 pendingWish = null
             }

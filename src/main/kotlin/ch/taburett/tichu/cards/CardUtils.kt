@@ -32,9 +32,11 @@ fun allPatterns(cards: Collection<HandCard>): Set<TichuPattern> {
 
 
 fun allSameValue(cards: Collection<PlayCard>): Int? {
-    val valueToMatch = cards.first().getValue()
-    if (cards.all { c -> c.getValue() == valueToMatch }) {
-        return valueToMatch
+    if(cards.size > 1) {
+        val valueToMatch = cards.first().getValue()
+        if (cards.all { c -> c.getValue() == valueToMatch }) {
+            return valueToMatch.toInt()
+        }
     }
     return null
 }
@@ -49,7 +51,7 @@ fun parseCards(cardsString: String): Set<HandCard> {
 
 fun parseCard(cardString: String): HandCard? {
     if (cardString.matches(Regex.fromLiteral("PHX\\d+"))) {
-        val value = cardString.substring("PHX".length).toInt()
+        val value = cardString.substring("PHX".length).toDouble()
         return PHX.asPlayCard(value)
     }
     return lookupByName.get(cardString)

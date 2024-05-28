@@ -18,7 +18,7 @@ class Stairs private constructor(cards: List<PlayCard>) : TichuPattern(TichuPatt
                     return null
                 }
                 if (i < cards.size - 2)
-                    if (abs(sorted[i + 1] - sorted[i + 2]) != 1) {
+                    if (abs(sorted[i + 1] - sorted[i + 2]) != 1.0) {
                         return null
                     }
             }

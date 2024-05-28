@@ -36,16 +36,22 @@ fun playedCardsValid(
     val pTAble = pattern(_tableCards)
     try {
         val pPlayed = pattern(cardsTriedToPlay)
-        if (wish != null && handCards.filterIsInstance<NumberCard>().any { c -> c.getValue() == wish }) {
-            if (cardsTriedToPlay.none { c -> c.getValue() == wish }) {
-                if (_tableCards.isEmpty()) { // allready checked that player has wished card
-                    return LegalityAnswer(WISH, "Wish $wish is pending. You're not allowed to play $cardsTriedToPlay")
-                }
-                val allPatternsMatchingTable = pTAble.type.factory.allPatterns(handCards)
-                val possiblePatterns = allPatternsMatchingTable
-                    .filter { p -> p.cards.any { c -> c.getValue() == wish } }
-                if (possiblePatterns.isNotEmpty()) {
-                    return LegalityAnswer(LegalType.WISH, possiblePatterns.first().toString())
+        if (wish != null) {
+            val wishPredicate: (PlayCard) -> Boolean = wishPredicate(wish)
+            if (handCards.filterIsInstance<NumberCard>().any(wishPredicate)) {
+                if (cardsTriedToPlay.none(wishPredicate)) {
+                    if (_tableCards.isEmpty()) { // allready checked that player has wished card
+                        return LegalityAnswer(
+                            WISH,
+                            "Wish $wish is pending. You're not allowed to play $cardsTriedToPlay"
+                        )
+                    }
+                    val allPatternsMatchingTable = pTAble.type.factory.allPatterns(handCards)
+                    val possiblePatterns = allPatternsMatchingTable
+                        .filter { p -> p.cards.any(wishPredicate) }
+                    if (possiblePatterns.isNotEmpty()) {
+                        return LegalityAnswer(LegalType.WISH, possiblePatterns.first().toString())
+                    }
                 }
             }
         }
@@ -57,4 +63,9 @@ fun playedCardsValid(
     } catch (e: IllegalArgumentException) {
         return LegalityAnswer(ILLEGAL, "$cardsTriedToPlay is not valid pattern")
     }
+}
+
+fun wishPredicate(wish: Int?): (PlayCard) -> Boolean {
+    val wishPredicate: (PlayCard) -> Boolean = { c -> wish!=null && c.getValue() - wish == 0.0 }
+    return wishPredicate
 }
