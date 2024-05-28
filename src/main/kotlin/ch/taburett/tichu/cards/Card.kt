@@ -181,6 +181,10 @@ class PhoenixPlaycard(private val phoenix: Phoenix, private val value: Int) : Ha
         return phoenix;
     }
 
+    override fun getSort(): Double {
+        return value.toDouble();
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is PhoenixPlaycard) return false

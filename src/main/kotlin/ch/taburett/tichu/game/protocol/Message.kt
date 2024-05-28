@@ -68,7 +68,8 @@ data class MakeYourMove(
     val wish: Int? = null,
     val dragonGift: Boolean = false,
 ) : ServerMessage {
-    fun mustFullFillWish(): Boolean = handcards.filterIsInstance<NumberCard>().any { it.getValue() == wish }
+    // todo: this is wrong...
+    fun mightFullFillWish(): Boolean = handcards.filterIsInstance<NumberCard>().any { it.getValue() == wish }
     val stage = if (dragonGift ) GIFT_DRAGON else YOURTURN
 }
 
