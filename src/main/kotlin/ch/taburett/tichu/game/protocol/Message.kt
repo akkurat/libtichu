@@ -27,7 +27,7 @@ sealed interface PlayerMessage : Message
  * SCHUPFED: [1 2 3 ... 14]
  * GIFT_DRAGON [5,As,DRG]
  */
-enum class Stage { EIGHT_CARDS, PRE_SCHUPF, POST_SCHUPF, GIFT_DRAGON, SCHUPF, SCHUPFED, GAME, YOURTURN }
+enum class Stage { EIGHT_CARDS, PRE_SCHUPF, POST_SCHUPF, GIFT_DRAGON, SCHUPF, SCHUPFED, OTHERS_TURN, YOURTURN }
 
 // info class
 data class Points(val points: Any) : ServerMessage
@@ -46,10 +46,6 @@ data class AckGameStage(val stage: Stage, val cards: List<HandCard>) : ServerMes
     }
 }
 
-data class WhosTurn(val who: Player, val cards: Collection<HandCard>, val table: Table, val last: Trick?) :
-    ServerMessage {
-    val stage = GAME
-}
 
 // id or not?
 // try first without ids and go with implicit
@@ -62,16 +58,30 @@ sealed class Ack : PlayerMessage {
     class TichuBeforePlay : Ack()
 }
 
-data class MakeYourMove(
+// todo merge with WhosTurn and make YOU a flag
+// all the
+data class WhosMove(
+    val youAre: Player,
+    val who: Player,
     val handcards: List<HandCard>,
     val table: Table,
     val last: Trick?,
     val wish: Int? = null,
     val dragonGift: Boolean = false,
+    val cardCounts: Map<Player, Int>,
 ) : ServerMessage {
     // todo: this is wrong...
-    fun mightFullFillWish(): Boolean = handcards.filterIsInstance<NumberCard>().any ( wishPredicate(wish) )
-    val stage = if (dragonGift ) GIFT_DRAGON else YOURTURN
+    val yourMove = youAre == who
+    fun mightFullFillWish(): Boolean = handcards.filterIsInstance<NumberCard>().any(wishPredicate(wish))
+    val stage = if (yourMove) {
+        if (dragonGift) {
+            GIFT_DRAGON
+        } else {
+            YOURTURN
+        }
+    } else {
+        OTHERS_TURN
+    }
 }
 
 data class GiftDragon(val to: ReLi) : PlayerMessage {
@@ -82,7 +92,6 @@ data class GiftDragon(val to: ReLi) : PlayerMessage {
         LI {
             override fun map(u: Player): Player = u.li()
         };
-
         abstract fun map(u: Player): Player
     }
 }

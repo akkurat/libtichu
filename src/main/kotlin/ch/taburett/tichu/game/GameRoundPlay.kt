@@ -52,7 +52,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
             throw IllegalStateException("running or finished")
         }
         state = State.RUNNING
-        sendTableAndHandcards(table.currentPlayer)
+        sendTableAndHandcards()
     }
 
     private fun activePlayers(): Set<Player> {
@@ -69,30 +69,18 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         // a faulty state (i.e. fail fast)
     }
 
-    internal fun sendTableAndHandcards(player: Player) {
-        sendMessage(
-            WrappedServerMessage(
-                player,
-                MakeYourMove(cardMap[player]!!, table, tricks.lastOrNull(), pendingWish, dragonGiftPending)
-            )
-        )
+    internal fun sendTableAndHandcards() {
         // in theory we could use topic or so...
         // but boah...
-        playerList.filter { it != player }
-            .forEach {
-                sendCardsForUser(it, player)
-            }
-    }
-
-    private fun sendTrick(player: Player) {
-        playerList.forEach {
-            sendCardsForUser(it, player)
+        playerList.forEach { player ->
+            val message = WhosMove(player, table.currentPlayer,
+                cardMap.getValue(player), table, tricks.lastOrNull(),
+                pendingWish, dragonGiftPending,
+                cardMap.mapValues { it.value.size })
+            sendMessage(WrappedServerMessage(player, message))
         }
     }
 
-    private fun sendCardsForUser(it: Player, player: Player) {
-        sendMessage(WrappedServerMessage(it, WhosTurn(player, cardMap.getValue(it), table, tricks.lastOrNull())))
-    }
 
     private fun nextPlayer(player_in: Player, step: Int = 1, cnt: Int = 0): Player {
         if (cnt == 4) {
@@ -150,7 +138,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
             } else {
                 // maybe just return action instead of void functions?
                 // would probably be easier to debug
-                _move(player, move.cards)
+                _regularMove(player, move.cards)
             }
         } else {
             sendMessage(WrappedServerMessage(player, Rejected(res.message, move)))
@@ -160,7 +148,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
     /**
      *
      */
-    private fun _move(player: Player, playedCards: Collection<PlayCard>) {
+    private fun _regularMove(player: Player, playedCards: Collection<PlayCard>) {
         if (player != table.currentPlayer) {
             sendMessage(WrappedServerMessage(player, Rejected("not your turn yet")))
             return
@@ -173,7 +161,6 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
                 pendingWish = null
             }
         }
-
 
         table.add(PlayLogEntry(player, playedCards.toList()))
         if (handCards.isEmpty()) {
@@ -193,19 +180,21 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
             return
         }
         if (table.allPass(activePlayers())) {
-            if( table.toBeatCards().contains(DRG)) {
+            if (table.toBeatCards().contains(DRG)) {
                 dragonGiftPending = true
+                // shouldn't be necessary? actually always the one who wins with dragon its turn ... hm...
+                // aaaah. reason is that one can finish with the dragon but still needs to gift it
                 table.currentPlayer = table.toBeat().player
-                sendTableAndHandcards(table.currentPlayer)
+                sendTableAndHandcards()
                 return
             } else {
-                sendTrick(player)
+                sendTableAndHandcards()
                 endTrick()
             }
         }
         // todo: logic inside table
         table.currentPlayer = nextPlayer(player)
-        sendTableAndHandcards(table.currentPlayer)
+        sendTableAndHandcards()
     }
 
 
@@ -224,7 +213,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         table.add(PlayLogEntry(player, listOf(DOG)))
         cardMap.getValue(player).remove(DOG)
         table.currentPlayer = nextPlayer(player, 2)
-        sendTableAndHandcards(table.currentPlayer)
+        sendTableAndHandcards()
     }
 
 
@@ -238,7 +227,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         return RoundInfo(preparationInfo, tricks, initalCardMap, leftoverHandcards)
     }
 
-    fun receive(wrappedPlayerMessage: WrappedPlayerMessage) {
+    fun receivePlayerMessage(wrappedPlayerMessage: WrappedPlayerMessage) {
         val u = wrappedPlayerMessage.u
         when (val m = wrappedPlayerMessage.message) {
             is Move -> move(u, m)
@@ -258,7 +247,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
             table.add(DrgGift(u, to))
             dragonGiftPending = false
             endTrick()
-            sendTableAndHandcards(table.currentPlayer)
+            sendTableAndHandcards()
         } else {
             sendMessage(WrappedServerMessage(u, Rejected("drg must be gifted to opponent", m)))
         }

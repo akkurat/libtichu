@@ -53,7 +53,7 @@ class Game(com: Out) {
 
     fun resendStatus() {
         if (roundPlay != null) {
-            roundPlay!!.sendTableAndHandcards(roundPlay!!.table.currentPlayer);
+            roundPlay!!.sendTableAndHandcards();
         }
     }
 
@@ -61,7 +61,7 @@ class Game(com: Out) {
     fun receive(wrappedPlayerMessage: WrappedPlayerMessage) {
         // todo: shouldn't switching happen inside state machine?
         prepareRound?.receive(wrappedPlayerMessage)
-        roundPlay?.receive(wrappedPlayerMessage)
+        roundPlay?.receivePlayerMessage(wrappedPlayerMessage)
         checkTransition()
     }
 

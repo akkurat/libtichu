@@ -21,7 +21,7 @@ enum class Player(val value: String, val playerGroup: PlayerGroup) {
     B2("B2", B);
 
     fun li(): Player {
-        return Player.entries[(this.ordinal + 1) % 4]
+        return Player.entries[(this.ordinal + 3) % 4]
     }
 
     fun partner(): Player {
@@ -29,7 +29,7 @@ enum class Player(val value: String, val playerGroup: PlayerGroup) {
     }
 
     fun re(): Player {
-        return Player.entries[(this.ordinal + 3) % 4]
+        return Player.entries[(this.ordinal + 1) % 4]
     }
 }
 

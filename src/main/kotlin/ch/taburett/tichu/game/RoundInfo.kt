@@ -13,11 +13,13 @@ data class RoundInfo(
     val orderOfWinning = tricks.flatMap { it.playerFinished }
     val tricksByPlayer: Map<Player, List<Trick>> = tricks.groupBy { it.pointOwner }
 
-    val points: Map<PlayerGroup, Int>
+    // bonusPoints()
+    // totalPoints()
+    val cardPoints: Map<PlayerGroup, Int>
         get() {
             val cards = cards
             return cards.mapValues { (_, v) -> v.sumOf { c -> c.getPoints() } }
-                .mapValues { (_, v) -> if (v == 100) 200 else v }
+                // todo: well.. 100 are also possible without double win ^^
         }
 
     val cards: Map<PlayerGroup, List<HandCard>>
