@@ -68,7 +68,7 @@ abstract class TichuPattern(val type: TichuPatternType, cards: Iterable<PlayCard
 
     }
 
-    fun findBeatingPatterns(handcards: MutableList<HandCard>): List<TichuPattern> {
+    fun findBeatingPatterns(handcards: List<HandCard>): List<TichuPattern> {
         return type.patterns(handcards, cardinality())
             .filter { it.beats(this).type ==LegalType.OK }
     }

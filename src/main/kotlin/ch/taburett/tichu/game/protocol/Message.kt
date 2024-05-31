@@ -73,7 +73,6 @@ data class WhosMove(
 ) : ServerMessage {
     // todo: this is wrong...
     val yourMove = youAre == who
-    fun mightFullFillWish(): Boolean = handcards.filterIsInstance<NumberCard>().any(wishPredicate(wish))
     val stage = if (yourMove) {
         if (dragonGift) {
             GIFT_DRAGON
@@ -123,6 +122,7 @@ object BigTichu : PlayerMessage
 
 data class Move(val cards: MutableCollection<out PlayCard>, val wish: Int? = null) : PlayerMessage {
     constructor(cards: Collection<PlayCard>) : this(cards.toMutableList(), null)
+    constructor(card: PlayCard?) : this(if (card != null) listOf(card) else listOf())
 }
 
 
