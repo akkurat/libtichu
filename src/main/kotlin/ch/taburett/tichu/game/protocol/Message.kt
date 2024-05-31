@@ -11,6 +11,7 @@ import ch.taburett.tichu.game.protocol.Stage.*
 import ch.taburett.tichu.game.wishPredicate
 import ch.taburett.tichu.patterns.Bomb
 import ch.taburett.tichu.patterns.BombStraight
+import ch.taburett.tichu.patterns.TichuPattern
 
 interface Message
 
@@ -32,7 +33,7 @@ enum class Stage { EIGHT_CARDS, PRE_SCHUPF, POST_SCHUPF, GIFT_DRAGON, SCHUPF, SC
 // info class
 data class Points(val points: Any) : ServerMessage
 
-data class Rejected(val msg: String, val orginal: PlayerMessage? = null) : ServerMessage
+data class Rejected(val msg: String, val orginal: Any? = null) : ServerMessage
 
 data class AckGameStage(val stage: Stage, val cards: List<HandCard>) : ServerMessage {
 
@@ -92,6 +93,7 @@ data class GiftDragon(val to: ReLi) : PlayerMessage {
         LI {
             override fun map(u: Player): Player = u.li()
         };
+
         abstract fun map(u: Player): Player
     }
 }
@@ -101,10 +103,16 @@ data class Schupf(val re: HandCard, val li: HandCard, val partner: HandCard) : P
 }
 
 data class Bomb(val cards: List<PlayCard>) : PlayerMessage {
+    val pattern: TichuPattern
+
     init {
         val b = Bomb.pattern(cards)
         val sb = BombStraight.pattern(cards)
-        if (b == null && sb == null) {
+        if (b != null) {
+            pattern = b;
+        } else if (sb != null) {
+            pattern = sb
+        } else {
             throw IllegalArgumentException("no bomb")
         }
     }

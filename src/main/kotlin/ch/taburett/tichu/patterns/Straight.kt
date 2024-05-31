@@ -33,8 +33,6 @@ class Straight(cards: Iterable<PlayCard>) : TichuPattern(TichuPatternType.STRAIG
                 val filter = { it: TichuPattern -> it.cardinality() == cardinality }
                 return wPhx(cards).filter( filter ).toSet()
             }
-
-
         }
 
         private fun wPhx(cards: Collection<HandCard>): Set<Straight> {

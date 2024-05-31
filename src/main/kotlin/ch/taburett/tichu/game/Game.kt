@@ -37,8 +37,8 @@ class Game(com: Out) {
             prepareRound!!.start()
         } else {
             // no shupf for quick testing
-            var specials = setOf(DRG, DOG, PHX, MAH)
-            val paeckli = ((fulldeck - specials).shuffled() + specials).chunked(14)
+            var rigged = setOf(DRG, DOG, PHX, MAH, D2, S2, P2, J2)
+            val paeckli = ((fulldeck - rigged).shuffled() + rigged).chunked(14)
             val cardmap = playerList.zip(paeckli).toMap()
 
             roundPlay = RoundPlay(com, cardmap, null)

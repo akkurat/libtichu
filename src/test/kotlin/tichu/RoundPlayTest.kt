@@ -36,7 +36,7 @@ class RoundPlayTest {
         )
         val round = RoundPlay(out, map, null)
         round.start()
-        round.move(A1, Move(setOf(J5)))
+        round.regularMove(A1, Move(setOf(J5)))
 
         assertThat(round.table.currentPlayer).isEqualTo(A2)
     }
@@ -53,10 +53,10 @@ class RoundPlayTest {
         val round = RoundPlay(out, map, null)
 
         round.start()
-        round.move(A2, Move(setOf(MAH)))
-        round.move(B2, Move(setOf()))
-        round.move(A1, Move(setOf()))
-        round.move(B1, Move(setOf()))
+        round.regularMove(A2, Move(setOf(MAH)))
+        round.regularMove(B2, Move(setOf()))
+        round.regularMove(A1, Move(setOf()))
+        round.regularMove(B1, Move(setOf()))
 
         assertThat(round.table.currentPlayer).isEqualTo(A2)
     }
@@ -73,10 +73,10 @@ class RoundPlayTest {
         val round = RoundPlay(out, map, null)
 
         round.start()
-        round.move(A2, Move(setOf(MAH)))
-        round.move(B2, Move(setOf(S2)))
-        round.move(A1, Move(setOf()))
-        round.move(B1, Move(setOf()))
+        round.regularMove(A2, Move(setOf(MAH)))
+        round.regularMove(B2, Move(setOf(S2)))
+        round.regularMove(A1, Move(setOf()))
+        round.regularMove(B1, Move(setOf()))
 
         assertThat(round.table.currentPlayer).isEqualTo(A1)
     }
@@ -93,11 +93,11 @@ class RoundPlayTest {
         val round = RoundPlay(out, map, null)
 
         round.start()
-        round.move(A2, Move(setOf(MAH)))
-        round.move(B2, Move(setOf(S2)))
-        round.move(A1, Move(setOf(J5)))
-        round.move(B1, Move(setOf(S7)))
-        round.move(A1, Move(setOf(PHX.asPlayCard(8))))
+        round.regularMove(A2, Move(setOf(MAH)))
+        round.regularMove(B2, Move(setOf(S2)))
+        round.regularMove(A1, Move(setOf(J5)))
+        round.regularMove(B1, Move(setOf(S7)))
+        round.regularMove(A1, Move(setOf(PHX.asPlayCard(8))))
 
         assertAll(
             { assertThat(round.state == RoundPlay.State.FINISHED).isTrue() },

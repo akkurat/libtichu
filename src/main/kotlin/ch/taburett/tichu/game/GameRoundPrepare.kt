@@ -172,17 +172,16 @@ class PrepareRound(val com: Out) {
     }
 
     val preparationInfo: PreparationInfo get() {
-        return PreparationInfo(cards8, cards6, schupfInfo)
+        return PreparationInfo(cards8, cards6, schupfInfo, listOf())
     }
-
 
 }
 
-
 data class PreparationInfo(
-    val cards8: Map<Player, MutableList<HandCard>>,
+    val cards8: Map<Player, List<HandCard>>,
     val cards6: Map<Player, List<HandCard>>,
     val schupf: SchupfLog,
+    val tichuLog: List<IPlayLogEntry>
 ) {
     data class SchupfLog(
         val to: Map<Player, Map<Player, HandCard>>,

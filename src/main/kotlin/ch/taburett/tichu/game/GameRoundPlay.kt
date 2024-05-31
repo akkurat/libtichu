@@ -96,7 +96,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
     }
 
 
-    fun move(player: Player, move: Move) {
+    fun regularMove(player: Player, move: Move) {
 
         // TODO: make all logic external
         val playerCards = cardMap[player]!!
@@ -230,7 +230,8 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
     fun receivePlayerMessage(wrappedPlayerMessage: WrappedPlayerMessage) {
         val u = wrappedPlayerMessage.u
         when (val m = wrappedPlayerMessage.message) {
-            is Move -> move(u, m)
+            is Move -> regularMove(u, m)
+            is Bomb -> bomb(u, m)
             // wish async doesn't as you have to play the 1 in that trick
 //            is Wish -> placeWish()
             BigTichu -> TODO()
@@ -239,6 +240,28 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
             else -> sendMessage(WrappedServerMessage(u, Rejected("Can't handle this message while playing", m)))
         }
 
+    }
+
+    private fun bomb(u: Player, m: Bomb) {
+        if (table.isEmpty()) {
+            if (u == table.currentPlayer) { // ok as regular move
+                _regularMove(u, m.cards)
+            } else {
+                sendMessage(WrappedServerMessage(u, Rejected("Cannot bomb ausspiel", m)))
+            }
+        } else {
+            val beats = m.pattern.beats(pattern(table.toBeatCards()))
+            if (beats.type == LegalType.OK) {
+                dragonGiftPending = false
+                table.add(BombPlayed(u, m.cards))
+                cardMap.getValue(u).removeAll( m.cards )
+                endTrick()
+                sendTableAndHandcards()
+                // do bomb stuff
+            } else {
+                sendMessage(WrappedServerMessage(u, Rejected(beats.message, m)))
+            }
+        }
     }
 
     private fun giftDragon(u: Player, m: GiftDragon) {
@@ -252,6 +275,10 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
             sendMessage(WrappedServerMessage(u, Rejected("drg must be gifted to opponent", m)))
         }
     }
+}
+
+data class BombPlayed(override val player: Player, val cards: List<PlayCard>) : IPlayLogEntry {
+    override val type = "Bomb"
 }
 
 
