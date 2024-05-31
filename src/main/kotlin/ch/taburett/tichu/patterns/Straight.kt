@@ -26,8 +26,15 @@ class Straight(cards: Iterable<PlayCard>) : TichuPattern(TichuPatternType.STRAIG
             return true
         }
 
-        override fun allPatterns(cards: Collection<HandCard>): Set<TichuPattern> {
-            return wPhx(cards)
+        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?): Set<TichuPattern> {
+            if( cardinality == null ) {
+                return wPhx(cards)
+            } else {
+                val filter = { it: TichuPattern -> it.cardinality() == cardinality }
+                return wPhx(cards).filter( filter ).toSet()
+            }
+
+
         }
 
         private fun wPhx(cards: Collection<HandCard>): Set<Straight> {

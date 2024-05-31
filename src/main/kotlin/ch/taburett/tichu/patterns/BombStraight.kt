@@ -14,7 +14,7 @@ class BombStraight(cards: Collection<PlayCard>) : TichuPattern(TichuPatternType.
             return null
         }
 
-        override fun allPatterns(cards: Collection<HandCard>): Set<TichuPattern> {
+        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?): Set<TichuPattern> {
             TODO("Not yet implemented")
         }
     }

@@ -1,5 +1,6 @@
 package ch.taburett.tichu.patterns
 
+import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.PlayCard
 
 abstract class TichuPattern(val type: TichuPatternType, cards: Iterable<PlayCard>) {
@@ -65,6 +66,11 @@ abstract class TichuPattern(val type: TichuPatternType, cards: Iterable<PlayCard
         }
         return ok();
 
+    }
+
+    fun findBeatingPatterns(handcards: MutableList<HandCard>): List<TichuPattern> {
+        return type.patterns(handcards, cardinality())
+            .filter { it.beats(this).type ==LegalType.OK }
     }
 
 }

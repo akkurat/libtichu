@@ -18,8 +18,8 @@ enum class TichuPatternType(val factory: PatternImplFactory) {
         return factory.pattern(cards);
     }
 
-    fun patterns(cards: Collection<HandCard>): Set<TichuPattern> {
-        return factory.allPatterns(cards)
+    fun patterns(cards: Collection<HandCard>, cardinality: Int? = null): Set<TichuPattern> {
+        return factory.allPatterns(cards, cardinality)
     }
 
 

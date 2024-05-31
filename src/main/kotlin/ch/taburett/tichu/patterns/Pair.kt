@@ -27,7 +27,7 @@ class Pair private constructor(cards: Collection<PlayCard>, private val height: 
             return null
         }
 
-        override fun allPatterns(cards: Collection<HandCard>): Set<Pair> {
+        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?): Set<Pair> {
             val groups = cards.filter { it is NumberCard || it is PhoenixPlaycard }
                 .map { it as PlayCard }
                 .groupBy { it.getValue() }

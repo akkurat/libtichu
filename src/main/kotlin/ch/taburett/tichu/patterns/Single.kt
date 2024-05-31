@@ -13,7 +13,7 @@ class Single(val card: PlayCard) : TichuPattern(TichuPatternType.SINGLE, setOf(c
             return null
         }
 
-        override fun allPatterns(cards: Collection<HandCard>): Set<TichuPattern> {
+        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?): Set<TichuPattern> {
             // todo: phx? drg?
             return cards.filterIsInstance<NumberCard>()
                 .map { Single(it) }

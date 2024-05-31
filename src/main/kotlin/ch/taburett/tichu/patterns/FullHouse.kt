@@ -31,7 +31,7 @@ class FullHouse(three: Collection<PlayCard>, two: Collection<PlayCard>) :
                 .toSet()
         }
 
-        override fun allPatterns(cards: Collection<HandCard>): Set<TichuPattern> {
+        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?): Set<TichuPattern> {
             if (cards.contains(PHX)) {
                 val numbers = cards.filterIsInstance<NumberCard>()
                     .map { it.getValue() }
