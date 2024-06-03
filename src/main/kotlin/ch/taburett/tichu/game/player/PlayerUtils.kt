@@ -60,9 +60,11 @@ fun mapPattern(pat: TichuPattern): Map<PlayCard, Double> {
 
 fun weightPossibilites(handcards: List<HandCard>, damping: Double = 1.0): Map<HandCard, Double> {
     val all = allPatterns(handcards).filter { it !is Single }
+
     if (all.isEmpty()) {
         return handcards.associateWith { cardCost(it) }
     }
+
     val map: MutableMap<HandCard, Double> = handcards
         .associateWith { cardCost(it) }
         .toSortedMap(compareBy { it.getSort() })
@@ -70,11 +72,6 @@ fun weightPossibilites(handcards: List<HandCard>, damping: Double = 1.0): Map<Ha
     for (pat in all) {
 
         val costMap = mapPattern(pat)
-
-        for (e in costMap) {
-            map.compute(e.key) { _, i -> i!! + e.value }
-        }
-
         val rest = handcards - pat.cards
 
         for (hc in rest) {
@@ -83,7 +80,12 @@ fun weightPossibilites(handcards: List<HandCard>, damping: Double = 1.0): Map<Ha
 
         val weights = weightPossibilites(rest, 0.8*damping)
 
-        for (w in weights) map.compute(w.key) { _, i -> i!! + w.value*damping }
+        for (w in weights) {
+            map.compute(w.key) { _, i -> i!! + w.value*damping }
+        }
+        for (e in costMap) {
+            map.compute(e.key) { _, i -> i!! + e.value }
+        }
     }
     return map
 }

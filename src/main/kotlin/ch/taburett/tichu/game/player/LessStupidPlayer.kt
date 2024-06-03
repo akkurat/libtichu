@@ -2,7 +2,6 @@ package ch.taburett.tichu.game.player
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.Player
-import ch.taburett.tichu.game.Table
 import ch.taburett.tichu.game.prob
 import ch.taburett.tichu.game.protocol.*
 import ch.taburett.tichu.patterns.Single
@@ -15,7 +14,7 @@ fun lessStupidMove(message: ServerMessage, listener: Consumer<PlayerMessage>, pl
     when (message) {
         is AckGameStage -> ack(message, listener)
         is Schupf -> listener.accept(Ack.SchupfcardReceived())
-        is WhosMove -> move(message, listener, message.wish, player)
+        is WhosMove -> move(message, listener)
         else -> {}
     }
 }
@@ -23,63 +22,50 @@ fun lessStupidMove(message: ServerMessage, listener: Consumer<PlayerMessage>, pl
 private fun move(
     wh: WhosMove,
     listener: Consumer<PlayerMessage>,
-    wish: Int?,
-    player: Player,
 ) {
     if (wh.stage == Stage.GIFT_DRAGON) {
         listener.accept(GiftDragon(GiftDragon.ReLi.LI))
     } else if (wh.stage == Stage.YOURTURN) {
-        val table = wh.table
-        val handcards = wh.handcards
-        val weights = weightPossibilites(handcards)
-        val allPatterns = allPatterns(handcards)
+        val weights = weightPossibilites(wh.handcards)
+        val probs = probabilitiesByMessage(wh)
 
-        val me = wh.youAre
-        val probs = prob(
-            handcards,
-            wh.goneCards,
-            wh.cardCounts.getValue(me.partner),
-            wh.cardCounts.getValue(me.li),
-            wh.cardCounts.getValue(me.re)
-        )
-
-        // todo: take cheapest and most unlike to get beaten
-        // table is empty. try to play least valueable cards
-        val patternPrice = allPatterns
-            .associateWith { p -> p.cards.sumOf { c -> weights.getValue(c) } / p.cards.size * (probs.getValue(p) + 0.5) }
-
-        val cheapest = patternPrice.minBy { it.value }
         val move =
-            if (table.isEmpty()) {
-                openingMove(handcards, wish, wh, cheapest)
+            if (wh.table.isEmpty()) {
+                openingMove(wh)
             } else {
-                reactionMove(table, handcards, weights, wh, wh.wish, cheapest, player)
+                reactionMove(wh)
             }
 
         listener.accept(move)
     }
 }
 
+private fun probabilitiesByMessage(wh: WhosMove): Map<TichuPattern, Double> = prob(
+    wh.handcards,
+    wh.goneCards,
+    wh.cardCounts.getValue(wh.youAre.partner),
+    wh.cardCounts.getValue(wh.youAre.li),
+    wh.cardCounts.getValue(wh.youAre.re)
+)
+
 private fun reactionMove(
-    table: Table,
-    handcards: List<HandCard>,
-    weights: Map<HandCard, Double>,
     wh: WhosMove,
-    wish: Int?,
-    cheapest: Map.Entry<TichuPattern, Double>,
-    player: Player,
 ): Move {
+    val table = wh.table
+    val handcards = wh.handcards
     val toBeat = table.toBeat()
     val pat = pattern(toBeat.cards)
 
     var beatingPatterns = pat.findBeatingPatterns(handcards).toMutableList()
+
+
     val beatingPrice = beatingPatterns
         .associateWith { p -> p.cards.sumOf { c -> weights.getValue(c) } }
 
 
     if (wh.wish != null) {
-        var allWithWish = beatingPatterns
-            .filter { p -> p.cards.any { c -> (c.getValue() - wish!!) == 0.0 } }
+        val allWithWish = beatingPatterns
+            .filter { p -> p.cards.any { c -> (c.getValue() - wh.wish) == 0.0 } }
             .toMutableList()
         if (allWithWish.isNotEmpty()) {
             beatingPatterns = allWithWish
@@ -97,11 +83,14 @@ private fun reactionMove(
     }
     // todo: if cheapestbreating cheaper than cheapest at all?
     // take into account cards of other players
+
+    val cheapest = patternPrice.minBy { it.value }
+
     val beatingCheapest = beatingPrice.minByOrNull { it.value }
 
     return if (beatingCheapest != null && beatingCheapest.value <= cheapest.value) {
         if (
-            toBeat.player.playerGroup != player.playerGroup ||
+            toBeat.player.playerGroup != wh.youAre.playerGroup ||
             pat.rank() < 10
         ) {
             move(beatingCheapest.key.cards)
@@ -114,34 +103,29 @@ private fun reactionMove(
 }
 
 private fun openingMove(
-    handcards: List<HandCard>,
-    wish: Int?,
     wh: WhosMove,
-    cheapest: Map.Entry<TichuPattern, Double>,
 ): Move {
-    val mightFullfillWish = mightFullfillWish(handcards, wish)
+
+    val handcards = wh.handcards
+    val mightFullfillWish = mightFullfillWish(handcards, wh.wish)
     val move =
         if (mightFullfillWish) {
+            // todo: might try to play normal pattern as well
             val numberCard = handcards
                 .filterIsInstance<NumberCard>()
                 .filter { nc -> Objects.equals(wh.wish, nc.getValue()) }
                 .minByOrNull { it.getValue() }
             moveSingle(numberCard)
         } else {
-
-            val cards = cheapest.key.cards
-
-
-            // play smallest pattern
-
-            val values = handcards.filterIsInstance<NumberCard>()
-                .map { it.getValue() }
-                .toSet()
-
-            val rw = (2..15).filter { n -> !values.contains(n.toDouble()) }
-            val randomWish: Int = rw.shuffled().first()
+            val prob = probabilitiesByMessage(wh)
+            val price =
 
             if (cards.contains(MAH)) {
+                val ownValues = handcards.filterIsInstance<NumberCard>()
+                    .map { it.getValue().toInt() }
+                    .toSet()
+                val rw = (2..15) - ownValues
+                val randomWish: Int = rw.shuffled().first()
                 move(cards, randomWish)
             } else {
                 move(cards)
