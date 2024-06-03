@@ -148,9 +148,9 @@ class PrepareRound(val com: Out) {
 
         for ((u, c) in received) {
             val msg = Schupf(
-                c[u.re()]!!,
-                c[u.li()]!!,
-                c[u.partner()]!!
+                c[u.re]!!,
+                c[u.li]!!,
+                c[u.partner]!!
             )
             sendMessage(WrappedServerMessage(u, msg))
         }
@@ -191,8 +191,8 @@ data class PreparationInfo(
 
 fun mapSchupfEvent(u: Player, schupf: Schupf): Map<Player, HandCard> {
     return mapOf(
-        u.partner() to schupf.partner,
-        u.li() to schupf.li,
-        u.re() to schupf.re,
+        u.partner to schupf.partner,
+        u.li to schupf.li,
+        u.re to schupf.re,
     )
 }

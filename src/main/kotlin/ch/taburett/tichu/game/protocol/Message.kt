@@ -86,10 +86,10 @@ data class WhosMove(
 data class GiftDragon(val to: ReLi) : PlayerMessage {
     enum class ReLi {
         RE {
-            override fun map(u: Player): Player = u.re()
+            override fun map(u: Player): Player = u.re
         },
         LI {
-            override fun map(u: Player): Player = u.li()
+            override fun map(u: Player): Player = u.li
         };
 
         abstract fun map(u: Player): Player
