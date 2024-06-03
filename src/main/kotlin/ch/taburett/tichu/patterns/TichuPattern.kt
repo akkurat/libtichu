@@ -3,7 +3,7 @@ package ch.taburett.tichu.patterns
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.PlayCard
 
-abstract class TichuPattern(val type: TichuPatternType, cards: Iterable<PlayCard>) {
+sealed class TichuPattern(val type: TichuPatternType, cards: Iterable<PlayCard>) {
     val cards: Set<PlayCard>
 
     init {
@@ -72,5 +72,7 @@ abstract class TichuPattern(val type: TichuPatternType, cards: Iterable<PlayCard
         return type.patterns(handcards, cardinality())
             .filter { it.beats(this).type ==LegalType.OK }
     }
+
+
 
 }

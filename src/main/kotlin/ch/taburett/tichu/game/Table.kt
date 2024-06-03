@@ -11,9 +11,11 @@ class Table( var currentPlayer: Player) {
         return  moves.filterIsInstance<PlayLogEntry>().last { !it.pass }
     }
 
+
     fun toBeatCards(): Collection<PlayCard> {
         return if( isNotEmpty() ) toBeat().cards else emptyList()
     }
+
 
     val moves = ArrayList<IPlayLogEntry>()
 

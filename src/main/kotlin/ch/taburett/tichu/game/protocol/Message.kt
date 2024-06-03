@@ -2,13 +2,11 @@ package ch.taburett.tichu.game.protocol
 
 import ch.taburett.tichu.cards.DRG
 import ch.taburett.tichu.cards.HandCard
-import ch.taburett.tichu.cards.NumberCard
 import ch.taburett.tichu.cards.PlayCard
 import ch.taburett.tichu.game.Player
 import ch.taburett.tichu.game.Table
 import ch.taburett.tichu.game.Trick
 import ch.taburett.tichu.game.protocol.Stage.*
-import ch.taburett.tichu.game.wishPredicate
 import ch.taburett.tichu.patterns.Bomb
 import ch.taburett.tichu.patterns.BombStraight
 import ch.taburett.tichu.patterns.TichuPattern
@@ -70,6 +68,7 @@ data class WhosMove(
     val wish: Int? = null,
     val dragonGift: Boolean = false,
     val cardCounts: Map<Player, Int>,
+    val goneCards: MutableSet<PlayCard>,
 ) : ServerMessage {
     // todo: this is wrong...
     val yourMove = youAre == who
@@ -121,10 +120,14 @@ object Tichu : PlayerMessage
 object BigTichu : PlayerMessage
 
 data class Move(val cards: MutableCollection<out PlayCard>, val wish: Int? = null) : PlayerMessage {
-    constructor(cards: Collection<PlayCard>) : this(cards.toMutableList(), null)
-    constructor(card: PlayCard?) : this(if (card != null) listOf(card) else listOf())
+    constructor(cards: Collection<PlayCard>) : this(cards.toMutableList())
+//    constructor(card: PlayCard?, wish: Int? = null) : this(if (card != null) listOf(card) else listOf(), wish)
 }
 
+fun move(cards: Collection<PlayCard>, wish: Int? = null) = Move(cards.toMutableList(), wish)
+
+fun moveSingle(card: PlayCard?, wish: Int? = null) =
+    Move(if (card != null) mutableListOf(card) else mutableListOf(), wish)
 
 /**
  *

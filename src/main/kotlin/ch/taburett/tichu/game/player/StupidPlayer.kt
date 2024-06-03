@@ -1,12 +1,12 @@
-package ch.taburett.tichu.game
+package ch.taburett.tichu.game.player
 
 import ch.taburett.tichu.cards.*
+import ch.taburett.tichu.game.Player
 import ch.taburett.tichu.game.protocol.*
 import ch.taburett.tichu.patterns.LegalType.OK
 import ch.taburett.tichu.patterns.Single
 import ch.taburett.tichu.patterns.TichuPattern
 import java.util.*
-import java.util.List
 import java.util.function.Consumer
 
 
@@ -31,50 +31,41 @@ private fun move(
         val table = message.table
         val handcards = message.handcards
         if (table.isEmpty()) {
-            val mightFullfillWish = message.handcards
-                .filterIsInstance<NumberCard>()
-                .any(wishPredicate(wish))
+            val mightFullfillWish = mightFullfillWish(handcards, wish)
             if (mightFullfillWish) {
-                val numberCard = message.handcards
+                val numberCard = handcards
                     .filterIsInstance<NumberCard>()
                     .filter { nc -> Objects.equals(message.wish, nc.getValue()) }
                     .minByOrNull { it.getValue() }
-                listener.accept(Move(numberCard))
+                listener.accept(moveSingle(numberCard))
                 return
             }
 
 
-
-
-
             // play smallest card
-            var ocard = handcards.stream()
-                .min(Comparator.comparingDouble(HandCard::getSort))
-                .orElse(null)
+            val ocard = handcards.minBy { it.getSort() }
 
-            var values = handcards.filterIsInstance<NumberCard>()
-                .map { h -> h.getValue() }
+            val values = handcards.filterIsInstance<NumberCard>()
+                .map { it.getValue() }
                 .toSet()
 
-            var rw = (2..15).filter { n -> !values.contains(n.toDouble()) }
+            val rw = (2..15).filter { n -> !values.contains(n.toDouble()) }
             val randomWish: Int = rw.shuffled().first()
 
-            var move: Move
+            val move: Move
             if (ocard is Phoenix) {
-                move = Move(List.of(ocard.asPlayCard(1)))
+                move = moveSingle(ocard.asPlayCard(1))
             } else if (ocard == MAH) {
-                move = Move(List.of(MAH), randomWish)
+                move = moveSingle(MAH, randomWish)
             } else if (ocard is PlayCard) {
-                move = Move(List.of(ocard))
+                move = moveSingle(ocard)
             } else {
-                move = Move(List.of())
+                move = move(listOf())
             }
-
             listener.accept(move)
-
         } else {
-            var toBeat = table.toBeat()
-            var pat = pattern(toBeat.cards)
+            val toBeat = table.toBeat()
+            val pat = pattern(toBeat.cards)
             var all = pat.findBeatingPatterns(handcards).toMutableList()
 
             if (message.wish != null) {
@@ -95,7 +86,7 @@ private fun move(
                 }
             }
             if (all.isEmpty()) {
-                listener.accept(Move(List.of()))
+                listener.accept(move(listOf()))
             } else {
                 var mypat = all.stream()
                     .filter { p -> p.beats(pat).type == OK }
@@ -106,12 +97,12 @@ private fun move(
                         toBeat.player.playerGroup != player.playerGroup ||
                         pat.rank() < 10
                     ) {
-                        listener.accept(Move(mypat.get().cards))
+                        listener.accept(move(mypat.get().cards))
                     } else {
-                        listener.accept(Move(List.of()))
+                        listener.accept(move(listOf()))
                     }
                 } else {
-                    listener.accept(Move(List.of()))
+                    listener.accept(move(listOf()))
                 }
             }
             // pattern

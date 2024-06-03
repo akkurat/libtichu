@@ -3,7 +3,7 @@ package ch.taburett.tichu.patterns
 import ch.taburett.tichu.cards.*
 import org.paukov.combinatorics3.Generator
 
-class FullHouse(three: Collection<PlayCard>, two: Collection<PlayCard>) :
+class FullHouse(val three: Collection<PlayCard>, val two: Collection<PlayCard>) :
     TichuPattern(TichuPatternType.FULLHOUSE, three + two) {
     companion object : PatternImplFactory {
         override fun pattern(cards: Collection<PlayCard>): TichuPattern? {

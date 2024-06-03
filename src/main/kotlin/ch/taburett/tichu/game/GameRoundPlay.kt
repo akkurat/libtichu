@@ -12,6 +12,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
 
     enum class State { INIT, RUNNING, FINISHED }
 
+    private val goneCards = mutableSetOf<PlayCard>()
     private lateinit var leftoverHandcards: Map<Player, List<HandCard>>
 
     var state = INIT
@@ -76,7 +77,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
             val message = WhosMove(player, table.currentPlayer,
                 cardMap.getValue(player), table, tricks.lastOrNull(),
                 pendingWish, dragonGiftPending,
-                cardMap.mapValues { it.value.size })
+                cardMap.mapValues { it.value.size },goneCards)
             sendMessage(WrappedServerMessage(player, message))
         }
     }
@@ -153,8 +154,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
             sendMessage(WrappedServerMessage(player, Rejected("not your turn yet")))
             return
         }
-        val handCards = cardMap.getValue(player)
-        handCards.removeAll(playedCards.map { it.asHandcard() })
+        val handCards = removePlayedCards(player, playedCards)
         if (pendingWish != null) {
             if (playedCards.filterIsInstance<NumberCard>().any { it.getValue() - pendingWish!! == 0.0 }) {
                 table.add(WishFullfilled(player, pendingWish!!))
@@ -166,7 +166,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         if (handCards.isEmpty()) {
             table.add(PlayerFinished(player))
         }
-
+        // todo: testroutine must also applied for dog and bomb
         if (finishedPlayers().size == 2) {
             if (finishedPlayers().first().playerGroup == finishedPlayers().last().playerGroup) {
                 endRound()
@@ -179,6 +179,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
             endRound()
             return
         }
+
         if (table.allPass(activePlayers())) {
             if (table.toBeatCards().contains(DRG)) {
                 dragonGiftPending = true
@@ -197,6 +198,12 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         sendTableAndHandcards()
     }
 
+    private fun removePlayedCards( player: Player, playedCards: Collection<PlayCard> ): MutableList<HandCard> {
+        val handCards = cardMap.getValue(player)
+        goneCards.addAll(playedCards)
+        handCards.removeAll(playedCards.map { it.asHandcard() })
+        return handCards
+    }
 
     private fun endRound() {
         endTrick()
@@ -205,14 +212,11 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
 //        send
     }
 
-    private fun _bomb() {
-
-    }
-
     private fun dogMove(player: Player) {
         table.add(PlayLogEntry(player, listOf(DOG)))
-        cardMap.getValue(player).remove(DOG)
+        removePlayedCards(player, listOf(DOG))
         table.currentPlayer = nextPlayer(player, 2)
+        endTrick()
         sendTableAndHandcards()
     }
 
@@ -254,7 +258,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
             if (beats.type == LegalType.OK) {
                 dragonGiftPending = false
                 table.add(BombPlayed(u, m.cards))
-                cardMap.getValue(u).removeAll( m.cards )
+                removePlayedCards(u, m.cards)
                 endTrick()
                 sendTableAndHandcards()
                 // do bomb stuff
