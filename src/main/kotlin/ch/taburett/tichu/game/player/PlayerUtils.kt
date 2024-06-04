@@ -84,10 +84,11 @@ fun penaltyPattern(pat: TichuPattern): Double {
 }
 
 
-fun weightPossibilitesNoRec(
-    handcards: Collection<HandCard>,
-): Map<TichuPattern, Double> {
-    val all = allPatterns(handcards)
+fun weightPossibilitesNoRec(handcards: Collection<HandCard>): Map<TichuPattern, Double> {
+    return mapPatternValues(allPatterns(handcards), handcards)
+}
+
+fun mapPatternValues(all: Set<TichuPattern>, handcards: Collection<HandCard>): Map<TichuPattern, Double> {
     val vals = all.associateWith { pat ->
         mapPattern(pat) + weightPossibilites(pat, handcards)
     }
@@ -117,6 +118,7 @@ fun weightPossibilites(
 //        patternCost + restCost
 
 }
+
 fun interface PlayerMessageConsumer {
     fun accept(m: PlayerMessage)
 }

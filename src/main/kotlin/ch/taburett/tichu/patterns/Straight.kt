@@ -27,11 +27,24 @@ class Straight(cards: Iterable<PlayCard>) : TichuPattern(TichuPatternType.STRAIG
         }
 
         override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?): Set<TichuPattern> {
-            if( cardinality == null ) {
+            if (cardinality == null) {
                 return wPhx(cards)
             } else {
-                val filter = { it: TichuPattern -> it.cardinality() == cardinality }
-                return wPhx(cards).filter( filter ).toSet()
+                val filter = { it: Straight -> it.cardinality() >= cardinality }
+                val minlengthStraights = wPhx(cards).filter(filter)
+                return minlengthStraights.flatMap { allShifts(it, cardinality) }.toSet()
+            }
+        }
+
+        private fun allShifts(straight: Straight, cardinality: Int): List<Straight> {
+            return if (straight.cardinality() == cardinality) {
+                listOf(straight)
+            } else if (straight.cardinality() > cardinality) {
+                val sorted = straight.cards.sortedBy { it.getValue() }
+                (0..<(straight.cardinality() - cardinality))
+                    .map { Straight(sorted.drop(it).take(cardinality)) }
+            } else {
+                throw IllegalArgumentException("Straight must be of atleast this rank")
             }
         }
 

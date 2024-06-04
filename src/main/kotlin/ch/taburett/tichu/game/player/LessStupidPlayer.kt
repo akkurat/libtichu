@@ -57,6 +57,15 @@ class LessStupidPlayer(val listener: PlayerMessageConsumer) : Battle.AutoPlayer 
 
         var beatingPatterns = pat.findBeatingPatterns(handcards).toMutableSet()
 
+        if (pat is Single) {
+            if (handcards.contains(DRG)) {
+                beatingPatterns.add(Single(DRG))
+            }
+            if (pat.card != DRG && handcards.contains(PHX)) {
+                beatingPatterns.add(Single(PHX.asPlayCard(pat.card.getValue() + .5)))
+            }
+        }
+
         if (wh.wish != null) {
             val allWithWish = beatingPatterns
                 .filter { p -> p.cards.any { c -> (c.getValue() - wh.wish) == 0.0 } }
@@ -67,20 +76,12 @@ class LessStupidPlayer(val listener: PlayerMessageConsumer) : Battle.AutoPlayer 
         }
 
 
-        if (pat is Single) {
-            if (handcards.contains(DRG)) {
-                beatingPatterns.add(Single(DRG))
-            }
-            if (pat.card != DRG && handcards.contains(PHX)) {
-                beatingPatterns.add(Single(PHX.asPlayCard(pat.card.getValue() + .5)))
-            }
-        }
         // todo: if cheapestbreating cheaper than cheapest at all?
         // take into account cards of other players
 
 //    val prices = beatingPatterns.associateWith { weightPossibilites(it, handcards, 0, 1.0) }
         val prices = weightPossibilitesNoRec(handcards)
-        val beatingPrices = prices.filterKeys { beatingPatterns.contains(it) }
+        val beatingPrices = mapPatternValues( beatingPatterns, handcards )
 
 
         return if (beatingPrices.isNotEmpty()) {
