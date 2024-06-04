@@ -1,9 +1,13 @@
 package tichu
 
 import ch.taburett.tichu.cards.*
+import ch.taburett.tichu.game.Out
 import ch.taburett.tichu.game.protocol.Move
 import ch.taburett.tichu.game.RoundPlay
 import ch.taburett.tichu.game.Player.*
+import ch.taburett.tichu.game.WrappedServerMessage
+import ch.taburett.tichu.game.protocol.ServerMessage
+import ch.taburett.tichu.game.protocol.move
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertAll
 import kotlin.test.Test
@@ -22,8 +26,39 @@ class RoundPlayTest {
         )
         val round = RoundPlay(out, map, null)
         round.start()
-        assertThat(round.table.currentPlayer).isEqualTo(A2)
+        assertThat(round.initialPlayer).isEqualTo(A2)
 
+    }
+    @Test
+    fun wishNotAMoveAndFinished() {
+        val map = mapOf(
+            A1 to mutableListOf(PHX, J5),
+            B1 to mutableListOf(DRG, S7),
+            A2 to mutableListOf(MAH),
+            B2 to mutableListOf(S2),
+        )
+        val messageSink = ArrayDeque<WrappedServerMessage>()
+        val round = RoundPlay(messageSink::add, map, null)
+        round.start()
+        round.regularMove(A2, move(setOf(MAH), 5))
+
+        assertThat(round.determineCurrentPlayer()).isEqualTo(B2)
+
+    }
+    @Test
+    fun wishNotAMove() {
+        val map = mapOf(
+            A1 to mutableListOf(PHX, J5),
+            B1 to mutableListOf(DRG, S7),
+            A2 to mutableListOf(MAH,S3),
+            B2 to mutableListOf(S2),
+        )
+        val messageSink = ArrayDeque<WrappedServerMessage>()
+        val round = RoundPlay(messageSink::add, map, null)
+        round.start()
+        round.regularMove(A2, move(setOf(MAH), 5))
+
+        assertThat(round.determineCurrentPlayer()).isEqualTo(B2)
     }
 
     @Test
@@ -38,7 +73,7 @@ class RoundPlayTest {
         round.start()
         round.regularMove(A1, Move(setOf(J5)))
 
-        assertThat(round.table.currentPlayer).isEqualTo(A2)
+        assertThat(round.determineCurrentPlayer()).isEqualTo(A2)
     }
 
     @Test
@@ -58,7 +93,7 @@ class RoundPlayTest {
         round.regularMove(A1, Move(setOf()))
         round.regularMove(B1, Move(setOf()))
 
-        assertThat(round.table.currentPlayer).isEqualTo(A2)
+        assertThat(round.determineCurrentPlayer()).isEqualTo(A2)
     }
 
     @Test
@@ -78,7 +113,7 @@ class RoundPlayTest {
         round.regularMove(A1, Move(setOf()))
         round.regularMove(B1, Move(setOf()))
 
-        assertThat(round.table.currentPlayer).isEqualTo(A1)
+        assertThat(round.determineCurrentPlayer()).isEqualTo(A1)
     }
 
     @Test

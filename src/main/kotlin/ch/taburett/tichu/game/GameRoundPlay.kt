@@ -6,6 +6,7 @@ import ch.taburett.tichu.game.protocol.*
 import ch.taburett.tichu.game.protocol.BigTichu
 import ch.taburett.tichu.game.protocol.Tichu
 import ch.taburett.tichu.patterns.LegalType
+import org.jetbrains.annotations.VisibleForTesting
 
 
 typealias MutableTricks = ArrayList<Trick>
@@ -19,7 +20,6 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
 
     var state = INIT
 
-    var table: Table
 
     var tricks = MutableTricks()
 
@@ -37,18 +37,16 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
     var pendingWish: Int? = null
 
 
+    val initialPlayer = cardMap
+        .filterValues { it.contains(MAH) }
+        .map { it.key }
+        .first()
+    var table = Table()
 
-    init {
-        val currentPlayer = cardMap
-            .filterValues { it.contains(MAH) }
-            .map { it.key }
-            .first()
-        table = Table(currentPlayer)
-    }
 
     private fun endTrick() {
         tricks.add(table.toTrick())
-        table = Table(table.currentPlayer)
+        table = Table()
     }
 
     fun start() {
@@ -74,36 +72,59 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         // a faulty state (i.e. fail fast)
     }
 
-    @Synchronized
-    internal fun sendTableAndHandcards() {
-        // todo: use tableLog to determine next/current player
-        if( cardMap.getValue(table.currentPlayer).isEmpty() && !dragonGiftPending) {
-            println("asdfsa")
-        }
-        if(table.moves.lastOrNull()?.player == table.currentPlayer) {
-            println("Whoaaaa...")
-        }
-        playerList.forEach { player ->
-            val message = WhosMove(player, table.currentPlayer,
-                cardMap.getValue(player).toList(), table.immutable(), tricks.lastOrNull(),
-                pendingWish, dragonGiftPending,
-                cardMap.mapValues { it.value.size }, goneCards.toSet()
-            )
-            sendMessage(WrappedServerMessage(player, message))
-        }
-    }
-
-
-    private fun nextPlayer(player_in: Player, step: Int = 1, cnt: Int = 0): Player {
-        if (cnt == 4) {
-            throw IllegalStateException("Game is probably finished")
-        }
-        val nextIdx = ((playerList.indexOf(player_in)) + step) % playerList.size
+    private fun nextPlayer(lastPlayer: Player, step: Int = 1, cnt: Int = 0): Player {
+        val nextIdx = ((playerList.indexOf(lastPlayer)) + 1) % playerList.size
         val player = playerList[nextIdx]
         if (cardMap.getValue(player).isEmpty()) {
             return nextPlayer(player, step, cnt + 1)
         } else {
             return player
+        }
+    }
+
+    @VisibleForTesting
+    internal fun determineCurrentPlayer(): Player {
+        if (tricks.isEmpty()) {
+            return if (table.moves.filter { it !is Wished }.isEmpty()) {
+                initialPlayer
+            } else {
+                val lastPlayer = table.moves.last().player
+                nextPlayer(lastPlayer)
+            }
+        } else {
+            if (table.moves.filter { it !is Wished }.isEmpty()) {
+                val lastMove = tricks.last().moves.last()
+                if (lastMove is PlayLogEntry) {
+                    if (lastMove.cards.contains(DOG)) {
+                        return nextPlayer(lastMove.player, 2)
+                    }
+                }
+                return nextPlayer(lastMove.player)
+            } else {
+                return nextPlayer(table.moves.last(::notWish).player)
+            }
+        }
+    }
+
+    private fun notWish(it: IPlayLogEntry): Boolean = it !is Wished
+
+    @Synchronized
+    internal fun sendTableAndHandcards() {
+        // todo: use tableLog to determine next/current player
+        if (cardMap.getValue(determineCurrentPlayer()).isEmpty() && !dragonGiftPending) {
+            println("asdfsa")
+        }
+        if (table.moves.lastOrNull()?.player == determineCurrentPlayer()) {
+            println("Whoaaaa...")
+        }
+        playerList.forEach { player ->
+            val message = WhosMove(
+                player, determineCurrentPlayer(),
+                cardMap.getValue(player).toList(), table.immutable(), tricks.lastOrNull(),
+                pendingWish, dragonGiftPending,
+                cardMap.mapValues { it.value.size }, goneCards.toSet()
+            )
+            sendMessage(WrappedServerMessage(player, message))
         }
     }
 
@@ -161,7 +182,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
      *
      */
     private fun _regularMove(player: Player, playedCards: Collection<PlayCard>) {
-        if (player != table.currentPlayer) {
+        if (player != determineCurrentPlayer()) {
             sendMessage(WrappedServerMessage(player, Rejected("not your turn yet")))
             return
         }
@@ -196,15 +217,12 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
                 dragonGiftPending = true
                 // shouldn't be necessary? actually always the one who wins with dragon its turn ... hm...
                 // aaaah. reason is that one can finish with the dragon but still needs to gift it
-                table.currentPlayer = table.toBeat().player
                 sendTableAndHandcards()
                 return
             } else {
                 endTrick()
             }
         }
-        // todo: logic inside table
-        table.currentPlayer = nextPlayer(player)
         sendTableAndHandcards()
     }
 
@@ -225,7 +243,6 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
     private fun dogMove(player: Player) {
         table.add(PlayLogEntry(player, listOf(DOG)))
         removePlayedCards(player, listOf(DOG))
-        table.currentPlayer = nextPlayer(player, 2)
         endTrick()
         sendTableAndHandcards()
     }
@@ -259,7 +276,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
 
     private fun bomb(u: Player, m: Bomb) {
         if (table.isEmpty()) {
-            if (u == table.currentPlayer) { // ok as regular move
+            if (u == determineCurrentPlayer()) { // ok as regular move
                 _regularMove(u, m.cards)
             } else {
                 sendMessage(WrappedServerMessage(u, Rejected("Cannot bomb ausspiel", m)))
@@ -307,6 +324,7 @@ interface IPlayLogEntry {
     val player: Player
 }
 
+// todo rename
 data class PlayLogEntry(override val player: Player, val cards: Collection<PlayCard> = listOf()) : IPlayLogEntry {
     constructor(player: Player, card: PlayCard) : this(player, listOf(card))
 

@@ -115,7 +115,7 @@ class LessStupidPlayer(val listener: PlayerMessageConsumer) : Battle.AutoPlayer 
                 // todo: might try to play normal pattern as well
                 val numberCard = handcards
                     .filterIsInstance<NumberCard>()
-                    .filter { nc -> Objects.equals(wh.wish, nc.getValue()) }
+                    .filter { nc -> wh.wish!! - nc.getValue()  == 0.0 }
                     .minByOrNull { it.getValue() }
                 moveSingle(numberCard)
             } else {

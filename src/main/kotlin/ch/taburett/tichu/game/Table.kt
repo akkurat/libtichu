@@ -5,7 +5,7 @@ import ch.taburett.tichu.cards.PlayCard
 /**
  * Current open trick
  */
-class Table(var currentPlayer: Player) : ImmutableTable {
+class Table : ImmutableTable {
 
     override val moves = ArrayList<IPlayLogEntry>()
 

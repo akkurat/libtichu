@@ -13,13 +13,25 @@ data class RoundInfo(
     val orderOfWinning = tricks.flatMap { it.playerFinished }
     val tricksByPlayer: Map<Player, List<Trick>> = tricks.groupBy { it.pointOwner }
 
-    // bonusPoints()
+    // tichuPoints()
+
+    val bonusPoints: Map<PlayerGroup, Int>
+        get() {
+            val (first, second) = orderOfWinning
+            // double win
+            if (first.playerGroup == second.playerGroup) {
+                return mapOf(first.playerGroup to 100, first.playerGroup.other() to 0)
+            }
+            return PlayerGroup.entries.associateWith { 0 }
+
+        }
+
     // totalPoints()
     val cardPoints: Map<PlayerGroup, Int>
         get() {
             val cards = cards
             return cards.mapValues { (_, v) -> v.sumOf { c -> c.getPoints() } }
-                // todo: well.. 100 are also possible without double win ^^
+            // todo: well.. 100 are also possible without double win ^^
         }
 
     val cards: Map<PlayerGroup, List<HandCard>>

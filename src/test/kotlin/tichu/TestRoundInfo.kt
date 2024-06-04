@@ -101,8 +101,13 @@ class TestRoundInfo {
             B2 to b2
         )
         val ri = RoundInfo(null, tricks.map { Trick(it) }, initMap, laterMap)
-        val points = ri.cardPoints
-        assertThat(points).containsExactly(Entry(PlayerGroup.A, 200), Entry(PlayerGroup.B, 0))
+        val cardPoints = ri.cardPoints
+        val bonus = ri.bonusPoints
+        assertAll(
+            {assertThat(cardPoints).containsExactly(Entry(PlayerGroup.A, 100), Entry(PlayerGroup.B, 0))},
+            {assertThat(bonus).containsExactly(Entry(PlayerGroup.A, 100), Entry(PlayerGroup.B, 0))},
+
+        )
     }
 
     private fun p(player: Player): PlayLogEntry = PlayLogEntry(player)

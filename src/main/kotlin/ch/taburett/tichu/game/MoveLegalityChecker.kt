@@ -46,7 +46,8 @@ fun playedCardsValid(
                             "Wish $wish is pending. You're not allowed to play $cardsTriedToPlay"
                         )
                     }
-                    val allPatternsMatchingTable = pTAble.type.factory.allPatterns(handCards)
+
+                    val allPatternsMatchingTable = pTAble.findBeatingPatterns(handCards)
                     val possiblePatterns = allPatternsMatchingTable
                         .filter { p -> p.cards.any(wishPredicate) }
                     if (possiblePatterns.isNotEmpty()) {

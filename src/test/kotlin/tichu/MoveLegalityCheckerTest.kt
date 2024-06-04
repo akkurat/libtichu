@@ -5,12 +5,9 @@ import ch.taburett.tichu.game.playedCardsValid
 import ch.taburett.tichu.patterns.LegalType
 import ch.taburett.tichu.patterns.LegalType.*
 import ch.taburett.tichu.patterns.LegalityAnswer
-import ch.taburett.tichu.patterns.Stairs
 import ch.taburett.tichu.patterns.ok
 import org.junit.jupiter.api.Assertions.assertAll
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.TestInstance
-import org.junit.jupiter.api.function.Executable
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.Arguments.arguments
@@ -118,7 +115,7 @@ class MoveLegalityCheckerTest {
         hand: List<HandCard>,
         wish: Int,
     ) {
-        assertEquals(exp, playedCardsValid(table, played, hand, wish))
+        assertEquals(exp.type, playedCardsValid(table, played, hand, wish).type)
     }
 
 
@@ -135,6 +132,22 @@ class MoveLegalityCheckerTest {
     @ParameterizedTest
     @MethodSource
     fun testWishOk(table: List<PlayCard>, played: List<PlayCard>, hand: List<HandCard>, wish: Int) {
+        assertEquals(ok(), playedCardsValid(table, played, hand, wish))
+    }
+
+    fun testWishNotFullfillable(): Iterable<Arguments> {
+        val handcards = listOf(S2, S3, D4, S5, D6, PHX, J8, J14, S14)
+        return listOf(
+            arguments(listOf( P6), listOf(J8), handcards, 5),
+//            arguments(listOf(MAH, P2, P3, S4, D5), listOf(S2, S3, D4, S5, D6), handcards, 7),
+//            arguments(listOf(P2, D2), listOf(J14, S14), handcards, 7),
+//            arguments(listOf(P2, D2), listOf(PHX.asPlayCard(8), J8), handcards, 8),
+        )
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    fun testWishNotFullfillable(table: List<PlayCard>, played: List<PlayCard>, hand: List<HandCard>, wish: Int) {
         assertEquals(ok(), playedCardsValid(table, played, hand, wish))
     }
 

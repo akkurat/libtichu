@@ -70,7 +70,7 @@ class Battle(val rounds: Int = 5000) {
         rp.start()
 
         var starved = 0
-        while (rp.state == RoundPlay.State.RUNNING && starved < 1000) {
+        while (rp.state == RoundPlay.State.RUNNING ) {
             val sm = serverQueue.removeFirstOrNull()
             if (sm != null) {
                 players.getValue(sm.u).receiveMessage(sm.message, sm.u)
@@ -81,6 +81,12 @@ class Battle(val rounds: Int = 5000) {
                 rp.receivePlayerMessage(pm)
             } else {
                 starved++
+            }
+            if(starved > 100) {
+                rp.sendTableAndHandcards()
+            }
+            if(starved > 200 ) {
+                break
             }
         }
 
