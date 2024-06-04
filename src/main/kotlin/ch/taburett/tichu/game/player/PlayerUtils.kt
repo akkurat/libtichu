@@ -1,8 +1,11 @@
 package ch.taburett.tichu.game.player
 
 import ch.taburett.tichu.cards.*
+import ch.taburett.tichu.game.protocol.PlayerMessage
 import ch.taburett.tichu.game.wishPredicate
-import ch.taburett.tichu.patterns.*
+import ch.taburett.tichu.patterns.Bomb
+import ch.taburett.tichu.patterns.BombStraight
+import ch.taburett.tichu.patterns.TichuPattern
 import ch.taburett.tichu.patterns.TichuPatternType.*
 import kotlin.math.pow
 
@@ -21,7 +24,7 @@ fun cardCost(hc: HandCard): Double {
     }
 }
 
-fun cardPenalty(hc: HandCard): Double {
+fun cardGettingRidIncentive(hc: HandCard): Double {
     return when (hc) {
         is NumberCard -> (1 - normValue(hc)).pow(2)
         else -> 0.0
@@ -45,48 +48,75 @@ fun patValue(pat: TichuPattern): Double {
     }
 }
 
-fun mapPattern(pat: TichuPattern): Map<PlayCard, Double> {
+// dep. on the played cards also the pattern values change
+fun patPenalty(pat: TichuPattern): Double {
+    return when (pat.type) {
+        ANSPIEL -> 0.0
+        SINGLE -> 200.0
+        PAIR -> 100.0
+        TRIPLE -> 50.0
+        FULLHOUSE -> 30.0
+        STRAIGHT -> 30.0
+        STAIRS -> 10.0
+        BOMB -> 0.0
+        BOMBSTRAIGHT -> 0.0
+    }
+}
+
+fun mapPattern(pat: TichuPattern): Double {
     return when (pat) {
         is Bomb, is BombStraight ->
-            pat.cards.associateWith { c -> patValue(pat) }
-
-        is FullHouse ->
-            pat.three.associateWith { cardCost(it) * 4 } + pat.two.associateWith { cardPenalty(it) * 4 }
+            pat.cards.sumOf { c -> patValue(pat) }
 
         else ->
-            pat.cards.associateWith { c -> cardCost(c) * patValue(pat) }
+            pat.cards.sumOf { c -> cardCost(c) * patValue(pat) }
     }
 }
 
-fun weightPossibilites(handcards: List<HandCard>, damping: Double = 1.0): Map<HandCard, Double> {
-    val all = allPatterns(handcards).filter { it !is Single }
+fun penaltyPattern(pat: TichuPattern): Double {
+    return when (pat) {
+        is Bomb, is BombStraight ->
+            pat.cards.sumOf { c -> -patValue(pat) }
 
-    if (all.isEmpty()) {
-        return handcards.associateWith { cardCost(it) }
+        else ->
+            pat.cards.sumOf { c -> cardGettingRidIncentive(c) * patValue(pat) }
     }
-
-    val map: MutableMap<HandCard, Double> = handcards
-        .associateWith { cardCost(it) }
-        .toSortedMap(compareBy { it.getSort() })
-
-    for (pat in all) {
-
-        val costMap = mapPattern(pat)
-        val rest = handcards - pat.cards
-
-        for (hc in rest) {
-            map.compute(hc) { c, i -> i!! + cardPenalty(c) }
-        }
-
-        val weights = weightPossibilites(rest, 0.8*damping)
-
-        for (w in weights) {
-            map.compute(w.key) { _, i -> i!! + w.value*damping }
-        }
-        for (e in costMap) {
-            map.compute(e.key) { _, i -> i!! + e.value }
-        }
-    }
-    return map
 }
 
+
+fun weightPossibilitesNoRec(
+    handcards: Collection<HandCard>,
+): Map<TichuPattern, Double> {
+    val all = allPatterns(handcards)
+    val vals = all.associateWith { pat ->
+        mapPattern(pat) + weightPossibilites(pat, handcards)
+    }
+    val norm = vals.values.sumOf { it.pow(2) }.pow(0.5)
+    return vals.mapValues { it.value / norm }
+}
+
+fun weightPossibilites(
+    pat: TichuPattern,
+    allcards: Collection<HandCard>,
+): Double {
+
+    val rest = allcards - pat.cards
+    if (rest.isEmpty()) {
+        return -5.0 * allcards.size
+    }
+
+
+    val all = allPatterns(rest).filter { it.type != SINGLE }
+    val orphans = rest - all.flatMap { it.cards }.toSet()
+    val price = all.sumOf { penaltyPattern(it) } + orphans.sumOf { 5 * cardGettingRidIncentive(it) }
+    return price
+//
+//        for (e in costMap) {
+//            map.compute(e.key) { _, i -> i!! + e.value }
+//        }
+//        patternCost + restCost
+
+}
+fun interface PlayerMessageConsumer {
+    fun accept(m: PlayerMessage)
+}

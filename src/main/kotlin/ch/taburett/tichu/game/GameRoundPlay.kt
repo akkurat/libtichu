@@ -3,6 +3,8 @@ package ch.taburett.tichu.game
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.RoundPlay.State.INIT
 import ch.taburett.tichu.game.protocol.*
+import ch.taburett.tichu.game.protocol.BigTichu
+import ch.taburett.tichu.game.protocol.Tichu
 import ch.taburett.tichu.patterns.LegalType
 
 
@@ -33,6 +35,8 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
      */
     var dragonGiftPending = false
     var pendingWish: Int? = null
+
+
 
     init {
         val currentPlayer = cardMap
@@ -70,14 +74,21 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         // a faulty state (i.e. fail fast)
     }
 
+    @Synchronized
     internal fun sendTableAndHandcards() {
-        // in theory we could use topic or so...
-        // but boah...
+        // todo: use tableLog to determine next/current player
+        if( cardMap.getValue(table.currentPlayer).isEmpty() && !dragonGiftPending) {
+            println("asdfsa")
+        }
+        if(table.moves.lastOrNull()?.player == table.currentPlayer) {
+            println("Whoaaaa...")
+        }
         playerList.forEach { player ->
             val message = WhosMove(player, table.currentPlayer,
-                cardMap.getValue(player), table, tricks.lastOrNull(),
+                cardMap.getValue(player).toList(), table.immutable(), tricks.lastOrNull(),
                 pendingWish, dragonGiftPending,
-                cardMap.mapValues { it.value.size },goneCards)
+                cardMap.mapValues { it.value.size }, goneCards.toSet()
+            )
             sendMessage(WrappedServerMessage(player, message))
         }
     }
@@ -189,7 +200,6 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
                 sendTableAndHandcards()
                 return
             } else {
-                sendTableAndHandcards()
                 endTrick()
             }
         }
@@ -198,7 +208,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         sendTableAndHandcards()
     }
 
-    private fun removePlayedCards( player: Player, playedCards: Collection<PlayCard> ): MutableList<HandCard> {
+    private fun removePlayedCards(player: Player, playedCards: Collection<PlayCard>): MutableList<HandCard> {
         val handCards = cardMap.getValue(player)
         goneCards.addAll(playedCards)
         handCards.removeAll(playedCards.map { it.asHandcard() })
@@ -221,7 +231,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
     }
 
 
-    fun sendMessage(wrappedServerMessage: WrappedServerMessage) {
+    private fun sendMessage(wrappedServerMessage: WrappedServerMessage) {
         com.send(wrappedServerMessage)
     }
 
@@ -231,6 +241,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         return RoundInfo(preparationInfo, tricks, initalCardMap, leftoverHandcards)
     }
 
+    @Synchronized
     fun receivePlayerMessage(wrappedPlayerMessage: WrappedPlayerMessage) {
         val u = wrappedPlayerMessage.u
         when (val m = wrappedPlayerMessage.message) {
@@ -283,6 +294,8 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
 
 data class BombPlayed(override val player: Player, val cards: List<PlayCard>) : IPlayLogEntry {
     override val type = "Bomb"
+    override fun toString(): String = "B:$player:$cards"
+
 }
 
 
@@ -299,30 +312,42 @@ data class PlayLogEntry(override val player: Player, val cards: Collection<PlayC
 
     val pass get() = cards.isEmpty()
     override val type = "RegularMove"
+    override fun toString(): String = "${player.name}:$cards"
 }
 
 data class PlayerFinished(override val player: Player) : IPlayLogEntry {
     override val type = "Finished"
+    override fun toString(): String = "F:$player"
 }
 
 data class Tichu(override val player: Player) : IPlayLogEntry {
     override val type = "Tichu"
+    override fun toString(): String = "t:$player"
+
 }
 
 data class BigTichu(override val player: Player) : IPlayLogEntry {
     override val type = "BigTichu"
+    override fun toString(): String = "T:$player"
+
 }
 
 data class Wished(override val player: Player, val value: Int) : IPlayLogEntry {
     override val type = "Wished"
+    override fun toString(): String = "w:$player:$value"
+
 }
 
 data class WishFullfilled(override val player: Player, val value: Int) : IPlayLogEntry {
     override val type = "WishFullfilled"
+    override fun toString(): String = "W:$player:$value"
+
 }
 
 data class DrgGift(override val player: Player, val to: Player) : IPlayLogEntry {
     override val type = "DrgGift"
+    override fun toString(): String = "D:$player->$to"
+
 }
 
 /**

@@ -50,7 +50,7 @@ fun playedCardsValid(
                     val possiblePatterns = allPatternsMatchingTable
                         .filter { p -> p.cards.any(wishPredicate) }
                     if (possiblePatterns.isNotEmpty()) {
-                        return LegalityAnswer(LegalType.WISH, possiblePatterns.first().toString())
+                        return LegalityAnswer(LegalType.WISH, "Wish must be fullfilled. e.g. by ${possiblePatterns.first()}")
                     }
                 }
             }

@@ -5,28 +5,36 @@ import ch.taburett.tichu.cards.PlayCard
 /**
  * Current open trick
  */
-class Table( var currentPlayer: Player) {
+class Table(var currentPlayer: Player) : ImmutableTable {
 
-    fun toBeat(): PlayLogEntry {
-        return  moves.filterIsInstance<PlayLogEntry>().last { !it.pass }
+    override val moves = ArrayList<IPlayLogEntry>()
+
+    fun add(played: IPlayLogEntry) {
+        moves.add(played)
     }
 
-
-    fun toBeatCards(): Collection<PlayCard> {
-        return if( isNotEmpty() ) toBeat().cards else emptyList()
+    fun immutable(): ImmutableTable {
+        return ImmutableTableImpl(moves)
     }
+    override fun toString(): String {
+        return moves.toString()
+    }
+}
 
+open class ImmutableTableImpl(moves: List<IPlayLogEntry>) : ImmutableTable {
+    override val moves = moves.toList()
+    override fun toString(): String {
+        return moves.joinToString ("|")
+    }
+}
 
-    val moves = ArrayList<IPlayLogEntry>()
+interface ImmutableTable {
+    val moves: List<IPlayLogEntry>
 
     fun toTrick(): Trick = Trick(moves.toList())
 
     fun isNotEmpty(): Boolean = moves.isNotEmpty()
     fun isEmpty(): Boolean = moves.isEmpty()
-    fun add(played: IPlayLogEntry) {
-        moves.add(played)
-    }
-
     fun allPass(activePlayers: Set<Player>): Boolean {
 
         val passedPlayers = mutableSetOf<Player>()
@@ -42,8 +50,12 @@ class Table( var currentPlayer: Player) {
         return false
 
     }
-    fun nextLegalMove() {
 
+    fun toBeat(): PlayLogEntry {
+        return moves.filterIsInstance<PlayLogEntry>().last { !it.pass }
     }
 
+    fun toBeatCards(): Collection<PlayCard> {
+        return if (isNotEmpty()) toBeat().cards else emptyList()
+    }
 }

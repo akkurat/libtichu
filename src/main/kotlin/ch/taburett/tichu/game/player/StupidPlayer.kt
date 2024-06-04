@@ -10,14 +10,22 @@ import java.util.*
 import java.util.function.Consumer
 
 
-fun stupidMove(message: ServerMessage, listener: Consumer<PlayerMessage>, player: Player) {
-    when (message) {
-        is AckGameStage -> ack(message, listener)
-        is Schupf -> listener.accept(Ack.SchupfcardReceived())
-        is WhosMove -> move(message, listener, message.wish, player)
-        else -> {}
+class StupidPlayer(val listener: (PlayerMessage) -> Unit) : Battle.AutoPlayer {
+    override fun receiveMessage(message: ServerMessage, player: Player) {
+        stupidMove(message, listener, player)
+    }
+
+    private fun stupidMove(message: ServerMessage, listener: Consumer<PlayerMessage>, player: Player) {
+        when (message) {
+            is AckGameStage -> ack(message, listener)
+            is Schupf -> listener.accept(Ack.SchupfcardReceived())
+            is WhosMove -> move(message, listener, message.wish, player)
+            is Rejected -> println(this)
+            else -> {}
+        }
     }
 }
+
 
 private fun move(
     message: WhosMove,
@@ -45,18 +53,9 @@ private fun move(
             // play smallest card
             val ocard = handcards.minBy { it.getSort() }
 
-            val values = handcards.filterIsInstance<NumberCard>()
-                .map { it.getValue() }
-                .toSet()
-
-            val rw = (2..15).filter { n -> !values.contains(n.toDouble()) }
-            val randomWish: Int = rw.shuffled().first()
-
             val move: Move
             if (ocard is Phoenix) {
                 move = moveSingle(ocard.asPlayCard(1))
-            } else if (ocard == MAH) {
-                move = moveSingle(MAH, randomWish)
             } else if (ocard is PlayCard) {
                 move = moveSingle(ocard)
             } else {
@@ -81,8 +80,8 @@ private fun move(
                 if (handcards.contains(DRG)) {
                     all.add(Single(DRG))
                 }
-                if (handcards.contains(PHX)) {
-                    all.add(Single(PHX.asPlayCard(pat.card.getValue() + 1)))
+                if (pat.card != DRG && handcards.contains(PHX)) {
+                    all.add(Single(PHX.asPlayCard(pat.card.getValue() + .5)))
                 }
             }
             if (all.isEmpty()) {

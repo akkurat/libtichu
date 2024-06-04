@@ -3,8 +3,8 @@ package ch.taburett.tichu.game.protocol
 import ch.taburett.tichu.cards.DRG
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.PlayCard
+import ch.taburett.tichu.game.ImmutableTable
 import ch.taburett.tichu.game.Player
-import ch.taburett.tichu.game.Table
 import ch.taburett.tichu.game.Trick
 import ch.taburett.tichu.game.protocol.Stage.*
 import ch.taburett.tichu.patterns.Bomb
@@ -63,12 +63,12 @@ data class WhosMove(
     val youAre: Player,
     val who: Player,
     val handcards: List<HandCard>,
-    val table: Table,
+    val table: ImmutableTable,
     val last: Trick?,
     val wish: Int? = null,
     val dragonGift: Boolean = false,
     val cardCounts: Map<Player, Int>,
-    val goneCards: MutableSet<PlayCard>,
+    val goneCards: Set<PlayCard>,
 ) : ServerMessage {
     // todo: this is wrong...
     val yourMove = youAre == who
@@ -81,6 +81,8 @@ data class WhosMove(
     } else {
         OTHERS_TURN
     }
+
+    override fun toString(): String = "$stage|$table|${handcards.joinToString()}"
 }
 
 data class GiftDragon(val to: ReLi) : PlayerMessage {

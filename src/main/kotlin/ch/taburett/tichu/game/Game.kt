@@ -2,7 +2,6 @@ package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.protocol.*
-import org.jetbrains.annotations.VisibleForTesting
 import java.util.concurrent.Executors
 
 typealias Tricks = List<Trick>
@@ -23,10 +22,8 @@ class Game(com: Out) {
 
     val playLog = mutableListOf<RoundInfo>()
 
-    @VisibleForTesting
     var prepareRound: PrepareRound? = null
 
-    @VisibleForTesting
     var roundPlay: RoundPlay? = null
 
     // todo: deserialize a stored game
@@ -52,9 +49,7 @@ class Game(com: Out) {
     }
 
     fun resendStatus() {
-        if (roundPlay != null) {
-            roundPlay!!.sendTableAndHandcards();
-        }
+        roundPlay?.sendTableAndHandcards();
     }
 
     @Synchronized

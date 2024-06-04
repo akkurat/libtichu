@@ -12,7 +12,7 @@ fun prob(
     nRe: Int,
     nLi: Int,
 ): Map<TichuPattern, Double> {
-    val myPatterns = allPatterns(handcards)
+    val myPatterns = allPatterns(handcards).toSet()
 
     val restcards = fulldeck - handcards - goneCards
 
