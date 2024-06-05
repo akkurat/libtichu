@@ -34,6 +34,7 @@ enum class Player(val value: String, val playerGroup: PlayerGroup) {
         get() {
             return Player.entries[(this.ordinal + 1) % 4]
         }
+
 }
 
 val playerList = Player.entries.toList()

@@ -10,17 +10,24 @@ import java.util.*
 import java.util.function.Consumer
 
 
-class StupidPlayer(val listener: (PlayerMessage) -> Unit) : Battle.AutoPlayer {
+class StupidPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer {
     override fun receiveMessage(message: ServerMessage, player: Player) {
         stupidMove(message, listener, player)
     }
+
+    override fun toString(): String {
+        return type
+    }
+
+    override val type: String = "Stupid"
+
 
     private fun stupidMove(message: ServerMessage, listener: Consumer<PlayerMessage>, player: Player) {
         when (message) {
             is AckGameStage -> ack(message, listener)
             is Schupf -> listener.accept(Ack.SchupfcardReceived())
             is WhosMove -> move(message, listener, message.wish, player)
-            is Rejected -> println(this)
+//            is Rejected -> println(this)
             else -> {}
         }
     }
@@ -91,15 +98,7 @@ private fun move(
                     .filter { p -> p.beats(pat).type == OK }
                     .min(Comparator.comparingDouble(TichuPattern::rank))
                 if (mypat.isPresent()) {
-                    var prPat = mypat.get()
-                    if (
-                        toBeat.player.playerGroup != player.playerGroup ||
-                        pat.rank() < 10
-                    ) {
-                        listener.accept(move(mypat.get().cards))
-                    } else {
-                        listener.accept(move(listOf()))
-                    }
+                    listener.accept(move(mypat.get().cards))
                 } else {
                     listener.accept(move(listOf()))
                 }

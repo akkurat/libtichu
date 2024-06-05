@@ -7,14 +7,16 @@ import ch.taburett.tichu.game.protocol.*
 import ch.taburett.tichu.patterns.Single
 import ch.taburett.tichu.patterns.TichuPattern
 import ch.taburett.tichu.patterns.TichuPatternType.SINGLE
-import java.util.*
-import java.util.function.Consumer
 
 
-class LessStupidPlayer(val listener: PlayerMessageConsumer) : Battle.AutoPlayer {
+class LessStupidPlayer(val listener: PlayerMessageConsumer) : Round.AutoPlayer {
     override fun receiveMessage(message: ServerMessage, player: Player) {
         lessStupidMove(message, player)
     }
+
+    override fun toString() = type
+
+    override val type: String = "LessStupid"
 
     private fun lessStupidMove(message: ServerMessage, player: Player) {
         when (message) {

@@ -9,11 +9,21 @@ data class RoundInfo(
     val initialCardmap: Map<Player, Collection<HandCard>>,
     val leftoverHandcards: Map<Player, Collection<HandCard>>,
 ) {
-
     val orderOfWinning = tricks.flatMap { it.playerFinished }
     val tricksByPlayer: Map<Player, List<Trick>> = tricks.groupBy { it.pointOwner }
 
     // tichuPoints()
+
+    val pointsPerPlayer: Map<Player, Int>
+        get() {
+            return Player.entries.associateWith { totalPoints.getValue(it.playerGroup) }
+        }
+
+
+    val totalPoints: Map<PlayerGroup, Int>
+        get() {
+            return cardPoints.mapValues { (k, v) -> v + bonusPoints.getValue(k) }
+        }
 
     val bonusPoints: Map<PlayerGroup, Int>
         get() {
@@ -26,12 +36,10 @@ data class RoundInfo(
 
         }
 
-    // totalPoints()
     val cardPoints: Map<PlayerGroup, Int>
         get() {
             val cards = cards
             return cards.mapValues { (_, v) -> v.sumOf { c -> c.getPoints() } }
-            // todo: well.. 100 are also possible without double win ^^
         }
 
     val cards: Map<PlayerGroup, List<HandCard>>

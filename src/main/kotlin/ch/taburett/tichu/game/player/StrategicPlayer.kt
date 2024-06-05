@@ -11,9 +11,14 @@ import java.util.*
 import java.util.function.Consumer
 
 
-class StrategicPlayer(val listener: (PlayerMessage)->Unit): Battle.AutoPlayer {
+class StrategicPlayer(val listener: (PlayerMessage)->Unit): Round.AutoPlayer {
     override fun receiveMessage(message: ServerMessage, player: Player) {
         strategic(message, listener, player)
+    }
+    override val type: String = "Strat"
+
+    override fun toString(): String {
+        return type
     }
 }
 
