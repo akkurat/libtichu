@@ -66,17 +66,16 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         return cardMap.filter { (p, v) -> v.isEmpty() }.keys
     }
 
-    private fun checkTricks(value: ArrayList<List<PlayLogEntry>>) {
-        // iterate through checks basically via statemachine without being connected to outside
-        // idea: create shadow round, play through and crate real one afterwards in order not to have
-        // a faulty state (i.e. fail fast)
-    }
-
     private fun nextPlayer(lastPlayer: Player, step: Int = 1, cnt: Int = 0): Player {
+        if(cnt >= 3) {
+//            endRound()
+//            return lastPlayer
+            throw IllegalStateException("game should have ended already")
+        }
         val nextIdx = ((playerList.indexOf(lastPlayer)) + 1) % playerList.size
         val player = playerList[nextIdx]
         if (cardMap.getValue(player).isEmpty()) {
-            return nextPlayer(player, step, cnt + 1)
+            return nextPlayer(player, 1, cnt + 1)
         } else {
             return player
         }
@@ -236,6 +235,12 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
     private fun endRound() {
         endTrick()
         leftoverHandcards = cardMap.mapValues { (_, v) -> v.toList() }
+        if( activePlayers().size == 2) {
+//            println("double win")
+            if( activePlayers().first().playerGroup != activePlayers().last().playerGroup) {
+                println("but how?")
+            }
+        }
         state = State.FINISHED
 //        send
     }

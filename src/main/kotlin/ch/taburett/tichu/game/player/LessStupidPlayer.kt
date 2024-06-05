@@ -43,13 +43,15 @@ class LessStupidPlayer(val listener: PlayerMessageConsumer) : Round.AutoPlayer {
         }
     }
 
-    private fun probabilitiesByMessage(wh: WhosMove): Map<TichuPattern, Double> = prob(
-        wh.handcards,
-        wh.goneCards,
-        wh.cardCounts.getValue(wh.youAre.partner),
-        wh.cardCounts.getValue(wh.youAre.li),
-        wh.cardCounts.getValue(wh.youAre.re)
-    )
+    private fun probabilitiesByMessage(wh: WhosMove): Map<TichuPattern, Double> {
+        val myPatterns = allPatterns(wh.handcards).toSet()
+        return prob(
+            wh.handcards, wh.goneCards,
+            myPatterns, wh.cardCounts.getValue(wh.youAre.partner),
+            wh.cardCounts.getValue(wh.youAre.li),
+            wh.cardCounts.getValue(wh.youAre.re)
+        )
+    }
 
     private fun reactionMove(wh: WhosMove): Move {
         val table = wh.table
@@ -130,7 +132,10 @@ class LessStupidPlayer(val listener: PlayerMessageConsumer) : Round.AutoPlayer {
 
                     val orphans = handcards - price.keys.filter { it.type != SINGLE }.flatMap { it.cards }.toSet()
 
-                    if (orphans.any { it.getSort() < ORPHAN_VALUE }) {
+                    if(handcards.size == 1 && handcards[0] == PHX) {
+                       setOf(PHX.asPlayCard(1.5))
+                    }
+                    else if (orphans.any { it.getSort() < ORPHAN_VALUE }) {
                         setOf(orphans.filterIsInstance<PlayCard>().minBy { it.getSort() })
                     } else {
                         price.filter { it.key !is Single || (it.key as Single).card.getSort() >= ORPHAN_VALUE }

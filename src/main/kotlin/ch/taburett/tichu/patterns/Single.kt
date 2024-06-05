@@ -2,6 +2,7 @@ package ch.taburett.tichu.patterns
 
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.NumberCard
+import ch.taburett.tichu.cards.PHX
 import ch.taburett.tichu.cards.PlayCard
 
 class Single(val card: PlayCard) : TichuPattern(TichuPatternType.SINGLE, setOf(card)) {
@@ -13,11 +14,14 @@ class Single(val card: PlayCard) : TichuPattern(TichuPatternType.SINGLE, setOf(c
             return null
         }
 
-        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?): Set<TichuPattern> {
-            // todo: phx? drg?
-            return cards.filterIsInstance<NumberCard>()
-                .map { Single(it) }
-                .toSet()
+        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?): Set<Single> {
+            // todo: phx?
+            val s = cards.filterIsInstance<PlayCard>()
+                .map { Single(it) }.toMutableList()
+            if (cards.contains(PHX)) {
+                s.add(Single(PHX.asPlayCard(1.5)))
+            }
+            return s.toSet()
         }
     }
 

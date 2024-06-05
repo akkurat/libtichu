@@ -4,20 +4,24 @@ import ch.taburett.tichu.cards.fulldeck
 import ch.taburett.tichu.game.*
 import ch.taburett.tichu.game.protocol.PlayerMessage
 import ch.taburett.tichu.game.protocol.ServerMessage
+import kotlinx.coroutines.*
 
 
 fun main() {
     val simpleBattle = SimpleBattle(5000)
-    simpleBattle.start()
+    val roundlog: List<SimpleBattle.Linfo>
+    runBlocking {
+        roundlog = simpleBattle.start()
+    }
 
     println(
-        "finished: ${simpleBattle.roundlog.filterIsInstance<SimpleBattle.BattleResult>().size}\n" +
-                "starved: ${simpleBattle.roundlog.filterIsInstance<SimpleBattle.BattleInterrupted>().size}\n" +
-                "error: ${simpleBattle.errorlog.size}"
+        "finished: ${roundlog.filterIsInstance<SimpleBattle.BattleResult>().size}\n" +
+                "starved: ${roundlog.filterIsInstance<SimpleBattle.BattleInterrupted>().size}\n"
+//                "error: ${simpleBattle.errorlog.size}"
     )
 
 
-    val resultsbytype = simpleBattle.roundlog.filterIsInstance<SimpleBattle.BattleResult>()
+    val resultsbytype = roundlog.filterIsInstance<SimpleBattle.BattleResult>()
         .flatMap { s ->
             val ri = s.roundInfo.getRoundInfo()
             ri.pointsPerPlayer.map { s.players.getValue(it.key).type to it.value }
@@ -26,7 +30,7 @@ fun main() {
 //    println(resultsbytype)
     println(resultsbytype.mapValues { it.value.average() })
 
-    val rb = simpleBattle.roundlog.filterIsInstance<SimpleBattle.BattleResult>()
+    val rb = roundlog.filterIsInstance<SimpleBattle.BattleResult>()
         .flatMap { s ->
             val ri = s.roundInfo.getRoundInfo()
             val lu = s.players::getValue
@@ -36,10 +40,10 @@ fun main() {
             shit
         }
         .groupBy({ it.first }, { it.second })
-    println(rb)
+//    println(rb)
     println(rb.mapValues { it.value.average() })
 
-    for (s in simpleBattle.roundlog.filterIsInstance<SimpleBattle.BattleInterrupted>()) {
+    for (s in roundlog.filterIsInstance<SimpleBattle.BattleInterrupted>()) {
         val player = s.roundInfo.determineCurrentPlayer()
         println(s.players.getValue(player))
     }
@@ -94,24 +98,20 @@ class SimpleBattle(val N: Int = 5000) {
         val players: Map<Player, Round.AutoPlayer>
     }
 
-    val roundlog = mutableListOf<Linfo>()
-    val errorlog = mutableListOf<Exception>()
-
-    fun start() {
-        print("*".repeat(N))
-        for (i in 1..N) {
-            print("\r")
-            print("*".repeat(N - i))
-            val round: Round
-            try {
-//                println(round())
-                round = Round()
-                val info = round.start()
-                roundlog.add(info)
-            } catch (e: Exception) {
-                errorlog.add(e)
-            }
+    suspend fun start(): List<Linfo> {
+        val roundlog = coroutineScope {
+            (1..N).map {
+                async(Dispatchers.Default) {
+                    //                println(round())
+                    print("${it}s${Thread.currentThread().threadId()} ")
+                    val round = Round()
+                    val info = round.start()
+                    print("${it}f${Thread.currentThread().threadId()} ")
+                    info
+                }
+            }.awaitAll()
         }
+        return roundlog
     }
 }
 
@@ -160,30 +160,36 @@ class Round {
         rp.start()
 
         var starved = 0
+
         while (rp.state == RoundPlay.State.RUNNING) {
-            val sm = serverQueue.removeFirstOrNull()
-            if (sm != null) {
-                players.getValue(sm.u).receiveMessage(sm.message, sm.u)
-            }
-            val pm = playersQueue.removeFirstOrNull()
-            if (pm != null) {
-                starved = 0
-                rp.receivePlayerMessage(pm)
-            } else {
-                starved++
-            }
+            try {
+                val sm = serverQueue.removeFirstOrNull()
+                if (sm != null) {
+                    players.getValue(sm.u).receiveMessage(sm.message, sm.u)
+                }
+                val pm = playersQueue.removeFirstOrNull()
+                if (pm != null) {
+                    starved = 0
+                    rp.receivePlayerMessage(pm)
+                } else {
+                    starved++
+                }
 //            if (starved > 100) {
 //                rp.sendTableAndHandcards()
 //                starved++
 //            }
-            if (starved > 200) {
-                break
+                if (starved > 200) {
+                    break
+                }
+            } catch (e: Exception) {
+                println(e.message)
             }
         }
         if (starved > 200) {
             return SimpleBattle.BattleInterrupted(rp, players)
         }
         return SimpleBattle.BattleResult(rp, players)
+
     }
 
     interface AutoPlayer {

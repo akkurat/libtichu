@@ -1,7 +1,9 @@
 package ch.taburett.tichu.game.player
 
 import ch.taburett.tichu.cards.*
+import ch.taburett.tichu.game.prob
 import ch.taburett.tichu.game.protocol.PlayerMessage
+import ch.taburett.tichu.game.protocol.WhosMove
 import ch.taburett.tichu.game.wishPredicate
 import ch.taburett.tichu.patterns.Bomb
 import ch.taburett.tichu.patterns.BombStraight
@@ -121,4 +123,19 @@ fun weightPossibilites(
 
 fun interface PlayerMessageConsumer {
     fun accept(m: PlayerMessage)
+}
+
+
+fun WhosMove.probabilitiesByMessage(): Map<TichuPattern, Double> {
+    val myPatterns = allPatterns(handcards).toSet()
+    return probabilitiesByMessage(myPatterns)
+}
+
+fun WhosMove.probabilitiesByMessage(myPatterns: Set<TichuPattern>): Map<TichuPattern, Double> {
+    return prob(
+        handcards, goneCards,
+        myPatterns, cardCounts.getValue(youAre.partner),
+        cardCounts.getValue(youAre.li),
+        cardCounts.getValue(youAre.re)
+    )
 }
