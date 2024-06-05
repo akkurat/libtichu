@@ -168,7 +168,7 @@ class Phoenix : HandCard {
 
 }
 
-class PhoenixPlaycard(private val phoenix: Phoenix, private val value: Double) : HandCard by phoenix, PlayCard {
+data class PhoenixPlaycard(private val phoenix: Phoenix, private val value: Double) : HandCard by phoenix, PlayCard {
     override fun getValue(): Double {
         return value
     }

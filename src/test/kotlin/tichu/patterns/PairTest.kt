@@ -26,11 +26,17 @@ internal class PairTest {
     }
 
     @Test
-    fun testshit()
+    fun testPairWithPhx()
     {
         val input = listOf(J2, D2, S5, PHX, S10 )
         val out = Pair.allPatterns(input)
-        val expect = setOf(Pair.of(J2, D2), Pair.of(J2, PHX.asPlayCard(2)), Pair.of(D2, PHX.asPlayCard(2)))
+        val expect = setOf(
+            Pair.of(J2, D2),
+            Pair.of(J2, PHX.asPlayCard(2)),
+            Pair.of(D2, PHX.asPlayCard(2)),
+            Pair.of(S5, PHX.asPlayCard(5)),
+            Pair.of(S10, PHX.asPlayCard(10)),
+        )
         assertThat(out).containsAll(expect)
     }
 
