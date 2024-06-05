@@ -41,7 +41,7 @@ class Straight(cards: Iterable<PlayCard>) : TichuPattern(TichuPatternType.STRAIG
                 listOf(straight)
             } else if (straight.cardinality() > cardinality) {
                 val sorted = straight.cards.sortedBy { it.getValue() }
-                (0..<(straight.cardinality() - cardinality))
+                (0..(straight.cardinality() - cardinality))
                     .map { Straight(sorted.drop(it).take(cardinality)) }
             } else {
                 throw IllegalArgumentException("Straight must be of atleast this rank")

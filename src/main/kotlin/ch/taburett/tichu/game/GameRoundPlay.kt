@@ -67,7 +67,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
     }
 
     private fun nextPlayer(lastPlayer: Player, step: Int = 1, cnt: Int = 0): Player {
-        if(cnt >= 3) {
+        if (cnt >= 3) {
 //            endRound()
 //            return lastPlayer
             throw IllegalStateException("game should have ended already")
@@ -165,13 +165,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         }
 
         if (res.type == LegalType.OK) {
-            if (move.cards.contains(DOG)) {
-                dogMove(player)
-            } else {
-                // maybe just return action instead of void functions?
-                // would probably be easier to debug
-                _regularMove(player, move.cards)
-            }
+            _regularMove(player, move.cards)
         } else {
             sendMessage(WrappedServerMessage(player, Rejected(res.message, move)))
         }
@@ -185,6 +179,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
             sendMessage(WrappedServerMessage(player, Rejected("not your turn yet")))
             return
         }
+
         val handCards = removePlayedCards(player, playedCards)
         if (pendingWish != null) {
             if (playedCards.filterIsInstance<NumberCard>().any { it.getValue() - pendingWish!! == 0.0 }) {
@@ -235,23 +230,15 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
     private fun endRound() {
         endTrick()
         leftoverHandcards = cardMap.mapValues { (_, v) -> v.toList() }
-        if( activePlayers().size == 2) {
+        if (activePlayers().size == 2) {
 //            println("double win")
-            if( activePlayers().first().playerGroup != activePlayers().last().playerGroup) {
+            if (activePlayers().first().playerGroup != activePlayers().last().playerGroup) {
                 println("but how?")
             }
         }
         state = State.FINISHED
 //        send
     }
-
-    private fun dogMove(player: Player) {
-        table.add(PlayLogEntry(player, listOf(DOG)))
-        removePlayedCards(player, listOf(DOG))
-        endTrick()
-        sendTableAndHandcards()
-    }
-
 
     private fun sendMessage(wrappedServerMessage: WrappedServerMessage) {
         com.send(wrappedServerMessage)

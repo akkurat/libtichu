@@ -69,7 +69,7 @@ class MoveLegalityCheckerTest {
     fun testWishNotFullfilled(): Iterable<Arguments> {
         return listOf(
             arguments(
-                LegalityAnswer(WISH, "STRAIGHT[P2, S3, P4, P5, J6, J7]"),
+                LegalityAnswer(WISH, "STRAIGHT[S3, P4, P5, J6, J7]"),
                 listOf(MAH, S2, P3, S4, J5),
                 listOf(P2, S3, P4, P5, J6),
                 listOf(P2, S3, P4, P5, J6, J7),
