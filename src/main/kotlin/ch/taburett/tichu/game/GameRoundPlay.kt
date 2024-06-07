@@ -9,22 +9,22 @@ import ch.taburett.tichu.patterns.LegalType
 import org.jetbrains.annotations.VisibleForTesting
 
 
-typealias MutableTricks = ArrayList<Trick>
-
 class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparationInfo: PreparationInfo?) {
 
     enum class State { INIT, RUNNING, FINISHED }
 
-    private val goneCards = mutableSetOf<PlayCard>()
     private lateinit var leftoverHandcards: Map<Player, List<HandCard>>
 
     var state = INIT
 
 
-    var tricks = MutableTricks()
+    //todo: class
+    var tricks = Tricks()
+
+    val mutableDeck = MutableDeck(cardMap)
 
     val initalCardMap = cardMap.mapValues { (_, v) -> v.toList() }
-    val cardMap: Map<Player, MutableList<HandCard>> = cardMap.mapValues { (_, l) -> l.toMutableList() }
+
 
     // todo: init by external log
     // also take protocol of schupf and so on into acccount...
@@ -37,16 +37,8 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
     var pendingWish: Int? = null
 
 
-    val initialPlayer = cardMap
-        .filterValues { it.contains(MAH) }
-        .map { it.key }
-        .first()
-    var table = Table()
-
-
     private fun endTrick() {
-        tricks.add(table.toTrick())
-        table = Table()
+        tricks.endTrick()
     }
 
     fun start() {
@@ -58,70 +50,22 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         sendTableAndHandcards()
     }
 
-    private fun activePlayers(): Set<Player> {
-        return cardMap.filter { (p, v) -> v.isNotEmpty() }.keys
-    }
 
-    private fun finishedPlayers(): Set<Player> {
-        return cardMap.filter { (p, v) -> v.isEmpty() }.keys
-    }
-
-    private fun nextPlayer(lastPlayer: Player, step: Int = 1, cnt: Int = 0): Player {
-        if (cnt >= 3) {
-//            endRound()
-//            return lastPlayer
-            throw IllegalStateException("game should have ended already")
-        }
-        val nextIdx = ((playerList.indexOf(lastPlayer)) + 1) % playerList.size
-        val player = playerList[nextIdx]
-        if (cardMap.getValue(player).isEmpty()) {
-            return nextPlayer(player, 1, cnt + 1)
-        } else {
-            return player
-        }
-    }
 
     @VisibleForTesting
     internal fun determineCurrentPlayer(): Player {
-        if (tricks.isEmpty()) {
-            return if (table.moves.filter { it !is Wished }.isEmpty()) {
-                initialPlayer
-            } else {
-                val lastPlayer = table.moves.last().player
-                nextPlayer(lastPlayer)
-            }
-        } else {
-            if (table.moves.filter { it !is Wished }.isEmpty()) {
-                val lastMove = tricks.last().moves.last()
-                if (lastMove is PlayLogEntry) {
-                    if (lastMove.cards.contains(DOG)) {
-                        return nextPlayer(lastMove.player, 2)
-                    }
-                }
-                return nextPlayer(lastMove.player)
-            } else {
-                return nextPlayer(table.moves.last(::notWish).player)
-            }
-        }
+        return tricks.nextPlayer(mutableDeck)
     }
-
-    private fun notWish(it: IPlayLogEntry): Boolean = it !is Wished
 
     @Synchronized
     internal fun sendTableAndHandcards() {
         // todo: use tableLog to determine next/current player
-        if (cardMap.getValue(determineCurrentPlayer()).isEmpty() && !dragonGiftPending) {
-            println("asdfsa")
-        }
-        if (table.moves.lastOrNull()?.player == determineCurrentPlayer()) {
-            println("Whoaaaa...")
-        }
         playerList.forEach { player ->
             val message = WhosMove(
                 player, determineCurrentPlayer(),
-                cardMap.getValue(player).toList(), table.immutable(), tricks.lastOrNull(),
+                mutableDeck.cards(player), tricks.table, tricks.tricks.lastOrNull(),
                 pendingWish, dragonGiftPending,
-                cardMap.mapValues { it.value.size }, goneCards.toSet()
+                mutableDeck.deckSizes(), mutableDeck.goneCards()
             )
             sendMessage(WrappedServerMessage(player, message))
         }
@@ -131,10 +75,10 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
     fun regularMove(player: Player, move: Move) {
 
         // TODO: make all logic external
-        val playerCards = cardMap[player]!!
+        val playerCards = mutableDeck.cards(player)
 
-        if (table.isNotEmpty()) {
-            val tablePlayer = table.toBeat().player
+        if (tricks.table.isNotEmpty()) {
+            val tablePlayer = tricks.table.toBeat().player
             if (tablePlayer == player) {
                 //
                 sendMessage(WrappedServerMessage(player, Rejected("can't beat your own trick with regular move", move)))
@@ -143,7 +87,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         }
 
         val res = playedCardsValid(
-            table.toBeatCards(),
+            tricks.table.toBeatCards(),
             move.cards,
             playerCards,
             pendingWish
@@ -153,7 +97,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
             if (move.cards.contains(MAH)) {
                 if (2 <= move.wish && move.wish <= 14) {
                     pendingWish = move.wish
-                    table.add(Wished(player, pendingWish!!))
+                    tricks.add(Wished(player, pendingWish!!))
                 } else {
                     sendMessage(WrappedServerMessage(player, Rejected("illegal wish range", move)))
                     return
@@ -183,31 +127,18 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         val handCards = removePlayedCards(player, playedCards)
         if (pendingWish != null) {
             if (playedCards.filterIsInstance<NumberCard>().any { it.getValue() - pendingWish!! == 0.0 }) {
-                table.add(WishFullfilled(player, pendingWish!!))
+                tricks.add(WishFullfilled(player, pendingWish!!))
                 pendingWish = null
             }
         }
 
-        table.add(PlayLogEntry(player, playedCards.toList()))
+        tricks.add(PlayLogEntry(player, playedCards.toList()))
         if (handCards.isEmpty()) {
-            table.add(PlayerFinished(player))
-        }
-        // todo: testroutine must also applied for dog and bomb
-        if (finishedPlayers().size == 2) {
-            if (finishedPlayers().first().playerGroup == finishedPlayers().last().playerGroup) {
-                endRound()
-                return
-            }
-        }
-        // from here dragon matters
-
-        if (finishedPlayers().size == 3) {
-            endRound()
-            return
+            tricks.add(PlayerFinished(player))
         }
 
-        if (table.allPass(activePlayers())) {
-            if (table.toBeatCards().contains(DRG)) {
+        if (tricks.table.allPass(mutableDeck.activePlayers())) {
+            if (tricks.table.toBeatCards().contains(DRG)) {
                 dragonGiftPending = true
                 // shouldn't be necessary? actually always the one who wins with dragon its turn ... hm...
                 // aaaah. reason is that one can finish with the dragon but still needs to gift it
@@ -220,22 +151,14 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         sendTableAndHandcards()
     }
 
-    private fun removePlayedCards(player: Player, playedCards: Collection<PlayCard>): MutableList<HandCard> {
-        val handCards = cardMap.getValue(player)
-        goneCards.addAll(playedCards)
-        handCards.removeAll(playedCards.map { it.asHandcard() })
-        return handCards
+    private fun removePlayedCards(player: Player, playedCards: Collection<PlayCard>): List<HandCard> {
+        mutableDeck.playCards(player, playedCards)
+        return mutableDeck.cards(player)
     }
 
     private fun endRound() {
         endTrick()
-        leftoverHandcards = cardMap.mapValues { (_, v) -> v.toList() }
-        if (activePlayers().size == 2) {
-//            println("double win")
-            if (activePlayers().first().playerGroup != activePlayers().last().playerGroup) {
-                println("but how?")
-            }
-        }
+        leftoverHandcards = mutableDeck.leftovers()
         state = State.FINISHED
 //        send
     }
@@ -267,17 +190,17 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
     }
 
     private fun bomb(u: Player, m: Bomb) {
-        if (table.isEmpty()) {
+        if (tricks.table.isEmpty()) {
             if (u == determineCurrentPlayer()) { // ok as regular move
                 _regularMove(u, m.cards)
             } else {
                 sendMessage(WrappedServerMessage(u, Rejected("Cannot bomb ausspiel", m)))
             }
         } else {
-            val beats = m.pattern.beats(pattern(table.toBeatCards()))
+            val beats = m.pattern.beats(pattern(tricks.table.toBeatCards()))
             if (beats.type == LegalType.OK) {
                 dragonGiftPending = false
-                table.add(BombPlayed(u, m.cards))
+                tricks.add(BombPlayed(u, m.cards))
                 removePlayedCards(u, m.cards)
                 endTrick()
                 sendTableAndHandcards()
@@ -291,7 +214,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
     private fun giftDragon(u: Player, m: GiftDragon) {
         val to = m.to.map(u)
         if (to.playerGroup != u.playerGroup) {
-            table.add(DrgGift(u, to))
+            tricks.add(DrgGift(u, to))
             dragonGiftPending = false
             endTrick()
             sendTableAndHandcards()
@@ -387,3 +310,4 @@ data class Trick(val moves: List<IPlayLogEntry>) {
     val allCards: List<PlayCard>
         get() = moves.filterIsInstance<PlayLogEntry>().flatMap { it.cards }
 }
+

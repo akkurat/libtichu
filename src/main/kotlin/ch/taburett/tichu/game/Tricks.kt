@@ -1,0 +1,47 @@
+package ch.taburett.tichu.game
+
+import ch.taburett.tichu.cards.DOG
+
+class Tricks {
+
+    private val _tricks = mutableListOf<Trick>()
+    val tricks: List<Trick>
+        get() = _tricks
+    private var _table = Table()
+    val table: ImmutableTable
+        get() = _table.immutable()
+
+    fun endTrick() {
+        _tricks.add(table.toTrick())
+        _table = Table()
+    }
+
+    fun nextPlayer(deck: Deck): Player {
+        if (tricks.isEmpty()) {
+            return if (table.moves.filter { it !is Wished }.isEmpty()) {
+                deck.initialPlayer
+            } else {
+                val lastPlayer = table.moves.last().player
+                deck.nextPlayer(lastPlayer)
+            }
+        } else {
+            if (table.moves.filter { it !is Wished }.isEmpty()) {
+                val lastMove = tricks.last().moves.last()
+                if (lastMove is PlayLogEntry) {
+                    if (lastMove.cards.contains(DOG)) {
+                        return deck.nextPlayer(lastMove.player, 2)
+                    }
+                }
+                return deck.nextPlayer(lastMove.player)
+            } else {
+                return deck.nextPlayer(table.moves.last(::notWish).player)
+            }
+        }
+    }
+
+    private fun notWish(it: IPlayLogEntry): Boolean = it !is Wished
+    fun add(logEntry: IPlayLogEntry) {
+        _table.add(logEntry)
+    }
+
+}

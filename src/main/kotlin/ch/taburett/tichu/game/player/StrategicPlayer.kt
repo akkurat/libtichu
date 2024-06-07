@@ -1,11 +1,11 @@
 package ch.taburett.tichu.game.player
 
 import ch.taburett.tichu.cards.*
-import ch.taburett.tichu.game.Player
+import ch.taburett.tichu.game.*
 import ch.taburett.tichu.game.protocol.*
 import ch.taburett.tichu.patterns.Single
+import ch.taburett.tichu.patterns.TichuPattern
 import ch.taburett.tichu.patterns.TichuPatternType.SINGLE
-import java.util.*
 import java.util.function.Consumer
 
 
@@ -57,14 +57,13 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
         }
 
 
-        var pats = allPatterns(handcards).filter { it.type != SINGLE }.toSet()
-
-
-        var orphans = Single.allPatterns(handcards - pats.flatMap { it.cards })
+        var (pats, orphans) = _allPatterns(handcards)
 
 
         val prob = wh.probabilitiesByMessage(pats)
         val oprop = wh.probabilitiesByMessage(orphans)
+
+        val result = emulateRandom(handcards, pats, wh.goneCards, wh.cardCounts, wh.youAre)
 
 
         if (mightFullfillWish) {
@@ -75,7 +74,7 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
         val cards = if (orphans.any { it.rank() < ORPH }) {
             setOf(orphans.minBy { it.rank() }.card)
         } else {
-            (pats+orphans).filter { it !is Single || it.card.getSort() >= ORPH }
+            (pats + orphans).filter { it !is Single || it.card.getSort() >= ORPH }
                 .minBy { it.rank() }.cards
         }
 
@@ -101,6 +100,62 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
         return move
     }
 
+    private fun _allPatterns(handcards: List<HandCard>): Pair<Set<TichuPattern>, Set<Single>> {
+        var pats = allPatterns(handcards).filter { it.type != SINGLE }.toSet()
+
+        var orphans = Single.allPatterns(handcards - pats.flatMap { it.cards })
+        return Pair(pats, orphans)
+    }
+
+    private fun emulateRandom(
+        handcards: List<HandCard>,
+        pats: Set<TichuPattern>,
+        _goneCards: Set<PlayCard>,
+        cardCounts: Map<Player, Int>,
+        iam: Player,
+    ): Map<TichuPattern, Int> {
+
+        val restcards = fulldeck - _goneCards - handcards
+
+
+        val nPartner = cardCounts.getValue(iam.partner)
+        val nRe = cardCounts.getValue(iam.re)
+        val nLi = cardCounts.getValue(iam.li)
+
+        var (partner, left, right) = randomCards(restcards, nPartner, nRe, nLi)
+
+        val cardMap = mapOf(iam to handcards, iam.partner to partner, iam.re to right, iam.li to left)
+
+        val table = Table()
+        // todo: make available generic function to simulate with other players
+        for (pat in pats) {
+            // until all pass
+            val mutableDeck = MutableDeck(cardMap)
+            var youAre = iam
+            do  {
+                table.add(PlayLogEntry(youAre, pat.cards))
+                mutableDeck.playCards(youAre, pat.cards)
+                val youAre = det
+                val move = reactionMove(
+                    WhosMove(
+                        youAre,
+                        youAre,
+                        right,
+                        table,
+                        null,
+                        null,
+                        false,
+                        mutableDeck.deckSizes(),
+                        mutableDeck.goneCards()
+                    )
+                )
+
+            } while (youAre != iam)
+        }
+
+        return pats.associateWith { 0 }
+
+    }
 
 
     private fun reactionMove(wh: WhosMove): Move {
@@ -173,5 +228,9 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
             else -> {}
         }
     }
+}
+
+interface TestInter {
+
 }
 

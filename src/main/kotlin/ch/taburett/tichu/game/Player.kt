@@ -20,6 +20,11 @@ enum class Player(val value: String, val playerGroup: PlayerGroup) {
     A2("A2", A),
     B2("B2", B);
 
+    val next: Player
+        get() {
+            return Player.entries[(this.ordinal + 3) % 4]
+        }
+
     val li: Player
         get() {
             return Player.entries[(this.ordinal + 3) % 4]

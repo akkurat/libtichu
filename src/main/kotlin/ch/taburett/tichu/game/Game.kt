@@ -4,7 +4,6 @@ import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.protocol.*
 import java.util.concurrent.Executors
 
-typealias Tricks = List<Trick>
 
 
 class Game(com: Out) {

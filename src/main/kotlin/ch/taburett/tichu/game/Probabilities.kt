@@ -34,14 +34,9 @@ private fun extracted(
     nRe: Int,
     nLi: Int,
 ): Map<TichuPattern, Boolean> {
-    val shuffled = restcards.shuffled()
+    val (partner, left, right) = randomCards(restcards, nPartner, nRe, nLi)
 
-    assert(nPartner + nRe + nLi == restcards.size)
-
-    val partner = shuffled.take(nPartner)
-    val left = shuffled.drop(nPartner).take(nLi)
-    val right = shuffled.drop(nPartner + nLi).take(nRe)
-
+    partner
     val counterTeam = myPatterns.filter { it.type !=SINGLE }
         .associateWith { it.findBeatingPatterns(left).isNotEmpty() || it.findBeatingPatterns(right).isNotEmpty() }
 
@@ -55,4 +50,20 @@ private fun extracted(
 //    val rightPatterns = myPatterns.filter { it.type != SINGLE }.associateWith { it.findBeatingPatterns(right) }
 
 
+}
+
+fun randomCards(
+    restcards: List<HandCard>,
+    nPartner: Int,
+    nRe: Int,
+    nLi: Int,
+): Triple<List<HandCard>, List<HandCard>, List<HandCard>> {
+    val shuffled = restcards.shuffled()
+
+    assert(nPartner + nRe + nLi == restcards.size)
+
+    val partner = shuffled.take(nPartner)
+    val left = shuffled.drop(nPartner).take(nLi)
+    val right = shuffled.drop(nPartner + nLi).take(nRe)
+    return Triple(partner, left, right)
 }
