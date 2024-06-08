@@ -37,10 +37,6 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
     var pendingWish: Int? = null
 
 
-    private fun endTrick() {
-        tricks.endTrick()
-    }
-
     fun start() {
         // todo: make enum
         if (state != INIT) {
@@ -49,7 +45,6 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         state = State.RUNNING
         sendTableAndHandcards()
     }
-
 
 
     @VisibleForTesting
@@ -131,13 +126,16 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
                 pendingWish = null
             }
         }
-
-        tricks.add(PlayLogEntry(player, playedCards.toList()))
         if (handCards.isEmpty()) {
             tricks.add(PlayerFinished(player))
         }
 
-        if(mutableDeck.roundEnded()) {
+        tricks.add(PlayLogEntry(player, playedCards.toList()))
+        if (playedCards.contains(DOG)) {
+            tricks.endTrick()
+        }
+
+        if (mutableDeck.roundEnded()) {
             endRound()
         }
 
@@ -149,7 +147,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
                 sendTableAndHandcards()
                 return
             } else {
-                endTrick()
+                tricks.endTrick()
             }
         }
         sendTableAndHandcards()
@@ -161,7 +159,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
     }
 
     private fun endRound() {
-        endTrick()
+        tricks.endTrick()
         leftoverHandcards = mutableDeck.leftovers()
         state = State.FINISHED
 //        send
@@ -206,7 +204,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
                 dragonGiftPending = false
                 tricks.add(BombPlayed(u, m.cards))
                 removePlayedCards(u, m.cards)
-                endTrick()
+                tricks.endTrick()
                 sendTableAndHandcards()
                 // do bomb stuff
             } else {
@@ -220,7 +218,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
         if (to.playerGroup != u.playerGroup) {
             tricks.add(DrgGift(u, to))
             dragonGiftPending = false
-            endTrick()
+            tricks.endTrick()
             sendTableAndHandcards()
         } else {
             sendMessage(WrappedServerMessage(u, Rejected("drg must be gifted to opponent", m)))

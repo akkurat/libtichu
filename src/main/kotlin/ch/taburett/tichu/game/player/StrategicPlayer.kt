@@ -3,6 +3,8 @@ package ch.taburett.tichu.game.player
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.*
 import ch.taburett.tichu.game.protocol.*
+import ch.taburett.tichu.game.protocol.GiftDragon.ReLi.LI
+import ch.taburett.tichu.game.protocol.GiftDragon.ReLi.RE
 import ch.taburett.tichu.patterns.Single
 import ch.taburett.tichu.patterns.TichuPattern
 import ch.taburett.tichu.patterns.TichuPatternType.SINGLE
@@ -34,7 +36,9 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
         wh: WhosMove,
     ): PlayerMessage? {
         return if (wh.stage == Stage.GIFT_DRAGON) {
-            GiftDragon(GiftDragon.ReLi.LI)
+            val nRe = wh.cardCounts.getValue(wh.youAre.re)
+            val nLi = wh.cardCounts.getValue(wh.youAre.li)
+            if (nRe > nLi) GiftDragon(LI) else GiftDragon(RE)
         } else if (wh.stage == Stage.YOURTURN) {
 
             val move =
@@ -61,25 +65,24 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
         var (pats, orphans) = _allPatterns(handcards)
 
 
-//        val prob = wh.probabilitiesByMessage(pats)
-//        val oprop = wh.probabilitiesByMessage(orphans)
 
         if (mightFullfillWish) {
             pats = pats.filter { it.cards.any { it.getValue() - wh.wish!! == 0.0 } }.toSet()
             orphans = orphans.filter { it.card.getValue() - wh.wish!! == 0.0 }.toSet()
         }
 
-        val result = emulateRandom(handcards, pats, wh.goneCards, wh.cardCounts, wh.youAre)
 
+        val result = emulateRandom(handcards, pats + orphans, wh.goneCards, wh.cardCounts, wh.youAre)
 
+//        val cards = if (orphans.any { it.rank() < ORPH } || result.isEmpty()) {
+//            setOf(orphans.minBy { it.rank() }.card)
+//        } else {
+////            (pats + orphans).filter { it !is Single || it.card.getSort() >= ORPH }
+////                .minBy { it.rank() }.cards
+//            result.maxBy { it.value }.key.cards
+//        }
 
-        val cards = if (orphans.any { it.rank() < ORPH } || result.isEmpty()) {
-            setOf(orphans.minBy { it.rank() }.card)
-        } else {
-//            (pats + orphans).filter { it !is Single || it.card.getSort() >= ORPH }
-//                .minBy { it.rank() }.cards
-            result.maxBy { it.value }.key.cards
-        }
+        val cards = result.maxBy { it.value }.key.cards
 
 //        {
 //            val c = handcards.minBy { it.getSort() }
@@ -104,9 +107,9 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
     }
 
     private fun _allPatterns(handcards: List<HandCard>): Pair<Set<TichuPattern>, Set<Single>> {
-        var pats = allPatterns(handcards).filter { it.type != SINGLE }.toSet()
+        val pats = allPatterns(handcards).filter { it.type != SINGLE }.toSet()
 
-        var orphans = Single.allPatterns(handcards - pats.flatMap { it.cards })
+        val orphans = Single.allPatterns(handcards - pats.flatMap { it.cards })
         return Pair(pats, orphans)
     }
 
@@ -125,7 +128,7 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
         val nRe = cardCounts.getValue(iam.re)
         val nLi = cardCounts.getValue(iam.li)
         val out = pats.associateWith { mutableListOf<Int>() }
-        for (i in 1..10) {
+        for (i in 1..20) {
 
             val (partner, left, right) = randomCards(restcards, nPartner, nRe, nLi)
 
@@ -141,10 +144,10 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
                 do {
                     mutableDeck.playCards(youAre, cards)
                     tricks.add(PlayLogEntry(youAre, cards))
-                    if(mutableDeck.cards(youAre).isEmpty()) {
+                    if (mutableDeck.cards(youAre).isEmpty()) {
                         tricks.add(PlayerFinished(youAre))
                     }
-                    if(cards.contains(DOG)) {
+                    if (cards.contains(DOG)) {
                         tricks.endTrick()
                     }
 
@@ -173,7 +176,7 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
 
                 val ow = tricks.orderWinning
 
-                val points = when(ow.indexOf(iam)) {
+                val points = when (ow.indexOf(iam)) {
                     -1 -> -20
                     0 -> 20
                     1 -> 5
@@ -191,8 +194,6 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
 //                if(ow.indexOf(iam.partner) == 0) points += 10
 //                if(ow.indexOf(iam.re) == 0 ) points -= 10
 //                if(ow.indexOf(iam.li) == 0 ) points -= 10
-
-
 
 
                 out[pat]?.add(points)

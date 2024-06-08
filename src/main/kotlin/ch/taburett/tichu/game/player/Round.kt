@@ -8,7 +8,7 @@ import kotlinx.coroutines.*
 
 
 fun main() {
-    val simpleBattle = SimpleBattle(100)
+    val simpleBattle = SimpleBattle(200)
     val roundlog: List<SimpleBattle.Linfo>
     runBlocking {
         roundlog = simpleBattle.start()
@@ -69,7 +69,7 @@ class Grr(val myteam: Set<String>, val otherPlayers: Set<String>) {
     }
 
     override fun toString(): String {
-        return "${myteam.map { it.substring(0..1) }}->${otherPlayers.map { it.substring(0..1) }}"
+        return "${myteam}->${otherPlayers}"
     }
 
 }

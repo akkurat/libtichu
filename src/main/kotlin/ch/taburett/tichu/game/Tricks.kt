@@ -12,8 +12,10 @@ class Tricks {
         get() = _table.immutable()
 
     fun endTrick() {
-        _tricks.add(table.toTrick())
-        _table = Table()
+        if(table.toTrick().moves.isNotEmpty()) {
+            _tricks.add(table.toTrick())
+            _table = Table()
+        }
     }
 
     fun nextPlayer(deck: Deck): Player {

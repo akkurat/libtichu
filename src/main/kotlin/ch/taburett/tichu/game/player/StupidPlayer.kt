@@ -1,6 +1,7 @@
 package ch.taburett.tichu.game.player
 
 import ch.taburett.tichu.cards.*
+import ch.taburett.tichu.game.ImmutableTable
 import ch.taburett.tichu.game.Player
 import ch.taburett.tichu.game.protocol.*
 import ch.taburett.tichu.patterns.LegalType.OK
@@ -40,72 +41,86 @@ class StupidPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer {
     if (message.stage == Stage.GIFT_DRAGON) {
         return GiftDragon(GiftDragon.ReLi.LI)
     } else if (message.stage == Stage.YOURTURN) {
-        val table = message.table
-        val handcards = message.handcards
-        if (table.isEmpty()) {
-            val mightFullfillWish = mightFullfillWish(handcards, message.wish)
-            if (mightFullfillWish) {
-                val numberCard = handcards
-                    .filterIsInstance<NumberCard>()
-                    .filter { nc -> Objects.equals(message.wish, nc.getValue()) }
-                    .minByOrNull { it.getValue() }
-                return moveSingle(numberCard)
-            }
-
-            // play smallest card
-            val ocard = handcards.minBy { it.getSort() }
-
-            return when (ocard) {
-                is Phoenix -> {
-                    moveSingle(ocard.asPlayCard(1))
-                }
-
-                is PlayCard -> {
-                    moveSingle(ocard)
-                }
-
-                else -> {
-                    move(listOf())
-                }
-            }
+        if (message.table.isEmpty()) {
+            return opening(message)
         } else {
-            val toBeat = table.toBeat()
-            val pat = pattern(toBeat.cards)
-            var all = pat.findBeatingPatterns(handcards).toMutableList()
-
-            if (message.wish != null) {
-                val allWithWish = all
-                    .filter { p -> p.cards.any { c -> (c.getValue() - message.wish) == 0.0 } }
-                    .toMutableList()
-                if (!allWithWish.isEmpty()) {
-                    all = allWithWish
-                }
-            }
-
-            if (pat is Single) {
-                if (handcards.contains(DRG)) {
-                    all.add(Single(DRG))
-                }
-                if (pat.card != DRG && handcards.contains(PHX)) {
-                    all.add(Single(PHX.asPlayCard(pat.card.getValue() + .5)))
-                }
-            }
-            return if (all.isEmpty()) {
-                move(listOf())
-            } else {
-                val mypat = all.stream()
-                    .filter { p -> p.beats(pat).type == OK }
-                    .min(Comparator.comparingDouble(TichuPattern::rank))
-                if (mypat.isPresent) {
-                    move(mypat.get().cards)
-                } else {
-                    move(listOf())
-                }
-            }
+            return response(message)
             // pattern
         }
     }
     return null
+}
+
+private fun response(
+    m: WhosMove,
+): PlayerMessage? {
+    with(m) {
+        val toBeat = table.toBeat()
+        val pat = pattern(toBeat.cards)
+        var all = pat.findBeatingPatterns(handcards).toMutableList()
+
+        if (m.wish != null) {
+            val allWithWish = all
+                .filter { p -> p.cards.any { c -> (c.getValue() - m.wish) == 0.0 } }
+                .toMutableList()
+            if (allWithWish.isNotEmpty()) {
+                all = allWithWish
+            }
+        }
+
+        if (pat is Single) {
+            if (handcards.contains(DRG)) {
+                all.add(Single(DRG))
+            }
+            if (pat.card != DRG && handcards.contains(PHX)) {
+                all.add(Single(PHX.asPlayCard(pat.card.getValue() + .5)))
+            }
+        }
+        return if (all.isEmpty()) {
+            move(listOf())
+        } else {
+            val mypat = all.stream()
+                .filter { p -> p.beats(pat).type == OK }
+                .min(Comparator.comparingDouble(TichuPattern::rank))
+            if (mypat.isPresent) {
+                move(mypat.get().cards)
+            } else {
+                move(listOf())
+            }
+        }
+    }
+}
+
+private fun opening(
+    message: WhosMove,
+): PlayerMessage {
+    with(message) {
+        val mightFullfillWish = mightFullfillWish(handcards, message.wish)
+        if (mightFullfillWish) {
+            val numberCard = handcards
+                .filterIsInstance<NumberCard>()
+                .filter { nc -> Objects.equals(message.wish, nc.getValue()) }
+                .minByOrNull { it.getValue() }
+            return moveSingle(numberCard)
+        }
+
+        // play smallest card
+        val ocard = handcards.minBy { it.getSort() }
+
+        return when (ocard) {
+            is Phoenix -> {
+                moveSingle(ocard.asPlayCard(1))
+            }
+
+            is PlayCard -> {
+                moveSingle(ocard)
+            }
+
+            else -> {
+                move(listOf())
+            }
+        }
+    }
 }
 
 private fun ack(

@@ -152,7 +152,7 @@ class Phoenix : HandCard {
     }
 
     fun asPlayCard(value: Number): PhoenixPlaycard {
-        if (MAH.getValue() <= value.toDouble() && value.toDouble() <= 15)
+        if (MAH.getValue() <= value.toDouble() && value.toDouble() <= 14.5)
             return PhoenixPlaycard(this, value.toDouble())
         throw IllegalArgumentException("Naughty boy: $value is not valid as value")
     }
