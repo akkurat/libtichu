@@ -137,6 +137,10 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
             tricks.add(PlayerFinished(player))
         }
 
+        if(mutableDeck.roundEnded()) {
+            endRound()
+        }
+
         if (tricks.table.allPass(mutableDeck.activePlayers())) {
             if (tricks.table.toBeatCards().contains(DRG)) {
                 dragonGiftPending = true

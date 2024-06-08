@@ -9,8 +9,8 @@ data class RoundInfo(
     val initialCardmap: Map<Player, Collection<HandCard>>,
     val leftoverHandcards: Map<Player, Collection<HandCard>>,
 ) {
-    val orderOfWinning = tricks.flatMap { it.playerFinished }
-    val tricksByPlayer: Map<Player, List<Trick>> = Player.entries.associateWith { listOf<Trick>() } + tricks.groupBy { it.pointOwner }
+    val orderOfWinning = tricks.tricks.flatMap { it.playerFinished }
+    val tricksByPlayer: Map<Player, List<Trick>> = Player.entries.associateWith { listOf<Trick>() } + tricks.tricks.groupBy { it.pointOwner }
 
     // tichuPoints()
 

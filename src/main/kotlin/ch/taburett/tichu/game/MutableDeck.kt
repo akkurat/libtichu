@@ -16,12 +16,12 @@ interface Deck {
     fun leftovers(): Map<Player, List<HandCard>>
 }
 
-class MutableDeck(cardMap: Map<Player, List<HandCard>>) : Deck {
+class MutableDeck(cardMap: Map<Player, List<HandCard>>, initialPlayer: Player? = null ) : Deck {
 
     private val cardMap: Map<Player, MutableList<HandCard>> = cardMap.mapValues { (_, l) -> l.toMutableList() }
     private val _goneCards = mutableSetOf<PlayCard>()
 
-    override val initialPlayer = cardMap
+    override val initialPlayer = initialPlayer ?: cardMap
         .filterValues { it.contains(MAH) }
         .map { it.key }
         .first()

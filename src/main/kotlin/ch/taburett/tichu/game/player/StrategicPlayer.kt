@@ -113,7 +113,7 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
         _goneCards: Set<PlayCard>,
         cardCounts: Map<Player, Int>,
         iam: Player,
-    ): Map<TichuPattern, Int> {
+    ): Map<TichuPattern, MutableList<Int>> {
 
         val restcards = fulldeck - _goneCards - handcards
 
@@ -121,39 +121,40 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
         val nPartner = cardCounts.getValue(iam.partner)
         val nRe = cardCounts.getValue(iam.re)
         val nLi = cardCounts.getValue(iam.li)
+        val out = pats.associateWith { mutableListOf<Int>() }
+        for (i in 1..5) {
 
-        var (partner, left, right) = randomCards(restcards, nPartner, nRe, nLi)
+            val (partner, left, right) = randomCards(restcards, nPartner, nRe, nLi)
 
-        val cardMap = mapOf(iam to handcards, iam.partner to partner, iam.re to right, iam.li to left)
+            val cardMap = mapOf(iam to handcards, iam.partner to partner, iam.re to right, iam.li to left)
 
-        val table = Table()
-        // todo: make available generic function to simulate with other players
-        for (pat in pats) {
-            // until all pass
-            val mutableDeck = MutableDeck(cardMap)
-            var youAre = iam
-            do  {
-                table.add(PlayLogEntry(youAre, pat.cards))
-                mutableDeck.playCards(youAre, pat.cards)
-                val youAre = det
-                val move = reactionMove(
-                    WhosMove(
-                        youAre,
-                        youAre,
-                        right,
-                        table,
-                        null,
-                        null,
-                        false,
-                        mutableDeck.deckSizes(),
-                        mutableDeck.goneCards()
+            // todo: make available generic function to simulate with other players
+            for (pat in pats) {
+                // until all pass
+                val tricks = Tricks()
+                val mutableDeck = MutableDeck(cardMap, iam)
+                var youAre = iam
+                var cards: Collection<PlayCard> = pat.cards
+                do {
+                    tricks.add(PlayLogEntry(youAre, cards))
+                    mutableDeck.playCards(youAre, cards)
+                    youAre = tricks.nextPlayer(mutableDeck)
+                    val move = reactionMove(
+                        WhosMove(
+                            youAre, youAre, right, tricks.table,
+                            null, null, false, mutableDeck.deckSizes(), mutableDeck.goneCards()
+                        )
                     )
-                )
+                    cards = move.cards
 
-            } while (youAre != iam)
+                } while (!mutableDeck.finishedPlayers().contains(iam) || mutableDeck.roundEnded())
+                // now what? count moves
+                val what = tricks.table.moves.filterIsInstance<PlayLogEntry>().count { it.cards.isNotEmpty() }
+                out[pat]?.add(what)
+            }
         }
 
-        return pats.associateWith { 0 }
+        return out
 
     }
 
