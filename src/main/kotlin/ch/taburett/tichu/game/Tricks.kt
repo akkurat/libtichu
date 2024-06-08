@@ -38,6 +38,7 @@ class Tricks {
             }
         }
     }
+    val orderWinning get() = tricks.flatMap { it.playerFinished }
 
     private fun notWish(it: IPlayLogEntry): Boolean = it !is Wished
     fun add(logEntry: IPlayLogEntry) {

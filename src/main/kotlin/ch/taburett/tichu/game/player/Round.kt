@@ -8,7 +8,7 @@ import kotlinx.coroutines.*
 
 
 fun main() {
-    val simpleBattle = SimpleBattle(5000)
+    val simpleBattle = SimpleBattle(100)
     val roundlog: List<SimpleBattle.Linfo>
     runBlocking {
         roundlog = simpleBattle.start()
@@ -146,13 +146,17 @@ class Round {
         }
 
 
-//        val groupFactory = PlayerGroup.entries.associateWith { p -> factories.random() }
-//
-//
-//        val players = Player.entries.associateWith{ groupFactory.getValue(it.playerGroup)({ m -> receivePlayer(WrappedPlayerMessage(it, m)) }) }
+        val groupFactory = PlayerGroup.entries.associateWith { p -> factories.random() }
 
-        val players =
-            Player.entries.associateWith { p -> factories.random()({ m -> receivePlayer(WrappedPlayerMessage(p, m)) }) }
+
+        val players = Player.entries.associateWith {
+            groupFactory.getValue(it.playerGroup)({ m ->
+                receivePlayer(WrappedPlayerMessage(it, m))
+            })
+        }
+
+//        val players =
+//            Player.entries.associateWith { p -> factories.random()({ m -> receivePlayer(WrappedPlayerMessage(p, m)) }) }
 
         val rp = RoundPlay(::receiveServer, cardMap, null)
 

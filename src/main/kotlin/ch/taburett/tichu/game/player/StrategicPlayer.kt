@@ -6,12 +6,12 @@ import ch.taburett.tichu.game.protocol.*
 import ch.taburett.tichu.patterns.Single
 import ch.taburett.tichu.patterns.TichuPattern
 import ch.taburett.tichu.patterns.TichuPatternType.SINGLE
-import java.util.function.Consumer
 
 
 class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer {
     override fun receiveMessage(message: ServerMessage, player: Player) {
-        strategic(message, listener, player)
+        val response = strategic(message)
+        if (response != null) listener(response)
     }
 
     override val type: String = "Strat"
@@ -21,21 +21,20 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
     }
 
 
-    fun strategic(message: ServerMessage, listener: Consumer<PlayerMessage>, player: Player) {
-        when (message) {
-            is AckGameStage -> ack(message, listener)
-            is Schupf -> listener.accept(Ack.SchupfcardReceived())
-            is WhosMove -> move(message, listener)
-            else -> {}
+    fun strategic(message: ServerMessage): PlayerMessage? {
+        return when (message) {
+            is AckGameStage -> ack(message)
+            is Schupf -> Ack.SchupfcardReceived()
+            is WhosMove -> move(message)
+            else -> null
         }
     }
 
     private fun move(
         wh: WhosMove,
-        listener: Consumer<PlayerMessage>,
-    ) {
-        if (wh.stage == Stage.GIFT_DRAGON) {
-            listener.accept(GiftDragon(GiftDragon.ReLi.LI))
+    ): PlayerMessage? {
+        return if (wh.stage == Stage.GIFT_DRAGON) {
+            GiftDragon(GiftDragon.ReLi.LI)
         } else if (wh.stage == Stage.YOURTURN) {
 
             val move =
@@ -45,7 +44,9 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
                     reactionMove(wh)
                 }
 
-            listener.accept(move)
+            move
+        } else {
+            null
         }
     }
 
@@ -60,22 +61,24 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
         var (pats, orphans) = _allPatterns(handcards)
 
 
-        val prob = wh.probabilitiesByMessage(pats)
-        val oprop = wh.probabilitiesByMessage(orphans)
-
-        val result = emulateRandom(handcards, pats, wh.goneCards, wh.cardCounts, wh.youAre)
-
+//        val prob = wh.probabilitiesByMessage(pats)
+//        val oprop = wh.probabilitiesByMessage(orphans)
 
         if (mightFullfillWish) {
             pats = pats.filter { it.cards.any { it.getValue() - wh.wish!! == 0.0 } }.toSet()
             orphans = orphans.filter { it.card.getValue() - wh.wish!! == 0.0 }.toSet()
         }
 
-        val cards = if (orphans.any { it.rank() < ORPH }) {
+        val result = emulateRandom(handcards, pats, wh.goneCards, wh.cardCounts, wh.youAre)
+
+
+
+        val cards = if (orphans.any { it.rank() < ORPH } || result.isEmpty()) {
             setOf(orphans.minBy { it.rank() }.card)
         } else {
-            (pats + orphans).filter { it !is Single || it.card.getSort() >= ORPH }
-                .minBy { it.rank() }.cards
+//            (pats + orphans).filter { it !is Single || it.card.getSort() >= ORPH }
+//                .minBy { it.rank() }.cards
+            result.maxBy { it.value }.key.cards
         }
 
 //        {
@@ -113,7 +116,7 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
         _goneCards: Set<PlayCard>,
         cardCounts: Map<Player, Int>,
         iam: Player,
-    ): Map<TichuPattern, MutableList<Int>> {
+    ): Map<TichuPattern, Double> {
 
         val restcards = fulldeck - _goneCards - handcards
 
@@ -122,7 +125,7 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
         val nRe = cardCounts.getValue(iam.re)
         val nLi = cardCounts.getValue(iam.li)
         val out = pats.associateWith { mutableListOf<Int>() }
-        for (i in 1..5) {
+        for (i in 1..10) {
 
             val (partner, left, right) = randomCards(restcards, nPartner, nRe, nLi)
 
@@ -136,25 +139,69 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
                 var youAre = iam
                 var cards: Collection<PlayCard> = pat.cards
                 do {
-                    tricks.add(PlayLogEntry(youAre, cards))
                     mutableDeck.playCards(youAre, cards)
+                    tricks.add(PlayLogEntry(youAre, cards))
+                    if(mutableDeck.cards(youAre).isEmpty()) {
+                        tricks.add(PlayerFinished(youAre))
+                    }
+                    if(cards.contains(DOG)) {
+                        tricks.endTrick()
+                    }
+
+                    if (tricks.table.allPass(mutableDeck.activePlayers())) {
+                        tricks.endTrick()
+                    }
+                    if (mutableDeck.roundEnded()) {
+                        tricks.endTrick()
+                        break
+                    }
                     youAre = tricks.nextPlayer(mutableDeck)
-                    val move = reactionMove(
+                    val move = stupidMove(
                         WhosMove(
-                            youAre, youAre, right, tricks.table,
+                            youAre, youAre, mutableDeck.cards(youAre), tricks.table,
                             null, null, false, mutableDeck.deckSizes(), mutableDeck.goneCards()
                         )
                     )
-                    cards = move.cards
+                    if (move is Move) {
+                        cards = move.cards
+                    } else {
+                        cards = listOf()
+                    }
 
-                } while (!mutableDeck.finishedPlayers().contains(iam) || mutableDeck.roundEnded())
+                } while (true)
                 // now what? count moves
-                val what = tricks.table.moves.filterIsInstance<PlayLogEntry>().count { it.cards.isNotEmpty() }
-                out[pat]?.add(what)
-            }
-        }
 
-        return out
+                val ow = tricks.orderWinning
+
+                val points = when(ow.indexOf(iam)) {
+                    -1 -> -20
+                    0 -> 20
+                    1 -> 5
+                    else -> 3
+                }
+
+
+                // partner makes only sense when schupfed cards are taken into account
+//                if(ow.indexOf(iam) == 0) {
+//                    points += 10
+//                    if(ow.indexOf(iam.partner)==1) {
+//                        points += 30
+//                    }
+//                }
+//                if(ow.indexOf(iam.partner) == 0) points += 10
+//                if(ow.indexOf(iam.re) == 0 ) points -= 10
+//                if(ow.indexOf(iam.li) == 0 ) points -= 10
+
+
+
+
+                out[pat]?.add(points)
+            }
+//            println(out)
+        }
+        val av = out.mapValues { it.value.average() }
+
+        return av
 
     }
 
@@ -215,18 +262,17 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
 
     private fun ack(
         message: AckGameStage,
-        listener: Consumer<PlayerMessage>,
-    ) {
-        when (message.stage) {
-            Stage.EIGHT_CARDS -> listener.accept(Ack.BigTichu())
-            Stage.PRE_SCHUPF -> listener.accept(Ack.TichuBeforeSchupf())
+    ): PlayerMessage? {
+        return when (message.stage) {
+            Stage.EIGHT_CARDS -> Ack.BigTichu()
+            Stage.PRE_SCHUPF -> Ack.TichuBeforeSchupf()
             Stage.SCHUPF -> {
                 val cards = message.cards
-                listener.accept(Schupf(cards[0], cards[1], cards[2]))
+                Schupf(cards[0], cards[1], cards[2])
             }
 
-            Stage.POST_SCHUPF -> listener.accept(Ack.TichuBeforePlay())
-            else -> {}
+            Stage.POST_SCHUPF -> Ack.TichuBeforePlay()
+            else -> null
         }
     }
 }
