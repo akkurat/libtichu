@@ -4,6 +4,7 @@ import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.PlayCard
 
 enum class TichuPatternType(val factory: PatternImplFactory) {
+    // Anspiel = Pass? not really.. puh
     ANSPIEL(Empty),
     SINGLE(Single),
     PAIR(Pair),

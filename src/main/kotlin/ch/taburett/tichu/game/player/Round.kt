@@ -178,10 +178,10 @@ class Round {
                 } else {
                     starved++
                 }
-//            if (starved > 100) {
-//                rp.sendTableAndHandcards()
-//                starved++
-//            }
+            if (starved > 100) {
+                rp.sendTableAndHandcards()
+                starved++
+            }
                 if (starved > 200) {
                     break
                 }

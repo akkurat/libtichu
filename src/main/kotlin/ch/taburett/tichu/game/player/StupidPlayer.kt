@@ -1,19 +1,16 @@
 package ch.taburett.tichu.game.player
 
 import ch.taburett.tichu.cards.*
-import ch.taburett.tichu.game.ImmutableTable
 import ch.taburett.tichu.game.Player
 import ch.taburett.tichu.game.protocol.*
-import ch.taburett.tichu.patterns.LegalType.OK
 import ch.taburett.tichu.patterns.Single
-import ch.taburett.tichu.patterns.TichuPattern
 import java.util.*
 
 
 class StupidPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer {
     override fun receiveMessage(message: ServerMessage, player: Player) {
         val move = stupidMove(message)
-        if(move != null) listener(move)
+        if (move != null) listener(move)
     }
 
     override fun toString(): String {
@@ -35,7 +32,7 @@ class StupidPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer {
 }
 
 
- fun stupidMove(
+fun stupidMove(
     message: WhosMove,
 ): PlayerMessage? {
     if (message.stage == Stage.GIFT_DRAGON) {
@@ -79,14 +76,8 @@ private fun response(
         return if (all.isEmpty()) {
             move(listOf())
         } else {
-            val mypat = all.stream()
-                .filter { p -> p.beats(pat).type == OK }
-                .min(Comparator.comparingDouble(TichuPattern::rank))
-            if (mypat.isPresent) {
-                move(mypat.get().cards)
-            } else {
-                move(listOf())
-            }
+            val mypat = all.sortedBy { it.rank() }.take(4).randomOrNull()
+            if (mypat != null) move(mypat.cards) else move(listOf())
         }
     }
 }

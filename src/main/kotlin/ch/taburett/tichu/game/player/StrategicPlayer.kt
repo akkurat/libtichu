@@ -5,6 +5,7 @@ import ch.taburett.tichu.game.*
 import ch.taburett.tichu.game.protocol.*
 import ch.taburett.tichu.game.protocol.GiftDragon.ReLi.LI
 import ch.taburett.tichu.game.protocol.GiftDragon.ReLi.RE
+import ch.taburett.tichu.patterns.Empty
 import ch.taburett.tichu.patterns.Single
 import ch.taburett.tichu.patterns.TichuPattern
 import ch.taburett.tichu.patterns.TichuPatternType.SINGLE
@@ -119,10 +120,10 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
         _goneCards: Set<PlayCard>,
         cardCounts: Map<Player, Int>,
         iam: Player,
+        lastMove: PlayLogEntry? = null,
     ): Map<TichuPattern, Double> {
 
         val restcards = fulldeck - _goneCards - handcards
-
 
         val nPartner = cardCounts.getValue(iam.partner)
         val nRe = cardCounts.getValue(iam.re)
@@ -137,8 +138,16 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
             // todo: make available generic function to simulate with other players
             for (pat in pats) {
                 // until all pass
-                val tricks = Tricks()
-                val mutableDeck = MutableDeck(cardMap, iam)
+                val tricks: Tricks
+                tricks = Tricks()
+                val mutableDeck: MutableDeck
+                if (lastMove != null) {
+                    mutableDeck = MutableDeck(cardMap, lastMove.player)
+                    mutableDeck.playCards(lastMove.player, lastMove.cards)
+                    tricks.add(lastMove)
+                } else {
+                    mutableDeck = MutableDeck(cardMap, iam)
+                }
                 var youAre = iam
                 var cards: Collection<PlayCard> = pat.cards
                 do {
@@ -154,10 +163,12 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
                     if (tricks.table.allPass(mutableDeck.activePlayers())) {
                         tricks.endTrick()
                     }
+
                     if (mutableDeck.roundEnded()) {
                         tricks.endTrick()
                         break
                     }
+
                     youAre = tricks.nextPlayer(mutableDeck)
                     val move = stupidMove(
                         WhosMove(
@@ -203,7 +214,6 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
         val av = out.mapValues { it.value.average() }
 
         return av
-
     }
 
 
@@ -221,7 +231,6 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
                 .toMutableSet()
             if (allWithWish.isNotEmpty()) {
                 beatingPatterns = allWithWish
-                return move(allWithWish.first().cards)
             }
         }
 
@@ -233,30 +242,17 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
                 beatingPatterns.add(Single(PHX.asPlayCard(pat.card.getValue() + .5)))
             }
         }
-        // todo: if cheapestbreating cheaper than cheapest at all?
-        // take into account cards of other players
-
-//    val prices = beatingPatterns.associateWith { weightPossibilites(it, handcards, 0, 1.0) }
-        val prices = weightPossibilitesNoRec(handcards)
-        val beatingPrices = prices.filterKeys { beatingPatterns.contains(it) }
 
 
-        return if (beatingPrices.isNotEmpty()) {
+        val simlated = emulateRandom(
+            handcards, beatingPatterns + Empty(), wh.goneCards, wh.cardCounts, wh.youAre, table.toBeat()
+        )
 
-            val beatingCheapest = beatingPrices.minBy { it.value }
+        val bestPat = simlated.minBy { it.value }
 
-            val lower = prices.filter { it.value < beatingCheapest.value }
-            // not sure if pattern or card in those patterns should be counted
-            val ratio = lower.size.toDouble() / prices.size < 0.3
+        return Move(bestPat.key.cards)
 
-            if (ratio && (toBeat.player.playerGroup != wh.youAre.playerGroup || pat.rank() < 10)) {
-                move(beatingCheapest.key.cards)
-            } else {
-                move(listOf())
-            }
-        } else {
-            move(listOf())
-        }
+
     }
 
     private val ORPH = 7
