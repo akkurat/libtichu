@@ -2,12 +2,12 @@ package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.DOG
 
-class Tricks {
+class Tricks(lastMoves: ImmutableTable?) {
 
     private val _tricks = mutableListOf<Trick>()
     val tricks: List<Trick>
         get() = _tricks
-    private var _table = Table()
+    private var _table = Table(lastMoves)
     val table: ImmutableTable
         get() = _table.immutable()
 
@@ -29,7 +29,7 @@ class Tricks {
         } else {
             if (table.moves.filter { it !is Wished }.isEmpty()) {
                 val lastMove = tricks.last().moves.last()
-                if (lastMove is PlayLogEntry) {
+                if (lastMove is RegularMoveEntry) {
                     if (lastMove.cards.contains(DOG)) {
                         return deck.nextPlayer(lastMove.player, 2)
                     }

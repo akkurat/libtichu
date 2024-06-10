@@ -2,6 +2,7 @@ package tichu.patterns
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.patterns.Stairs
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import kotlin.test.Test
@@ -56,5 +57,17 @@ internal class StairsTest {
             ),
             Stairs.allPatterns(cards)
         )
+    }
+
+    @Test
+    fun findAll() {
+        val handcards = listOf(D7, P4, D3, D4, S8, J12, S12, S9, D11, J2, J11, P6, J5, S5)
+        val all = Stairs.allPatterns(handcards)
+
+        assertThat(all).containsExactly(
+            Stairs.pattern(listOf(P4, D4, J5, S5)),
+            Stairs.pattern(listOf(D11, J11, J12, S12)),
+        )
+
     }
 }

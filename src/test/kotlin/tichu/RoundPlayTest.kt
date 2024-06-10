@@ -22,9 +22,9 @@ class RoundPlayTest {
             A2 to mutableListOf(MAH),
             B2 to mutableListOf(S2),
         )
-        val round = RoundPlay(out, map, null)
+        val round = RoundPlay(out, map, null, null)
         round.start()
-        assertThat(round.initialPlayer).isEqualTo(A2)
+        assertThat(round.mutableDeck.initialPlayer).isEqualTo(A2)
 
     }
     @Test
@@ -36,7 +36,7 @@ class RoundPlayTest {
             B2 to mutableListOf(S2),
         )
         val messageSink = ArrayDeque<WrappedServerMessage>()
-        val round = RoundPlay(messageSink::add, map, null)
+        val round = RoundPlay(messageSink::add, map, null, null)
         round.start()
         round.regularMove(A2, move(setOf(MAH), 5))
 
@@ -52,7 +52,7 @@ class RoundPlayTest {
             B2 to mutableListOf(S2),
         )
         val messageSink = ArrayDeque<WrappedServerMessage>()
-        val round = RoundPlay(messageSink::add, map, null)
+        val round = RoundPlay(messageSink::add, map, null, null)
         round.start()
         round.regularMove(A2, move(setOf(MAH), 5))
 
@@ -67,7 +67,7 @@ class RoundPlayTest {
             A2 to mutableListOf(MAH, D2),
             B2 to mutableListOf(S2),
         )
-        val round = RoundPlay(out, map, null)
+        val round = RoundPlay(out, map, null, null)
         round.start()
         round.regularMove(A1, Move(setOf(J5)))
 
@@ -83,7 +83,7 @@ class RoundPlayTest {
             B2 to mutableListOf(S2),
         )
 
-        val round = RoundPlay(out, map, null)
+        val round = RoundPlay(out, map, null, null)
 
         round.start()
         round.regularMove(A2, Move(setOf(MAH)))
@@ -103,7 +103,7 @@ class RoundPlayTest {
             B2 to mutableListOf(S2),
         )
 
-        val round = RoundPlay(out, map, null)
+        val round = RoundPlay(out, map, null, null)
 
         round.start()
         round.regularMove(A2, Move(setOf(MAH)))
@@ -123,7 +123,7 @@ class RoundPlayTest {
             B2 to mutableListOf(S2),
         )
 
-        val round = RoundPlay(out, map, null)
+        val round = RoundPlay(out, map, null, null)
 
         round.start()
         round.regularMove(A2, Move(setOf(MAH)))

@@ -25,13 +25,13 @@ class TestRoundInfo {
         val b2: List<HandCard> = (fulldeck - a1 - b1 - a2)
 
         val tricks = listOf(
-            listOf(PlayLogEntry(A1, a1.toList()), PlayerFinished(A1), p(B1), p(A2), p(B2)),
-            listOf(PlayLogEntry(B1, b1_str.toList()), p(A2), p(B2)),
-            listOf(PlayLogEntry(B1, b1_fh.toList()), p(A2), p(B2)),
-            listOf(PlayLogEntry(B1, DRG), p(A2), p(B2), DrgGift(B1, A2)),
-            listOf(PlayLogEntry(B1, listOf(PHX.asPlayCard(13), J13)), PlayerFinished(B1), p(A2), p(B2)),
-        ) + a2.dropLast(1).map { listOf(PlayLogEntry(A2, it), p(B2)) } + a2.takeLast(1)
-            .map { listOf(PlayLogEntry(A2, it), PlayerFinished(A2)) }
+            listOf(RegularMoveEntry(A1, a1.toList()), PlayerFinished(A1), p(B1), p(A2), p(B2)),
+            listOf(RegularMoveEntry(B1, b1_str.toList()), p(A2), p(B2)),
+            listOf(RegularMoveEntry(B1, b1_fh.toList()), p(A2), p(B2)),
+            listOf(RegularMoveEntry(B1, DRG), p(A2), p(B2), DrgGift(B1, A2)),
+            listOf(RegularMoveEntry(B1, listOf(PHX.asPlayCard(13), J13)), PlayerFinished(B1), p(A2), p(B2)),
+        ) + a2.dropLast(1).map { listOf(RegularMoveEntry(A2, it), p(B2)) } + a2.takeLast(1)
+            .map { listOf(RegularMoveEntry(A2, it), PlayerFinished(A2)) }
 
         val initMap = mapOf(
             A1 to a1,
@@ -47,10 +47,10 @@ class TestRoundInfo {
             B2 to b2
         )
 
-        val ri = RoundInfo(null, tricks.map { Trick(it) }, initMap, laterMap)
+        val ri = RoundInfo(null, mapTricksToObj(tricks), initMap, laterMap)
         val points = ri.cardPoints
 
-        val allCardsPlayed = tricks.flatten().filterIsInstance<PlayLogEntry>().flatMap { it.cards }
+        val allCardsPlayed = tricks.flatten().filterIsInstance<RegularMoveEntry>().flatMap { it.cards }
 
         val allCardsLeft = laterMap.values.flatten()
         allCardsLeft.sumOf { it.getPoints() }
@@ -69,6 +69,15 @@ class TestRoundInfo {
         )
     }
 
+    private fun mapTricksToObj(tricks: List<List<IPlayLogEntry>>): Tricks {
+        val tricksO = Tricks(null)
+        for (trick in tricks) {
+            trick.forEach { tricksO.add(it) }
+            tricksO.endTrick()
+        }
+        return tricksO
+    }
+
     @Test
     fun testDoubleWin() {
 
@@ -80,12 +89,12 @@ class TestRoundInfo {
         val (b1, b2) = (fulldeck - a1 - a2).shuffled().chunked(14)
 
         val tricks = listOf(
-            listOf(PlayLogEntry(A1, a1 - DOG), p(B1), p(A2), p(B2)),
-            listOf(PlayLogEntry(A1, DOG), PlayerFinished(A1), p(B1), p(A2), p(B2)),
-            listOf(PlayLogEntry(A2, a2_str), p(B2), p(B1)),
-            listOf(PlayLogEntry(A2, a2_fh.toList()), p(B2), p(B1)),
-            listOf(PlayLogEntry(A2, DRG), p(B2), p(B1)),
-            listOf(PlayLogEntry(A2, setOf(PHX.asPlayCard(13), J13)), PlayerFinished(A2))
+            listOf(RegularMoveEntry(A1, a1 - DOG), p(B1), p(A2), p(B2)),
+            listOf(RegularMoveEntry(A1, DOG), PlayerFinished(A1), p(B1), p(A2), p(B2)),
+            listOf(RegularMoveEntry(A2, a2_str), p(B2), p(B1)),
+            listOf(RegularMoveEntry(A2, a2_fh.toList()), p(B2), p(B1)),
+            listOf(RegularMoveEntry(A2, DRG), p(B2), p(B1)),
+            listOf(RegularMoveEntry(A2, setOf(PHX.asPlayCard(13), J13)), PlayerFinished(A2))
         )
 
         val initMap = mapOf(
@@ -100,17 +109,17 @@ class TestRoundInfo {
             B1 to b1,
             B2 to b2
         )
-        val ri = RoundInfo(null, tricks.map { Trick(it) }, initMap, laterMap)
+        val ri = RoundInfo(null, mapTricksToObj(tricks), initMap, laterMap)
         val cardPoints = ri.cardPoints
         val bonus = ri.bonusPoints
         assertAll(
-            {assertThat(cardPoints).containsExactly(Entry(PlayerGroup.A, 100), Entry(PlayerGroup.B, 0))},
-            {assertThat(bonus).containsExactly(Entry(PlayerGroup.A, 100), Entry(PlayerGroup.B, 0))},
+            { assertThat(cardPoints).containsExactly(Entry(PlayerGroup.A, 100), Entry(PlayerGroup.B, 0)) },
+            { assertThat(bonus).containsExactly(Entry(PlayerGroup.A, 100), Entry(PlayerGroup.B, 0)) },
 
-        )
+            )
     }
 
-    private fun p(player: Player): PlayLogEntry = PlayLogEntry(player)
+    private fun p(player: Player): RegularMoveEntry = RegularMoveEntry(player)
 }
 
 

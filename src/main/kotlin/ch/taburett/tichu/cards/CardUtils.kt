@@ -25,7 +25,7 @@ fun pattern(cards: Collection<PlayCard >): TichuPattern {
 }
 
 fun allPatterns(cards: Collection<HandCard>): Set<TichuPattern> {
-    return TichuPatternType.values()
+    return TichuPatternType.entries
         .flatMap { it.patterns(cards) }
         .toSet()
 }

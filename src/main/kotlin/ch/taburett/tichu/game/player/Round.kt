@@ -8,7 +8,7 @@ import kotlinx.coroutines.*
 
 
 fun main() {
-    val simpleBattle = SimpleBattle(200)
+    val simpleBattle = SimpleBattle(100)
     val roundlog: List<SimpleBattle.Linfo>
     runBlocking {
         roundlog = simpleBattle.start()
@@ -21,24 +21,17 @@ fun main() {
     )
 
 
-    val resultsbytype = roundlog.filterIsInstance<SimpleBattle.BattleResult>()
-        .flatMap { s ->
-            val ri = s.roundInfo.getRoundInfo()
-            ri.pointsPerPlayer.map { s.players.getValue(it.key).type to it.value }
-        }
-        .groupBy({ it.first }, { it.second })
-//    println(resultsbytype)
-    println(resultsbytype.mapValues { it.value.average() })
+//    val resultsbytype = roundlog.filterIsInstance<SimpleBattle.BattleResult>()
+//        .flatMap { s ->
+//            val ri = s.roundInfo.getRoundInfo()
+//            ri.pointsPerPlayer.map { s.players.getValue(it.key).type to it.value }
+//        }
+//        .groupBy({ it.first }, { it.second })
+////    println(resultsbytype)
+//    println(resultsbytype.mapValues { it.value.average() })
 
     val rb = roundlog.filterIsInstance<SimpleBattle.BattleResult>()
-        .flatMap { s ->
-            val ri = s.roundInfo.getRoundInfo()
-            val lu = s.players::getValue
-            val shit = ri.pointsPerPlayer.map { (p, v) ->
-                Grr(setOf(lu(p).type, lu(p.partner).type), setOf(lu(p.re).type, lu(p.li).type)) to v
-            }
-            shit
-        }
+        .flatMap(::mapResult)
         .groupBy({ it.first }, { it.second })
 //    println(rb)
     println(rb.mapValues { it.value.average() })
@@ -48,6 +41,16 @@ fun main() {
         println(s.players.getValue(player))
     }
 
+}
+
+private fun mapResult(s: SimpleBattle.BattleResult): List<Pair<Grr, Int>> {
+    val ri = s.roundInfo.getRoundInfo()
+    val lu = s.players::getValue
+    val shit = ri.pointsPerPlayer
+        .map { (p, v) ->
+            Grr(setOf(lu(p).type, lu(p.partner).type), setOf(lu(p.re).type, lu(p.li).type)) to v
+        }
+    return shit
 }
 
 class Grr(val myteam: Set<String>, val otherPlayers: Set<String>) {
@@ -103,10 +106,11 @@ class SimpleBattle(val N: Int = 5000) {
             (1..N).map {
                 async(Dispatchers.Default) {
                     //                println(round())
-                    print("${it}s${Thread.currentThread().threadId()} ")
+//                    print("${it}s${Thread.currentThread().threadId()} ")
                     val round = Round()
                     val info = round.start()
-                    print("${it}f${Thread.currentThread().threadId()} ")
+                    if (info is BattleResult) println(mapResult(info))
+                    else println("Starved")
                     info
                 }
             }.awaitAll()
@@ -117,12 +121,6 @@ class SimpleBattle(val N: Int = 5000) {
 
 class Round {
 
-    val factories: Set<((PlayerMessage) -> Unit) -> AutoPlayer> =
-        setOf(
-            { StupidPlayer(it) },
-            { StrategicPlayer(it) },
-            { LessStupidPlayer(it) },
-        )
 
     private lateinit var players: Map<Player, AutoPlayer>
 
@@ -145,9 +143,13 @@ class Round {
             playersQueue.add(pm)
         }
 
-
-        val groupFactory = PlayerGroup.entries.associateWith { p -> factories.random() }
-
+        val factories: Set<((PlayerMessage) -> Unit) -> AutoPlayer> =
+            setOf(
+                { StupidPlayer(it) },
+                { StrategicPlayer(it) },
+//            { LessStupidPlayer(it) },
+            )
+        val groupFactory = PlayerGroup.entries.zip(factories).toMap()
 
         val players = Player.entries.associateWith {
             groupFactory.getValue(it.playerGroup)({ m ->
@@ -158,8 +160,7 @@ class Round {
 //        val players =
 //            Player.entries.associateWith { p -> factories.random()({ m -> receivePlayer(WrappedPlayerMessage(p, m)) }) }
 
-        val rp = RoundPlay(::receiveServer, cardMap, null)
-
+        val rp = RoundPlay(::receiveServer, cardMap, null, null)
 
         rp.start()
 
@@ -178,10 +179,10 @@ class Round {
                 } else {
                     starved++
                 }
-            if (starved > 100) {
-                rp.sendTableAndHandcards()
-                starved++
-            }
+//            if (starved > 100) {
+//                rp.sendTableAndHandcards()
+//                starved++
+//            }
                 if (starved > 200) {
                     break
                 }

@@ -9,21 +9,33 @@ import ch.taburett.tichu.patterns.LegalType
 import org.jetbrains.annotations.VisibleForTesting
 
 
-class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparationInfo: PreparationInfo?) {
+class RoundPlay(
+    val com: Out,
+    deck: MutableDeck,
+    val preparationInfo: PreparationInfo?,
+    currentTable: ImmutableTable?,
+) {
+    constructor(
+        com: Out,
+        cardMap: Map<Player, Collection<HandCard>>,
+        preparationInfo: PreparationInfo?,
+        currentTable: ImmutableTable?, // hm.. how about outsourcing all logic inside a trick to the trick class?
+    ) : this(com, MutableDeck(cardMap), preparationInfo, currentTable) {
+
+    }
 
     enum class State { INIT, RUNNING, FINISHED }
 
-    private lateinit var leftoverHandcards: Map<Player, List<HandCard>>
+    private lateinit var leftoverHandcards: Map<Player, Collection<HandCard>>
 
     var state = INIT
 
 
-    //todo: class
-    var tricks = Tricks()
+    var tricks = Tricks(currentTable)
 
-    val mutableDeck = MutableDeck(cardMap)
+    val mutableDeck = MutableDeck(deck)
 
-    val initalCardMap = cardMap.mapValues { (_, v) -> v.toList() }
+    val initalCardMap = mutableDeck.getCardMap()
 
 
     // todo: init by external log
@@ -130,7 +142,7 @@ class RoundPlay(val com: Out, cardMap: Map<Player, List<HandCard>>, val preparat
             tricks.add(PlayerFinished(player))
         }
 
-        tricks.add(PlayLogEntry(player, playedCards.toList()))
+        tricks.add(RegularMoveEntry(player, playedCards.toList()))
         if (playedCards.contains(DOG)) {
             tricks.endTrick()
         }
@@ -241,8 +253,7 @@ interface IPlayLogEntry {
     val player: Player
 }
 
-// todo rename
-data class PlayLogEntry(override val player: Player, val cards: Collection<PlayCard> = listOf()) : IPlayLogEntry {
+data class RegularMoveEntry(override val player: Player, val cards: Collection<PlayCard> = listOf()) : IPlayLogEntry {
     constructor(player: Player, card: PlayCard) : this(player, listOf(card))
 
     val pass get() = cards.isEmpty()
@@ -300,7 +311,7 @@ data class Trick(val moves: List<IPlayLogEntry>) {
             return if (drg != null) {
                 drg.to;
             } else {
-                moves.filterIsInstance<PlayLogEntry>().last { !it.pass }.player
+                moves.filterIsInstance<RegularMoveEntry>().last { !it.pass }.player
             }
         }
 
@@ -310,6 +321,6 @@ data class Trick(val moves: List<IPlayLogEntry>) {
         }
 
     val allCards: List<PlayCard>
-        get() = moves.filterIsInstance<PlayLogEntry>().flatMap { it.cards }
+        get() = moves.filterIsInstance<RegularMoveEntry>().flatMap { it.cards }
 }
 

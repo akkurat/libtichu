@@ -8,7 +8,7 @@ import kotlin.math.abs
 
 class Stairs private constructor(cards: List<PlayCard>) : TichuPattern(TichuPatternType.STAIRS, cards) {
     companion object : PatternImplFactory {
-        override fun pattern(cards: Collection<PlayCard>): TichuPattern? {
+        override fun pattern(cards: Collection<PlayCard>): Stairs? {
             if (cards.size % 2 != 0) {
                 return null
             }
@@ -27,7 +27,7 @@ class Stairs private constructor(cards: List<PlayCard>) : TichuPattern(TichuPatt
             return Stairs(sortedcards)
         }
 
-        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?): Set<TichuPattern> {
+        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?): Set<Stairs> {
 
             // maybe a class for deck would be more appropriate than just a list?
             val cardByValue = cards.filterIsInstance<NumberCard>()
@@ -38,7 +38,7 @@ class Stairs private constructor(cards: List<PlayCard>) : TichuPattern(TichuPatt
             val sorted = cardByValue.keys.sorted()
             if (sorted.size >= 2) { // need at least two pairs for a stair
 
-                val found = mutableSetOf<TichuPattern>()
+                val found = mutableSetOf<Stairs>()
 
                 val buffer = mutableListOf<Double>()
                 var last = sorted.first()
@@ -58,6 +58,7 @@ class Stairs private constructor(cards: List<PlayCard>) : TichuPattern(TichuPatt
 
                 for (height in sorted.drop(1)) {
                     if (height - last > 1) {
+                        addFromBuff()
                         buffer.clear()
                     }
                     buffer.add(height)

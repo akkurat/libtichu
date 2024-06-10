@@ -37,7 +37,7 @@ class Game(com: Out) {
             val paeckli = ((fulldeck - rigged).shuffled() + rigged).chunked(14)
             val cardmap = playerList.zip(paeckli).toMap()
 
-            roundPlay = RoundPlay(com, cardmap, null)
+            roundPlay = RoundPlay(com, cardmap, null, null)
             roundPlay!!.start()
         }
 
@@ -61,7 +61,7 @@ class Game(com: Out) {
 
     private fun checkTransition() {
         if (prepareRound != null && prepareRound!!.isFinished) {
-            roundPlay = RoundPlay(com, prepareRound!!.cardMap, prepareRound!!.preparationInfo)
+            roundPlay = RoundPlay(com, prepareRound!!.cardMap, prepareRound!!.preparationInfo, null)
             prepareRound = null
             roundPlay!!.start()
         } else if (roundPlay != null && roundPlay!!.state == RoundPlay.State.FINISHED) {

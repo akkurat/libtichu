@@ -5,9 +5,9 @@ import ch.taburett.tichu.cards.PlayCard
 /**
  * Current open trick
  */
-class Table : ImmutableTable {
+class Table(moves: ImmutableTable? = null) : ImmutableTable {
 
-    override val moves = ArrayList<IPlayLogEntry>()
+    override val moves = if (moves == null) ArrayList<IPlayLogEntry>() else ArrayList(moves.moves)
 
     fun add(played: IPlayLogEntry) {
         moves.add(played)
@@ -16,6 +16,7 @@ class Table : ImmutableTable {
     fun immutable(): ImmutableTable {
         return ImmutableTableImpl(moves)
     }
+
     override fun toString(): String {
         return moves.toString()
     }
@@ -24,7 +25,7 @@ class Table : ImmutableTable {
 open class ImmutableTableImpl(moves: List<IPlayLogEntry>) : ImmutableTable {
     override val moves = moves.toList()
     override fun toString(): String {
-        return moves.joinToString ("|")
+        return moves.joinToString("|")
     }
 }
 
@@ -39,7 +40,7 @@ interface ImmutableTable {
 
         val passedPlayers = mutableSetOf<Player>()
 
-        for (p in moves.reversed().filterIsInstance<PlayLogEntry>()) {
+        for (p in moves.reversed().filterIsInstance<RegularMoveEntry>()) {
             if (p.pass) {
                 passedPlayers.add(p.player)
             } else {
@@ -51,8 +52,8 @@ interface ImmutableTable {
 
     }
 
-    fun toBeat(): PlayLogEntry {
-        return moves.filterIsInstance<PlayLogEntry>().last { !it.pass }
+    fun toBeat(): RegularMoveEntry {
+        return moves.filterIsInstance<RegularMoveEntry>().last { !it.pass }
     }
 
     fun toBeatCards(): Collection<PlayCard> {

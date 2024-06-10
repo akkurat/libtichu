@@ -9,6 +9,7 @@ import ch.taburett.tichu.patterns.Empty
 import ch.taburett.tichu.patterns.Single
 import ch.taburett.tichu.patterns.TichuPattern
 import ch.taburett.tichu.patterns.TichuPatternType.SINGLE
+import kotlin.math.abs
 
 
 class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer {
@@ -73,26 +74,23 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
         }
 
 
-        val result = emulateRandom(handcards, pats + orphans, wh.goneCards, wh.cardCounts, wh.youAre)
+        var result = emulateRandom(handcards, pats + orphans, wh.goneCards, wh.cardCounts, wh.youAre, null)
 
-//        val cards = if (orphans.any { it.rank() < ORPH } || result.isEmpty()) {
-//            setOf(orphans.minBy { it.rank() }.card)
-//        } else {
-////            (pats + orphans).filter { it !is Single || it.card.getSort() >= ORPH }
-////                .minBy { it.rank() }.cards
-//            result.maxBy { it.value }.key.cards
-//        }
+        mapPatternValues(result.keys, handcards)
+
+        result = result.mapValues { (k, v) ->
+            if (k is Single) v + cardGettingRidIncentive(k.card.asHandcard()) else v
+        }
+
+        val numPatsPerCard = pats.flatMap { it.cards }.groupingBy { it.asHandcard() }.eachCount()
+
+
+        val penalties = result.mapValues { (k, v) ->
+            k.cards.map { numPatsPerCard[it.asHandcard()] }.sumOf { (it ?: 0) * (-10) }
+        }
+
 
         val cards = result.maxBy { it.value }.key.cards
-
-//        {
-//            val c = handcards.minBy { it.getSort() }
-//            when (c) {
-//                is Phoenix -> setOf(PHX.asPlayCard(1.5))
-//                is PlayCard -> setOf(c)
-//                else -> setOf()
-//            }
-//        }
 
         val move = if (cards.contains(MAH)) {
             val ownValues = handcards.filterIsInstance<NumberCard>()
@@ -120,10 +118,10 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
         _goneCards: Set<PlayCard>,
         cardCounts: Map<Player, Int>,
         iam: Player,
-        lastMove: PlayLogEntry? = null,
+        table: ImmutableTable?,
     ): Map<TichuPattern, Double> {
 
-        val restcards = fulldeck - _goneCards - handcards
+        val restcards = fulldeck - _goneCards.map { it.asHandcard() } - handcards
 
         val nPartner = cardCounts.getValue(iam.partner)
         val nRe = cardCounts.getValue(iam.re)
@@ -134,86 +132,46 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
             val (partner, left, right) = randomCards(restcards, nPartner, nRe, nLi)
 
             val cardMap = mapOf(iam to handcards, iam.partner to partner, iam.re to right, iam.li to left)
+            // hm... assuming it is our move
+            // stupid
+            val boah = MutableDeck(cardMap, iam)
 
-            // todo: make available generic function to simulate with other players
             for (pat in pats) {
-                // until all pass
-                val tricks: Tricks
-                tricks = Tricks()
-                val mutableDeck: MutableDeck
-                if (lastMove != null) {
-                    mutableDeck = MutableDeck(cardMap, lastMove.player)
-                    mutableDeck.playCards(lastMove.player, lastMove.cards)
-                    tricks.add(lastMove)
-                } else {
-                    mutableDeck = MutableDeck(cardMap, iam)
+                // todo: make available generic function to simulate with other players
+                val result = SimulationRound().start(boah, table)
+                if (result.finished) {
+                    val ri = result.roundInfo
+                    val ow = ri.tricks.orderWinning
+
+                    var points: Int = 0
+                    try {
+                        val totalPoints = ri.getRoundInfo().totalPoints
+                        points += totalPoints.getValue(iam.playerGroup)
+                        points -= totalPoints.getValue(iam.playerGroup.other())
+                    } catch (_: Exception) {
+                        //todo: // more generic counting
+                        // however, not possible correctly without all tricks of the game
+                    } /// uuuugly
+
+                    points += when (ow.indexOf(iam)) {
+                        -1 -> -30
+                        0 -> 120
+                        1 -> 40
+                        else -> 10
+                    }
+
+
+
+                    out[pat]?.add(points)
                 }
-                var youAre = iam
-                var cards: Collection<PlayCard> = pat.cards
-                do {
-                    mutableDeck.playCards(youAre, cards)
-                    tricks.add(PlayLogEntry(youAre, cards))
-                    if (mutableDeck.cards(youAre).isEmpty()) {
-                        tricks.add(PlayerFinished(youAre))
-                    }
-                    if (cards.contains(DOG)) {
-                        tricks.endTrick()
-                    }
-
-                    if (tricks.table.allPass(mutableDeck.activePlayers())) {
-                        tricks.endTrick()
-                    }
-
-                    if (mutableDeck.roundEnded()) {
-                        tricks.endTrick()
-                        break
-                    }
-
-                    youAre = tricks.nextPlayer(mutableDeck)
-                    val move = stupidMove(
-                        WhosMove(
-                            youAre, youAre, mutableDeck.cards(youAre), tricks.table,
-                            null, null, false, mutableDeck.deckSizes(), mutableDeck.goneCards()
-                        )
-                    )
-                    if (move is Move) {
-                        cards = move.cards
-                    } else {
-                        cards = listOf()
-                    }
-
-                } while (true)
-                // now what? count moves
-
-                val ow = tricks.orderWinning
-
-                val points = when (ow.indexOf(iam)) {
-                    -1 -> -20
-                    0 -> 20
-                    1 -> 5
-                    else -> 3
-                }
-
-
-                // partner makes only sense when schupfed cards are taken into account
-//                if(ow.indexOf(iam) == 0) {
-//                    points += 10
-//                    if(ow.indexOf(iam.partner)==1) {
-//                        points += 30
-//                    }
-//                }
-//                if(ow.indexOf(iam.partner) == 0) points += 10
-//                if(ow.indexOf(iam.re) == 0 ) points -= 10
-//                if(ow.indexOf(iam.li) == 0 ) points -= 10
-
-
-                out[pat]?.add(points)
             }
 //            println(out)
         }
         val av = out.mapValues { it.value.average() }
+        val mx =av.values.maxOf { abs(it) }
 
-        return av
+
+        return av.mapValues { it.value/mx }
     }
 
 
@@ -243,12 +201,12 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
             }
         }
 
+        val pats = _allPatterns(handcards)
 
-        val simlated = emulateRandom(
-            handcards, beatingPatterns + Empty(), wh.goneCards, wh.cardCounts, wh.youAre, table.toBeat()
-        )
+        val simlated =
+            emulateRandom(handcards, beatingPatterns + Empty(), wh.goneCards, wh.cardCounts, wh.youAre, table)
 
-        val bestPat = simlated.minBy { it.value }
+        val bestPat = simlated.maxBy { it.value }
 
         return Move(bestPat.key.cards)
 

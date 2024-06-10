@@ -16,7 +16,8 @@ interface Deck {
     fun leftovers(): Map<Player, List<HandCard>>
 }
 
-class MutableDeck(cardMap: Map<Player, List<HandCard>>, initialPlayer: Player? = null ) : Deck {
+class MutableDeck(cardMap: Map<Player, Collection<HandCard>>, initialPlayer: Player? = null ) : Deck {
+    constructor(deck:  MutableDeck) : this(deck.cardMap, deck.initialPlayer)
 
     private val cardMap: Map<Player, MutableList<HandCard>> = cardMap.mapValues { (_, l) -> l.toMutableList() }
     private val _goneCards = mutableSetOf<PlayCard>()
@@ -50,7 +51,7 @@ class MutableDeck(cardMap: Map<Player, List<HandCard>>, initialPlayer: Player? =
 
     override fun deckSizes() = cardMap.mapValues { it.value.size }
     override fun cards(player: Player): List<HandCard> = cardMap.getValue(player).toList()
-
+    fun getCardMap() = cardMap.mapValues { (_, v) -> v.toList() }
 
     override fun roundEnded() = when (finishedPlayers().size) {
         2 -> {

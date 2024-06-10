@@ -28,12 +28,14 @@ fun cardCost(hc: HandCard): Double {
 
 fun cardGettingRidIncentive(hc: HandCard): Double {
     return when (hc) {
-        is NumberCard -> (1 - normValue(hc)).pow(2)
+        is NumberCard -> (1 - normValue(hc)).pow(3)
+        DOG -> 1.0
+        MAH -> (13/14.0).pow(3)
         else -> 0.0
     }
 }
 
-private fun normValue(hc: NumberCard) = (hc.getValue() - 2) / 12
+fun normValue(hc: NumberCard) = hc.getValue() / 14
 
 // dep. on the played cards also the pattern values change
 fun patValue(pat: TichuPattern): Double {
