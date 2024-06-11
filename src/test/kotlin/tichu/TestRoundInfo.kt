@@ -69,8 +69,8 @@ class TestRoundInfo {
         )
     }
 
-    private fun mapTricksToObj(tricks: List<List<IPlayLogEntry>>): Tricks {
-        val tricksO = Tricks(null)
+    private fun mapTricksToObj(tricks: List<List<IPlayLogEntry>>): MutableTricks {
+        val tricksO = MutableTricks(null)
         for (trick in tricks) {
             trick.forEach { tricksO.add(it) }
             tricksO.endTrick()

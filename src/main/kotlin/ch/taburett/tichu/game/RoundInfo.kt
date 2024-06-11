@@ -5,7 +5,7 @@ import ch.taburett.tichu.cards.fulldeck
 
 data class RoundInfo(
     val prepareLog: PreparationInfo?,
-    val tricks: Tricks,
+    val tricks: MutableTricks,
     val initialCardmap: Map<Player, Collection<HandCard>>,
     val leftoverHandcards: Map<Player, Collection<HandCard>>,
 ) {
@@ -47,7 +47,7 @@ data class RoundInfo(
             val (first, second) = orderOfWinning
             // double win
             if (first.playerGroup == second.playerGroup) {
-                return mapOf(first.playerGroup to fulldeck, first.playerGroup.other() to listOf())
+                return mapOf(first.playerGroup to fulldeck.toList(), first.playerGroup.other() to listOf())
             } else {
                 val third = orderOfWinning[2]
                 val last = Player.entries.minus(setOf(first, second, third))[0]

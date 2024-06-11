@@ -1,47 +1,44 @@
 package ch.taburett.tichu.game
 
-import ch.taburett.tichu.cards.fulldeck
 import ch.taburett.tichu.game.player.Round.AutoPlayer
 import ch.taburett.tichu.game.player.SimpleBattle
 import ch.taburett.tichu.game.player.StupidPlayer
 import ch.taburett.tichu.game.protocol.PlayerMessage
 
-class SimulationRound {
+class SimulationRound(
 
-    val factories: Set<((PlayerMessage) -> Unit) -> AutoPlayer> = setOf(
-        { StupidPlayer(it) },
-//        { StrategicPlayer(it) },
-//        { LessStupidPlayer(it) },
-    )
-
+    _deck: Deck? = null,
+    soFareMoves: MutableTricks,
+    _playersFactory: ((a: Player, b: (PlayerMessage) -> Unit) -> AutoPlayer)? = null,
+) {
 
     // todo: class per round
-    fun start(_cardMap: MutableDeck? = null, lastMove: ImmutableTable?): SimpleBattle.Linfo {
 
-        val cardMap = _cardMap ?: MutableDeck(Player.entries.zip(fulldeck.shuffled().chunked(14)).toMap())
+    val deck = _deck?.let { MutableDeck.copy(it) } ?: MutableDeck.createInitial()
 
-        val serverQueue = ArrayDeque<WrappedServerMessage>()
-        val playersQueue = ArrayDeque<WrappedPlayerMessage>()
+    val serverQueue = ArrayDeque<WrappedServerMessage>()
+    val playersQueue = ArrayDeque<WrappedPlayerMessage>()
 
-        fun receiveServer(sm: WrappedServerMessage) {
-            serverQueue.add(sm)
-        }
+    fun receiveServer(sm: WrappedServerMessage) {
+        serverQueue.add(sm)
+    }
 
-        fun receivePlayer(pm: WrappedPlayerMessage) {
-            playersQueue.add(pm)
-        }
+    fun receivePlayer(pm: WrappedPlayerMessage) {
+        playersQueue.add(pm)
+    }
 
-        val groupFactory = PlayerGroup.entries.associateWith { p -> factories.random() }
+    val groupFactory = PlayerGroup.entries.associateWith { p -> }
 
-        // todo: external param
-        val players = Player.entries.associateWith {
-            groupFactory.getValue(it.playerGroup)({ m ->
-                receivePlayer(WrappedPlayerMessage(it, m))
-            })
-        }
+    // todo: external param
+    val playersFactory = _playersFactory ?: { a, com -> StupidPlayer(com) }
 
-        val rp = RoundPlay(::receiveServer, cardMap, null, lastMove)
+    val players = Player.entries.associateWith {
+        playersFactory(it) { m: PlayerMessage -> receivePlayer(WrappedPlayerMessage(it, m)) }
+    }
+    val rp = RoundPlay(::receiveServer, deck, null, soFareMoves)
 
+    fun start(
+    ): SimpleBattle.Linfo {
 
         rp.start()
 
@@ -60,10 +57,10 @@ class SimulationRound {
                 } else {
                     starved++
                 }
-                if (starved > 100) {
-                    rp.sendTableAndHandcards()
-                    starved++
-                }
+//                if (starved > 100) {
+//                    rp.sendTableAndHandcards()
+//                    starved++
+//                }
                 if (starved > 200) {
                     break
                 }
@@ -79,3 +76,4 @@ class SimulationRound {
     }
 
 }
+

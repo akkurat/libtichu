@@ -90,7 +90,7 @@ private fun opening(
         if (mightFullfillWish) {
             val numberCard = handcards
                 .filterIsInstance<NumberCard>()
-                .filter { nc -> Objects.equals(message.wish, nc.getValue()) }
+                .filter { nc -> message.wish!! - nc.getValue() == 0.0 }
                 .minByOrNull { it.getValue() }
             return moveSingle(numberCard)
         }

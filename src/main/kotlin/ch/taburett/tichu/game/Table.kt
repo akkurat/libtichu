@@ -7,7 +7,7 @@ import ch.taburett.tichu.cards.PlayCard
  */
 class Table(moves: ImmutableTable? = null) : ImmutableTable {
 
-    override val moves = if (moves == null) ArrayList<IPlayLogEntry>() else ArrayList(moves.moves)
+    override val moves = moves?.moves?.toMutableList() ?: mutableListOf()
 
     fun add(played: IPlayLogEntry) {
         moves.add(played)
@@ -58,5 +58,10 @@ interface ImmutableTable {
 
     fun toBeatCards(): Collection<PlayCard> {
         return if (isNotEmpty()) toBeat().cards else emptyList()
+    }
+
+    fun allCards(): List<PlayCard> {
+        return moves.filterIsInstance<RegularMoveEntry>().flatMap { it.cards }
+
     }
 }

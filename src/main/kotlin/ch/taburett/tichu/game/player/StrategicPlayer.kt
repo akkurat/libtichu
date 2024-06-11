@@ -9,13 +9,17 @@ import ch.taburett.tichu.patterns.Empty
 import ch.taburett.tichu.patterns.Single
 import ch.taburett.tichu.patterns.TichuPattern
 import ch.taburett.tichu.patterns.TichuPatternType.SINGLE
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlin.math.abs
 
 
 class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer {
+    @OptIn(DelicateCoroutinesApi::class)
     override fun receiveMessage(message: ServerMessage, player: Player) {
+//        GlobalScope.launch {
         val response = strategic(message)
         if (response != null) listener(response)
+//        }
     }
 
     override val type: String = "Strat"
@@ -64,8 +68,8 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
         }
 
 
-        var (pats, orphans) = _allPatterns(handcards)
 
+        var (pats, orphans) = _allPatterns(handcards)
 
 
         if (mightFullfillWish) {
@@ -74,7 +78,8 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
         }
 
 
-        var result = emulateRandom(handcards, pats + orphans, wh.goneCards, wh.cardCounts, wh.youAre, null)
+        var result = emulateRandom(handcards, pats + orphans, wh.goneCards,
+            wh.cardCounts, wh.youAre, wh.tricks)
 
         mapPatternValues(result.keys, handcards)
 
@@ -115,33 +120,48 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
     private fun emulateRandom(
         handcards: List<HandCard>,
         pats: Set<TichuPattern>,
-        _goneCards: Set<PlayCard>,
+        goneCards: Set<PlayCard>,
         cardCounts: Map<Player, Int>,
         iam: Player,
-        table: ImmutableTable?,
+        imTable: ImmutableTricks,
     ): Map<TichuPattern, Double> {
 
-        val restcards = fulldeck - _goneCards.map { it.asHandcard() } - handcards
+        val restcards = fulldeck - goneCards.map { it.asHandcard() } - handcards
 
         val nPartner = cardCounts.getValue(iam.partner)
         val nRe = cardCounts.getValue(iam.re)
         val nLi = cardCounts.getValue(iam.li)
         val out = pats.associateWith { mutableListOf<Int>() }
-        for (i in 1..20) {
+        for (i in 1..10) {
 
             val (partner, left, right) = randomCards(restcards, nPartner, nRe, nLi)
 
-            val cardMap = mapOf(iam to handcards, iam.partner to partner, iam.re to right, iam.li to left)
-            // hm... assuming it is our move
-            // stupid
-            val boah = MutableDeck(cardMap, iam)
-
             for (pat in pats) {
-                // todo: make available generic function to simulate with other players
-                val result = SimulationRound().start(boah, table)
+                val cardMap = mapOf(
+                    iam to handcards - pat.cards.map { it.asHandcard() },
+                    iam.partner to partner,
+                    iam.re to right,
+                    iam.li to left
+                )
+
+                val deck = MutableDeck.createStarted(cardMap, iam, goneCards + pat.cards)
+                val tricks = MutableTricks(imTable)
+                // logic for adding a trick must take more responsiblity
+                tricks.add(RegularMoveEntry(iam, pat.cards))
+                if(pat.cards.contains(DOG)) {
+                    tricks.endTrick()
+                }
+
+
+                val sim = SimulationRound(deck, tricks) { p, com ->
+//                    if (p == iam && handcards.size==14 ) StrategicPlayer(com) else StupidPlayer(com)
+                    StupidPlayer(com)
+                }
+                val result = sim.start()
                 if (result.finished) {
                     val ri = result.roundInfo
                     val ow = ri.tricks.orderWinning
+
 
                     var points: Int = 0
                     try {
@@ -168,10 +188,10 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
 //            println(out)
         }
         val av = out.mapValues { it.value.average() }
-        val mx =av.values.maxOf { abs(it) }
+        val mx = av.values.maxOf { abs(it) }
 
 
-        return av.mapValues { it.value/mx }
+        return av.mapValues { it.value / mx }
     }
 
 
@@ -204,7 +224,7 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
         val pats = _allPatterns(handcards)
 
         val simlated =
-            emulateRandom(handcards, beatingPatterns + Empty(), wh.goneCards, wh.cardCounts, wh.youAre, table)
+            emulateRandom(handcards, beatingPatterns + Empty(), wh.goneCards, wh.cardCounts, wh.youAre, wh.tricks)
 
         val bestPat = simlated.maxBy { it.value }
 

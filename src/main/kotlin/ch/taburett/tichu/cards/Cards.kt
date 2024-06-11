@@ -73,6 +73,8 @@ val fulldeck = listOf(
     D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, D14,
     P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14
 )
+val fulldeckSet = fulldeck.toSet()
+
 
 // todo: lookup by King / queen instead of only 12/13
 val lookupByName = fulldeck.associateBy { k -> k.toString() }

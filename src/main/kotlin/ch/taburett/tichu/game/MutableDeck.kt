@@ -1,8 +1,6 @@
 package ch.taburett.tichu.game
 
-import ch.taburett.tichu.cards.HandCard
-import ch.taburett.tichu.cards.MAH
-import ch.taburett.tichu.cards.PlayCard
+import ch.taburett.tichu.cards.*
 
 interface Deck {
     val initialPlayer: Player
@@ -14,18 +12,59 @@ interface Deck {
     fun cards(player: Player): List<HandCard>
     fun roundEnded(): Boolean
     fun leftovers(): Map<Player, List<HandCard>>
+    fun getCardMap(): Map<Player, List<HandCard>>
+    fun copy(): Deck
 }
 
-class MutableDeck(cardMap: Map<Player, Collection<HandCard>>, initialPlayer: Player? = null ) : Deck {
-    constructor(deck:  MutableDeck) : this(deck.cardMap, deck.initialPlayer)
+class MutableDeck private constructor(
+    _cardMap: Map<Player, Collection<HandCard>>,
+    override val initialPlayer: Player,
+    _goneCards: Collection<PlayCard>,
+) : Deck {
+    companion object {
 
-    private val cardMap: Map<Player, MutableList<HandCard>> = cardMap.mapValues { (_, l) -> l.toMutableList() }
-    private val _goneCards = mutableSetOf<PlayCard>()
+        fun createInitial(cardMap: Map<Player, Collection<HandCard>>): MutableDeck {
+            // logic later on works only if all cards in map are present
+            val valid = fulldeckSet == cardMap.values.flatten().toSet()
+            val initialPlayer = cardMap
+                .filterValues { it.contains(MAH) }
+                .map { it.key }
+                .first()
+            if (valid) {
+                return MutableDeck(cardMap, initialPlayer, emptySet())
+            } else {
+                throw IllegalArgumentException("Card map must contain complete deck")
+            }
+        }
 
-    override val initialPlayer = initialPlayer ?: cardMap
-        .filterValues { it.contains(MAH) }
-        .map { it.key }
-        .first()
+        fun createStarted(
+            cardMap: Map<Player, Collection<HandCard>>,
+            initialPlayer: Player,
+            _goneCards: Collection<PlayCard>,
+        ): MutableDeck {
+            val deckVAlid = (cardMap.values.flatten() + _goneCards.map { it.asHandcard() }).toSet() == fulldeckSet
+            if (deckVAlid) {
+                return MutableDeck(cardMap, initialPlayer, _goneCards)
+            } else {
+                throw IllegalArgumentException("Card map and gone cards must add up to full deck")
+            }
+        }
+
+        fun copy(deck: Deck): MutableDeck {
+            return if (deck is MutableDeck) {
+                deck.copy()
+            } else {
+                MutableDeck(deck.getCardMap(), deck.initialPlayer, deck.goneCards())
+            }
+        }
+
+        fun createInitial(): MutableDeck {
+            return createInitial(Player.entries.zip(fulldeck.shuffled().chunked(14)).toMap())
+        }
+    }
+
+    private val cardMap: Map<Player, MutableList<HandCard>> = _cardMap.mapValues { (_, l) -> l.toMutableList() }
+    private val _goneCards = _goneCards.toMutableSet() ?: mutableSetOf()
 
 
     override fun activePlayers(): Set<Player> {
@@ -36,35 +75,47 @@ class MutableDeck(cardMap: Map<Player, Collection<HandCard>>, initialPlayer: Pla
         return cardMap.filter { (p, v) -> v.isEmpty() }.keys
     }
 
-    override fun nextPlayer(lastPlayer: Player, step: Int, cnt: Int): Player {
+    override tailrec fun nextPlayer(lastPlayer: Player, step: Int, cnt: Int): Player {
         if (cnt >= 3) {
             throw IllegalStateException("game should have ended already")
         }
         val nextIdx = ((playerList.indexOf(lastPlayer)) + 1) % playerList.size
         val player = playerList[nextIdx]
-        if (cardMap.getValue(player).isEmpty()) {
-            return nextPlayer(player, 1, cnt + 1)
+        return if (cardMap.getValue(player).isEmpty()) {
+            nextPlayer(player, 1, cnt + 1)
         } else {
-            return player
+            player
         }
     }
 
     override fun deckSizes() = cardMap.mapValues { it.value.size }
     override fun cards(player: Player): List<HandCard> = cardMap.getValue(player).toList()
-    fun getCardMap() = cardMap.mapValues { (_, v) -> v.toList() }
+    override fun getCardMap() = cardMap.mapValues { (_, v) -> v.toList() }
 
-    override fun roundEnded() = when (finishedPlayers().size) {
-        2 -> {
-            finishedPlayers().first().playerGroup == finishedPlayers().last().playerGroup
-        }
+    override fun roundEnded(): Boolean {
+        val size = finishedPlayers().size
+        val s = when (size) {
+            2 -> {
+                finishedPlayers().first().playerGroup == finishedPlayers().last().playerGroup
+            }
 
-        3 -> {
-            true
-        }
+            3 -> {
+                true
+            }
 
-        else -> {
-            false
+            4 -> {
+//                throw IllegalArgumentException("game was already finished ")
+                true
+            }
+
+            else -> {
+                false
+            }
         }
+//        if(s) {
+//            println("$size $this")
+//        }
+        return s
     }
 
     fun playCards(player: Player, playedCards: Collection<PlayCard>) {
@@ -74,4 +125,7 @@ class MutableDeck(cardMap: Map<Player, Collection<HandCard>>, initialPlayer: Pla
 
     override fun leftovers(): Map<Player, List<HandCard>> = cardMap.mapValues { (_, v) -> v.toList() }
     override fun goneCards(): Set<PlayCard> = _goneCards
+    override fun copy(): MutableDeck {
+        return MutableDeck(cardMap, initialPlayer, _goneCards)
+    }
 }

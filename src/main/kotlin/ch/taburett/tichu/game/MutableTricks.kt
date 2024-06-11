@@ -2,17 +2,17 @@ package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.DOG
 
-class Tricks(lastMoves: ImmutableTable?) {
+class MutableTricks(tricks: ImmutableTricks?): ImmutableTricks{
 
-    private val _tricks = mutableListOf<Trick>()
-    val tricks: List<Trick>
+    private val _tricks = tricks?.tricks?.toMutableList() ?: mutableListOf()
+    override val tricks: List<Trick>
         get() = _tricks
-    private var _table = Table(lastMoves)
-    val table: ImmutableTable
+    private var _table = Table(tricks?.table)
+    override val table: ImmutableTable
         get() = _table.immutable()
 
     fun endTrick() {
-        if(table.toTrick().moves.isNotEmpty()) {
+        if (table.toTrick().moves.isNotEmpty()) {
             _tricks.add(table.toTrick())
             _table = Table()
         }
@@ -40,11 +40,24 @@ class Tricks(lastMoves: ImmutableTable?) {
             }
         }
     }
+
     val orderWinning get() = tricks.flatMap { it.playerFinished }
 
     private fun notWish(it: IPlayLogEntry): Boolean = it !is Wished
     fun add(logEntry: IPlayLogEntry) {
         _table.add(logEntry)
     }
+
+    fun immutable(): Tricks {
+        return Tricks(tricks, table)
+    }
+
+}
+
+class Tricks(override val tricks: List<Trick>, override val table: ImmutableTable): ImmutableTricks
+
+interface ImmutableTricks {
+    val tricks: List<Trick>
+    val table: ImmutableTable
 
 }

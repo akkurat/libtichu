@@ -11,18 +11,16 @@ import org.jetbrains.annotations.VisibleForTesting
 
 class RoundPlay(
     val com: Out,
-    deck: MutableDeck,
+    deck: Deck,
     val preparationInfo: PreparationInfo?,
-    currentTable: ImmutableTable?,
+    soFar: ImmutableTricks?,
 ) {
     constructor(
         com: Out,
         cardMap: Map<Player, Collection<HandCard>>,
         preparationInfo: PreparationInfo?,
-        currentTable: ImmutableTable?, // hm.. how about outsourcing all logic inside a trick to the trick class?
-    ) : this(com, MutableDeck(cardMap), preparationInfo, currentTable) {
-
-    }
+        soFar: Tricks?, // hm.. how about outsourcing all logic inside a trick to the trick class?
+    ) : this(com, MutableDeck.createInitial(cardMap), preparationInfo, soFar)
 
     enum class State { INIT, RUNNING, FINISHED }
 
@@ -31,9 +29,9 @@ class RoundPlay(
     var state = INIT
 
 
-    var tricks = Tricks(currentTable)
+    var tricks = MutableTricks(soFar)
 
-    val mutableDeck = MutableDeck(deck)
+    val mutableDeck = MutableDeck.copy(deck)
 
     val initalCardMap = mutableDeck.getCardMap()
 
@@ -50,6 +48,14 @@ class RoundPlay(
 
 
     fun start() {
+        if (mutableDeck.roundEnded()) {
+            endRound()
+            return
+        }
+        if (tricks.table.allPass(mutableDeck.activePlayers())) {
+//            println("shit")
+            tricks.endTrick()
+        }
         // todo: make enum
         if (state != INIT) {
             throw IllegalStateException("running or finished")
@@ -71,7 +77,7 @@ class RoundPlay(
             val message = WhosMove(
                 player, determineCurrentPlayer(),
                 mutableDeck.cards(player), tricks.table, tricks.tricks.lastOrNull(),
-                pendingWish, dragonGiftPending,
+                tricks.immutable(), pendingWish, dragonGiftPending,
                 mutableDeck.deckSizes(), mutableDeck.goneCards()
             )
             sendMessage(WrappedServerMessage(player, message))
@@ -145,13 +151,9 @@ class RoundPlay(
         tricks.add(RegularMoveEntry(player, playedCards.toList()))
         if (playedCards.contains(DOG)) {
             tricks.endTrick()
-        }
-
-        if (mutableDeck.roundEnded()) {
-            endRound()
-        }
-
-        if (tricks.table.allPass(mutableDeck.activePlayers())) {
+            sendTableAndHandcards()
+            return
+        } else if (tricks.table.allPass(mutableDeck.activePlayers())) {
             if (tricks.table.toBeatCards().contains(DRG)) {
                 dragonGiftPending = true
                 // shouldn't be necessary? actually always the one who wins with dragon its turn ... hm...
@@ -162,7 +164,11 @@ class RoundPlay(
                 tricks.endTrick()
             }
         }
-        sendTableAndHandcards()
+        if (mutableDeck.roundEnded()) {
+            endRound()
+        } else {
+            sendTableAndHandcards()
+        }
     }
 
     private fun removePlayedCards(player: Player, playedCards: Collection<PlayCard>): List<HandCard> {

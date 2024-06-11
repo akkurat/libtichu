@@ -29,7 +29,7 @@ fun prob(
 
 private fun extracted(
     myPatterns: Set<TichuPattern>,
-    restcards: List<HandCard>,
+    restcards: Collection<HandCard>,
     nPartner: Int,
     nRe: Int,
     nLi: Int,
@@ -53,7 +53,7 @@ private fun extracted(
 }
 
 fun randomCards(
-    restcards: List<HandCard>,
+    restcards: Collection<HandCard>,
     nPartner: Int,
     nRe: Int,
     nLi: Int,
