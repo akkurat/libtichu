@@ -11,7 +11,7 @@ import org.junit.jupiter.api.assertAll
 import kotlin.test.Test
 
 
-class RoundPlayTest {
+class BattleRoundPlayTest {
 
 
     @Test

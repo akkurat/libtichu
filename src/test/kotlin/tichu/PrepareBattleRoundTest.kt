@@ -15,7 +15,7 @@ import kotlin.test.Test
 
 val out = Out { println(it) }
 
-class PrepareRoundTest {
+class PrepareBattleRoundTest {
 
 
     @Test

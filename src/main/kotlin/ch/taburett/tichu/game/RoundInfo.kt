@@ -8,11 +8,12 @@ data class RoundInfo(
     val tricks: MutableTricks,
     val initialCardmap: Map<Player, Collection<HandCard>>,
     val leftoverHandcards: Map<Player, Collection<HandCard>>,
+    val tichuMap: Map<Player, ETichu>,
+    val name: String?,
 ) {
     val orderOfWinning = tricks.tricks.flatMap { it.playerFinished }
-    val tricksByPlayer: Map<Player, List<Trick>> = Player.entries.associateWith { listOf<Trick>() } + tricks.tricks.groupBy { it.pointOwner }
-
-    // tichuPoints()
+    val tricksByPlayer: Map<Player, List<Trick>> =
+        Player.entries.associateWith { listOf<Trick>() } + tricks.tricks.groupBy { it.pointOwner }
 
     val pointsPerPlayer: Map<Player, Int>
         get() {
@@ -20,10 +21,20 @@ data class RoundInfo(
         }
 
 
-    val totalPoints: Map<PlayerGroup, Int>
-        get() {
-            return cardPoints.mapValues { (k, v) -> v + bonusPoints.getValue(k) }
+    val totalPoints: Map<PlayerGroup, Int> by lazy {
+        cardPoints.mapValues { (k, v) ->
+            v + bonusPoints.getValue(k) + tichuPoints.getValue(k)
         }
+    }
+
+    val tichuPoints: Map<PlayerGroup, Int>
+        get() {
+            val s =
+                tichuMap.mapValues { if (orderOfWinning.indexOf(it.key) == 0) it.value.points else -it.value.points }
+
+            return PlayerGroup.entries.associateWith { g -> g.players.sumOf { s.getValue(it) } }
+        }
+
 
     val bonusPoints: Map<PlayerGroup, Int>
         get() {
@@ -68,4 +79,8 @@ data class RoundInfo(
                 return cards;
             }
         }
+
+    override fun toString(): String {
+        return name ?: super.toString()
+    }
 }

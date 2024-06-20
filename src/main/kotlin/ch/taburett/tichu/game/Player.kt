@@ -1,16 +1,23 @@
 package ch.taburett.tichu.game
 
+import ch.taburett.tichu.game.Player.*
 import ch.taburett.tichu.game.PlayerGroup.*
 
-enum class PlayerGroup {
+enum class PlayerGroup(vararg _players: Player) {
 
     A {
+        // inherent circular dependency hence must be function or at least lazily evaluated/**/
+        override val players: List<Player> by lazy { listOf(A1, A2) }
+
         override fun other(): PlayerGroup = B
     },
     B {
+        override val players: List<Player> by lazy { listOf(B1, B2) }
+
         override fun other(): PlayerGroup = A
     };
 
+    abstract val players: List<Player>
     abstract fun other(): PlayerGroup
 }
 

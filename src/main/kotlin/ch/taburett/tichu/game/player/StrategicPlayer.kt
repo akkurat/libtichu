@@ -13,7 +13,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlin.math.abs
 
 
-class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer {
+class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoPlayer {
     @OptIn(DelicateCoroutinesApi::class)
     override fun receiveMessage(message: ServerMessage, player: Player) {
 //        GlobalScope.launch {
@@ -159,7 +159,7 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
                 }
                 val result = sim.start()
                 if (result.finished) {
-                    val ri = result.roundInfo
+                    val ri = result.roundPlay
                     val ow = ri.tricks.orderWinning
 
 
@@ -198,8 +198,7 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : Round.AutoPlayer 
     private fun reactionMove(wh: WhosMove): Move {
         val table = wh.table
         val handcards = wh.handcards
-        val toBeat = table.toBeat()
-        val pat = pattern(toBeat.cards)
+        val pat = pattern(table.toBeatCards())
 
         var beatingPatterns = pat.findBeatingPatterns(handcards).toMutableSet()
 

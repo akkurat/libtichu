@@ -52,12 +52,12 @@ interface ImmutableTable {
 
     }
 
-    fun toBeat(): RegularMoveEntry {
-        return moves.filterIsInstance<RegularMoveEntry>().last { !it.pass }
+    fun toBeat(): RegularMoveEntry? {
+        return moves.filterIsInstance<RegularMoveEntry>().lastOrNull() { !it.pass }
     }
 
     fun toBeatCards(): Collection<PlayCard> {
-        return if (isNotEmpty()) toBeat().cards else emptyList()
+        return if (isNotEmpty()) toBeat()?.cards ?: emptyList() else emptyList()
     }
 
     fun allCards(): List<PlayCard> {

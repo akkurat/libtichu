@@ -9,7 +9,7 @@ import kotlin.test.Test
 
 data class Entry<A, B>(override val key: A, override val value: B) : Map.Entry<A, B>
 
-class TestRoundInfo {
+class TestBattleRoundInfo {
     @Test
     fun testNormalWin() {
 
@@ -47,7 +47,15 @@ class TestRoundInfo {
             B2 to b2
         )
 
-        val ri = RoundInfo(null, mapTricksToObj(tricks), initMap, laterMap)
+        val ri =
+            RoundInfo(
+                null,
+                mapTricksToObj(tricks),
+                initMap,
+                laterMap,
+                Player.entries.associateWith { ETichu.NONE },
+                name
+            )
         val points = ri.cardPoints
 
         val allCardsPlayed = tricks.flatten().filterIsInstance<RegularMoveEntry>().flatMap { it.cards }
@@ -109,7 +117,15 @@ class TestRoundInfo {
             B1 to b1,
             B2 to b2
         )
-        val ri = RoundInfo(null, mapTricksToObj(tricks), initMap, laterMap)
+        val ri =
+            RoundInfo(
+                null,
+                mapTricksToObj(tricks),
+                initMap,
+                laterMap,
+                Player.entries.associateWith { ETichu.NONE },
+                name
+            )
         val cardPoints = ri.cardPoints
         val bonus = ri.bonusPoints
         assertAll(

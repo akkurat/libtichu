@@ -5,6 +5,7 @@ import ch.taburett.tichu.game.protocol.*
 import java.util.concurrent.Executors
 
 
+typealias PlayerETichuMutableMap = MutableMap<Player, ETichu>
 
 class Game(com: Out) {
     val executor = Executors.newCachedThreadPool()

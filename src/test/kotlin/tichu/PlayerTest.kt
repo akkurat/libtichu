@@ -1,12 +1,12 @@
 package tichu
 
-import ch.taburett.tichu.game.player.Round
+import ch.taburett.tichu.game.player.BattleRound
 import kotlin.test.Test
 
 class PlayerTest {
     @Test
     fun testImpl() {
-        Round.AutoPlayer::class.qualifiedName
+        BattleRound.AutoPlayer::class.qualifiedName
 
     }
 }

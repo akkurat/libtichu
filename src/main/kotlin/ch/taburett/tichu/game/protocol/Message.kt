@@ -31,7 +31,7 @@ data class Points(val points: Any) : ServerMessage
 
 data class Rejected(val msg: String, val orginal: Any? = null) : ServerMessage
 
-data class AckGameStage(val stage: Stage, val cards: List<HandCard>) : ServerMessage {
+data class AckGameStage(val stage: Stage, val cards: List<HandCard>, val tichuMap: Map<Player, ETichu>) : ServerMessage {
 
     init {
         when (stage) {
@@ -117,8 +117,8 @@ data class Bomb(val cards: List<PlayCard>) : PlayerMessage {
     }
 }
 
-object Tichu : PlayerMessage
-object BigTichu : PlayerMessage
+class SmallTichu : PlayerMessage
+class BigTichu : PlayerMessage
 
 data class Move(val cards: MutableCollection<out PlayCard>, val wish: Int? = null) : PlayerMessage {
     constructor(cards: Collection<PlayCard>) : this(cards.toMutableList())

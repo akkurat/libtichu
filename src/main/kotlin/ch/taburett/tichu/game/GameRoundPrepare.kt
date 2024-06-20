@@ -3,6 +3,8 @@ package ch.taburett.tichu.game
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.fulldeck
 import ch.taburett.tichu.game.protocol.*
+import ch.taburett.tichu.game.protocol.BigTichu
+import ch.taburett.tichu.game.protocol.SmallTichu
 import kotlin.reflect.KClass
 
 interface State {
@@ -11,33 +13,40 @@ interface State {
     fun react(u: Player, s: PlayerMessage)
 }
 
+
 class PrepareRound(val com: Out) {
 
     private lateinit var cards6: Map<Player, List<HandCard>>
     private lateinit var cards8: Map<Player, MutableList<HandCard>>
     private lateinit var schupfInfo: PreparationInfo.SchupfLog
 
-    sealed class AckState(val reactsTo: KClass<out Ack>) : State {
-        val ack = mutableSetOf<Player>()
+    private val tichuMap: PlayerETichuMutableMap = Player.entries
+        .associateWith { ETichu.NONE }.toMutableMap()
+
+    sealed class AckState(private vararg val reactsTo: KClass<out PlayerMessage>) : State {
+
+        private val ack = mutableSetOf<Player>()
+
         override fun complete(): Boolean {
             return ack.size == playerList.size
         }
 
         override fun reactsTo(value: PlayerMessage): Boolean {
-            return value::class == reactsTo
+            return reactsTo.contains(value::class)
+
         }
 
         override fun react(u: Player, s: PlayerMessage) {
-            assert(s::class == reactsTo)
+            assert(reactsTo(s))
             ack.add(u)
         }
     }
 
     // enum would actually be fine....
-    class bTichu : AckState(Ack.BigTichu::class)
-    class preSchupf : AckState(Ack.TichuBeforeSchupf::class)
-    class schupfed : AckState(Ack.SchupfcardReceived::class)
-    class preGame : AckState(Ack.TichuBeforePlay::class)
+    class bTichu : AckState(Ack.BigTichu::class,BigTichu::class )
+    class preSchupf : AckState(Ack.TichuBeforeSchupf::class,SmallTichu::class)
+    class schupfed : AckState(Ack.SchupfcardReceived::class,SmallTichu::class)
+    class preGame : AckState(Ack.TichuBeforePlay::class,SmallTichu::class)
 
 
     // theory all players could have their own state....
@@ -67,7 +76,7 @@ class PrepareRound(val com: Out) {
             cardMap = playerList.zip(first8.chunked(8))
                 //                        .groupByTo(mutableMapOf(), { z -> z.first }, {z -> z.second.toMutableList()} )
                 .associateBy({ z -> z.first }, { z -> z.second.toMutableList() })
-            cards8= cardMap.toMap()
+            cards8 = cardMap.toMap()
             sendStage(Stage.EIGHT_CARDS)
         },
         preSchupf() to {
@@ -90,13 +99,13 @@ class PrepareRound(val com: Out) {
         transition()
     }
 
-    fun sendMessage(wrappedServerMessage: WrappedServerMessage) {
+    private fun sendMessage(wrappedServerMessage: WrappedServerMessage) {
         com.send(wrappedServerMessage)
     }
 
-    fun sendStage(stage: Stage) {
+    private fun sendStage(stage: Stage) {
         for ((u, c) in cardMap) {
-            val message = AckGameStage(stage, c)
+            val message = AckGameStage(stage, c, tichuMap)
             sendMessage(WrappedServerMessage(u, message))
         }
     }
@@ -164,16 +173,17 @@ class PrepareRound(val com: Out) {
 
         val u = wrappedPlayerMessage.u
         when (val m = wrappedPlayerMessage.message) {
-            is Ack, is Schupf -> react(u, m)
+            is Ack, is Schupf, is SmallTichu, is BigTichu -> react(u, m)
             else -> {
                 sendMessage(WrappedServerMessage(u, Rejected("Prepare round can't handle this message", m)))
             }
         }
     }
 
-    val preparationInfo: PreparationInfo get() {
-        return PreparationInfo(cards8, cards6, schupfInfo, listOf())
-    }
+    val preparationInfo: PreparationInfo
+        get() {
+            return PreparationInfo(cards8, cards6, schupfInfo, listOf(), tichuMap.toMap())
+        }
 
 }
 
@@ -181,7 +191,8 @@ data class PreparationInfo(
     val cards8: Map<Player, List<HandCard>>,
     val cards6: Map<Player, List<HandCard>>,
     val schupf: SchupfLog,
-    val tichuLog: List<IPlayLogEntry>
+    val tichuLog: List<IPlayLogEntry>,
+    val tichuMap: Map<Player,ETichu>
 ) {
     data class SchupfLog(
         val to: Map<Player, Map<Player, HandCard>>,

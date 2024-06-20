@@ -1,7 +1,10 @@
+@file:OptIn(ExperimentalStdlibApi::class)
+
 package ch.taburett.tichu.game.player
 
 import ch.taburett.tichu.cards.fulldeck
 import ch.taburett.tichu.game.*
+import ch.taburett.tichu.game.player.BattleRound.AutoPlayer
 import ch.taburett.tichu.game.player.SimpleBattle.BattleResult
 import ch.taburett.tichu.game.protocol.PlayerMessage
 import ch.taburett.tichu.game.protocol.ServerMessage
@@ -10,16 +13,16 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 
 
-private const val N = 100
+private const val N = 10000
 
 fun main() {
     val simpleBattle = SimpleBattle(N)
     val roundlog: MutableList<SimpleBattle.Linfo> = ArrayList()
     runBlocking {
         simpleBattle.start().consumeEach { info ->
-            if (info is BattleResult)
-                println(mapResult(info))
-            else println("Starved")
+            val roundName = info.roundPlay.name
+            val out = if (info is BattleResult) mapResult(info).toString() else "starved"
+            println("$roundName $out")
             roundlog.add(info)
             printAvg(roundlog)
         }
@@ -34,7 +37,7 @@ fun main() {
     printAvg(roundlog)
 
     for (s in roundlog.filterIsInstance<SimpleBattle.BattleInterrupted>()) {
-        val player = s.roundInfo.determineCurrentPlayer()
+        val player = s.roundPlay.determineCurrentPlayer()
         println(s.players.getValue(player))
     }
 
@@ -48,13 +51,13 @@ private fun printAvg(roundlog: MutableList<SimpleBattle.Linfo>) {
 }
 
 private fun mapResult(s: BattleResult): List<Pair<Grr, Int>> {
-    val ri = s.roundInfo.getRoundInfo()
+    val ri = s.roundPlay.getRoundInfo()
     val lu = s.players::getValue
-    val shit = ri.pointsPerPlayer
+    val battleResult = ri.pointsPerPlayer
         .map { (p, v) ->
             Grr(setOf(lu(p).type, lu(p.partner).type), setOf(lu(p.re).type, lu(p.li).type)) to v
         }
-    return shit
+    return battleResult
 }
 
 class Grr(val myteam: Set<String>, val otherPlayers: Set<String>) {
@@ -87,21 +90,22 @@ class Grr(val myteam: Set<String>, val otherPlayers: Set<String>) {
  * when close to 1000
  */
 class SimpleBattle(private val n: Int = 5000) {
-    data class BattleResult(override val roundInfo: RoundPlay, override val players: Map<Player, Round.AutoPlayer>) :
+    data class BattleResult(override val roundPlay: RoundPlay, override val players: Map<Player, AutoPlayer>) :
         Linfo {
         override val finished: Boolean = true
     }
 
     data class BattleInterrupted(
-        override val roundInfo: RoundPlay,
-        override val players: Map<Player, Round.AutoPlayer>,
+        override val roundPlay: RoundPlay,
+        override val players: Map<Player, AutoPlayer>,
     ) : Linfo {
         override val finished: Boolean = false
     }
+
     interface Linfo {
         val finished: Boolean
-        val roundInfo: RoundPlay
-        val players: Map<Player, Round.AutoPlayer>
+        val roundPlay: RoundPlay
+        val players: Map<Player, AutoPlayer>
     }
 
     @OptIn(DelicateCoroutinesApi::class)
@@ -109,8 +113,8 @@ class SimpleBattle(private val n: Int = 5000) {
         val channel = Channel<Linfo>()
         val out = (1..n).map {
             GlobalScope.async(Dispatchers.Default) {
-                val round = Round()
-                val info = round.start()
+                val battleRound = BattleRound(it.toHexString(hexhex))
+                val info = battleRound.start()
                 channel.send(info)
             }
         }
@@ -122,10 +126,8 @@ class SimpleBattle(private val n: Int = 5000) {
     }
 }
 
-class Round {
+class BattleRound(val name: String) {
 
-
-    private lateinit var players: Map<Player, AutoPlayer>
 
     // todo: class per round
     fun start(): SimpleBattle.Linfo {
@@ -163,7 +165,7 @@ class Round {
 //        val players =
 //            Player.entries.associateWith { p -> factories.random()({ m -> receivePlayer(WrappedPlayerMessage(p, m)) }) }
 
-        val rp = RoundPlay(::receiveServer, cardMap, null, null)
+        val rp = RoundPlay(::receiveServer, cardMap, null, null, name)
 
         rp.start()
 
@@ -204,4 +206,9 @@ class Round {
         fun receiveMessage(message: ServerMessage, player: Player)
         val type: String
     }
+}
+
+val hexhex = HexFormat {
+    this.upperCase = true
+    this.number.removeLeadingZeros = true
 }

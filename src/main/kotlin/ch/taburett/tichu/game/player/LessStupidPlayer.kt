@@ -9,7 +9,7 @@ import ch.taburett.tichu.patterns.TichuPattern
 import ch.taburett.tichu.patterns.TichuPatternType.SINGLE
 
 
-class LessStupidPlayer(val listener: PlayerMessageConsumer) : Round.AutoPlayer {
+class LessStupidPlayer(val listener: PlayerMessageConsumer) : BattleRound.AutoPlayer {
     override fun receiveMessage(message: ServerMessage, player: Player) {
         lessStupidMove(message, player)
     }
@@ -56,8 +56,7 @@ class LessStupidPlayer(val listener: PlayerMessageConsumer) : Round.AutoPlayer {
     private fun reactionMove(wh: WhosMove): Move {
         val table = wh.table
         val handcards = wh.handcards
-        val toBeat = table.toBeat()
-        val pat = pattern(toBeat.cards)
+        val pat = pattern(table.toBeatCards())
 
         var beatingPatterns = pat.findBeatingPatterns(handcards).toMutableSet()
 
@@ -96,7 +95,7 @@ class LessStupidPlayer(val listener: PlayerMessageConsumer) : Round.AutoPlayer {
             // not sure if pattern or card in those patterns should be counted
             val ratio = lower.size.toDouble() / prices.size < 0.3
 
-            if (ratio && (toBeat.player.playerGroup != wh.youAre.playerGroup || pat.rank() < 10)
+            if (ratio && (table.toBeat()?.player?.playerGroup != wh.youAre.playerGroup || pat.rank() < 10)
                 || wh.wish != null
             ) {
                 move(beatingCheapest.key.cards)

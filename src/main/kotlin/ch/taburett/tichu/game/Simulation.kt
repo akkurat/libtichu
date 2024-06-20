@@ -1,8 +1,11 @@
+@file:OptIn(ExperimentalStdlibApi::class)
+
 package ch.taburett.tichu.game
 
-import ch.taburett.tichu.game.player.Round.AutoPlayer
+import ch.taburett.tichu.game.player.BattleRound.AutoPlayer
 import ch.taburett.tichu.game.player.SimpleBattle
 import ch.taburett.tichu.game.player.StupidPlayer
+import ch.taburett.tichu.game.player.hexhex
 import ch.taburett.tichu.game.protocol.PlayerMessage
 
 class SimulationRound(
@@ -29,13 +32,12 @@ class SimulationRound(
 
     val groupFactory = PlayerGroup.entries.associateWith { p -> }
 
-    // todo: external param
     val playersFactory = _playersFactory ?: { a, com -> StupidPlayer(com) }
 
     val players = Player.entries.associateWith {
         playersFactory(it) { m: PlayerMessage -> receivePlayer(WrappedPlayerMessage(it, m)) }
     }
-    val rp = RoundPlay(::receiveServer, deck, null, soFareMoves)
+    val rp = RoundPlay(::receiveServer, deck, null, soFareMoves, "Sim${deck.hashCode().toHexString(hexhex)}")
 
     fun start(
     ): SimpleBattle.Linfo {

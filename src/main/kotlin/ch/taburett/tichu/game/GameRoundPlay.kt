@@ -3,8 +3,7 @@ package ch.taburett.tichu.game
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.RoundPlay.State.INIT
 import ch.taburett.tichu.game.protocol.*
-import ch.taburett.tichu.game.protocol.BigTichu
-import ch.taburett.tichu.game.protocol.Tichu
+import ch.taburett.tichu.game.protocol.SmallTichu
 import ch.taburett.tichu.patterns.LegalType
 import org.jetbrains.annotations.VisibleForTesting
 
@@ -14,20 +13,24 @@ class RoundPlay(
     deck: Deck,
     val preparationInfo: PreparationInfo?,
     soFar: ImmutableTricks?,
+    val name: String? = null
 ) {
     constructor(
         com: Out,
         cardMap: Map<Player, Collection<HandCard>>,
         preparationInfo: PreparationInfo?,
         soFar: Tricks?, // hm.. how about outsourcing all logic inside a trick to the trick class?
-    ) : this(com, MutableDeck.createInitial(cardMap), preparationInfo, soFar)
+        name: String? = null
+    ) : this(com, MutableDeck.createInitial(cardMap), preparationInfo, soFar, name)
 
     enum class State { INIT, RUNNING, FINISHED }
 
     private lateinit var leftoverHandcards: Map<Player, Collection<HandCard>>
 
-    var state = INIT
+    val tichuMap: PlayerETichuMutableMap =
+        preparationInfo?.tichuMap?.toMutableMap() ?: Player.entries.associateWith { ETichu.NONE }.toMutableMap()
 
+    var state = INIT
 
     var tricks = MutableTricks(soFar)
 
@@ -38,7 +41,6 @@ class RoundPlay(
 
     // todo: init by external log
     // also take protocol of schupf and so on into acccount...
-    val tichuAnnouncements = mutableMapOf<Player, TichuType>()
 
     /**
      * Can be reset by bomb or actually gifting
@@ -90,13 +92,15 @@ class RoundPlay(
         // TODO: make all logic external
         val playerCards = mutableDeck.cards(player)
 
-        if (tricks.table.isNotEmpty()) {
-            val tablePlayer = tricks.table.toBeat().player
+        if (tricks.table.moves.filterIsInstance<RegularMoveEntry>().isNotEmpty()) {
+            val tablePlayer = tricks.table.toBeat()?.player
             if (tablePlayer == player) {
                 //
                 sendMessage(WrappedServerMessage(player, Rejected("can't beat your own trick with regular move", move)))
                 return
             }
+        } else {
+            // todo...?
         }
 
         val res = playedCardsValid(
@@ -190,7 +194,7 @@ class RoundPlay(
 
     // todo: maybe almost better if done in game class?
     fun getRoundInfo(): RoundInfo {
-        return RoundInfo(preparationInfo, tricks, initalCardMap, leftoverHandcards)
+        return RoundInfo(preparationInfo, tricks, initalCardMap, leftoverHandcards, tichuMap.toMap(), name)
     }
 
     @Synchronized
@@ -201,8 +205,19 @@ class RoundPlay(
             is Bomb -> bomb(u, m)
             // wish async doesn't as you have to play the 1 in that trick
 //            is Wish -> placeWish()
-            BigTichu -> TODO()
-            Tichu -> TODO()
+            is SmallTichu ->
+                if (mutableDeck.cards(u).size != 14) {
+                    sendMessage(WrappedServerMessage(u, Rejected("Already cards played")))
+                } else if (!tichuMap.replace(u, ETichu.NONE, ETichu.SMALL)) {
+                    sendMessage(WrappedServerMessage(u, Rejected("Already a tichu announced")))
+                } else {
+                    if(name?.startsWith("Sim") == false) {
+                        println("$name small tichu")
+                    }
+                    tricks.add(Tichu(u))
+                    sendTableAndHandcards()
+                }
+
             is GiftDragon -> giftDragon(u, m)
             else -> sendMessage(WrappedServerMessage(u, Rejected("Can't handle this message while playing", m)))
         }
@@ -241,6 +256,10 @@ class RoundPlay(
         } else {
             sendMessage(WrappedServerMessage(u, Rejected("drg must be gifted to opponent", m)))
         }
+    }
+
+    override fun toString(): String {
+        return name ?: super.toString()
     }
 }
 
@@ -328,5 +347,6 @@ data class Trick(val moves: List<IPlayLogEntry>) {
 
     val allCards: List<PlayCard>
         get() = moves.filterIsInstance<RegularMoveEntry>().flatMap { it.cards }
+
 }
 
