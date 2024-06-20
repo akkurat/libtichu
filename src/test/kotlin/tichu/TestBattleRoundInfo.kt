@@ -54,7 +54,7 @@ class TestBattleRoundInfo {
                 initMap,
                 laterMap,
                 Player.entries.associateWith { ETichu.NONE },
-                name
+                "test"
             )
         val points = ri.cardPoints
 
@@ -124,7 +124,7 @@ class TestBattleRoundInfo {
                 initMap,
                 laterMap,
                 Player.entries.associateWith { ETichu.NONE },
-                name
+                "test"
             )
         val cardPoints = ri.cardPoints
         val bonus = ri.bonusPoints
