@@ -26,15 +26,14 @@ class MutableDeck private constructor(
         fun createInitial(cardMap: Map<Player, Collection<HandCard>>): MutableDeck {
             // logic later on works only if all cards in map are present
             val valid = fulldeckSet == cardMap.values.flatten().toSet()
+            if (!valid) {
+                throw IllegalArgumentException("Card map must contain complete deck. use createStarted for a partial deck [requires start player]")
+            }
             val initialPlayer = cardMap
                 .filterValues { it.contains(MAH) }
                 .map { it.key }
                 .first()
-            if (valid) {
-                return MutableDeck(cardMap, initialPlayer, emptySet())
-            } else {
-                throw IllegalArgumentException("Card map must contain complete deck")
-            }
+            return MutableDeck(cardMap, initialPlayer, emptySet())
         }
 
         fun createStarted(

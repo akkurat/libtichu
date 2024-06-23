@@ -3,16 +3,9 @@ package ch.taburett.tichu.cards
 import ch.taburett.tichu.patterns.TichuPattern
 import ch.taburett.tichu.patterns.TichuPatternType
 
-val lDRG = listOf(DRG)
-
-fun count(cards: Iterable<HandCard>): Int {
-    return cards.sumOf { c -> c.getPoints() }
+fun fulldeckAsPlayCards(phx: Double): List<PlayCard> {
+    return fulldeck.filterIsInstance<PlayCard>() + PHX.asPlayCard(phx)
 }
-
-//fun validMove(tableCards: Set<ch.taburett.tichu.cards.PlayCard>, toPlayCards: Set<ch.taburett.tichu.cards.PlayCard>): Boolean {
-//
-//}
-
 
 fun pattern(cards: Collection<PlayCard >): TichuPattern {
     for (pattern in TichuPatternType.values()) {

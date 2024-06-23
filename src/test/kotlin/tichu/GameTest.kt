@@ -1,7 +1,6 @@
 package tichu
 
 import ch.taburett.tichu.game.*
-import ch.taburett.tichu.game.protocol.Message
 import ch.taburett.tichu.game.protocol.Message.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -16,7 +15,7 @@ class GameTest {
             val game = Game(out)
             game.start()
             for (p in playerList) {
-                game.receive(WrappedPlayerMessage(p, BigTichu()))
+                game.receive(WrappedPlayerMessage(p, Announce.BigTichu()))
             }
             delay(10)
             for (p in playerList) {

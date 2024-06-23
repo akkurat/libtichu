@@ -2,7 +2,6 @@ package ch.taburett.tichu.game.player
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.Player
-import ch.taburett.tichu.game.protocol.Message
 import ch.taburett.tichu.game.protocol.Message.*
 import ch.taburett.tichu.game.protocol.createMove
 import ch.taburett.tichu.game.protocol.moveSingle
@@ -94,7 +93,7 @@ private fun response(
     }
 
     return if (evaluateSmallTichu(m.handcards)) {
-        listOf(SmallTichu(), move)
+        listOf(Announce.SmallTichu(), move)
     } else {
         listOf(move)
     }
@@ -132,7 +131,7 @@ private fun opening(
         }
     }
     return if (evaluateSmallTichu(message.handcards)) {
-        listOf(SmallTichu(), move)
+        listOf(Announce.SmallTichu(), move)
     } else {
         listOf(move)
     }
@@ -144,7 +143,7 @@ private fun ack(
     return when (message.stage) {
         Stage.EIGHT_CARDS -> {
             if (evaluateBigTichu(message.handcards)) {
-                BigTichu()
+                Announce.BigTichu()
             } else {
                 Ack.BigTichu()
             }
@@ -152,7 +151,7 @@ private fun ack(
 
         Stage.PRE_SCHUPF -> {
             if (evaluateSmallTichu(message.handcards)) {
-                SmallTichu()
+                Announce.SmallTichu()
             } else {
                 Ack.TichuBeforeSchupf()
             }
@@ -165,7 +164,7 @@ private fun ack(
 
         Stage.POST_SCHUPF -> {
             if (evaluateSmallTichu(message.handcards)) {
-                SmallTichu()
+                Announce.SmallTichu()
             } else {
                 Ack.TichuBeforePlay()
             }

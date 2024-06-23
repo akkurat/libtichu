@@ -2,10 +2,10 @@ package ch.taburett.tichu.game.player
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.*
-import ch.taburett.tichu.game.protocol.*
 import ch.taburett.tichu.game.protocol.Message.*
 import ch.taburett.tichu.game.protocol.Message.GiftDragon.ReLi.LI
 import ch.taburett.tichu.game.protocol.Message.GiftDragon.ReLi.RE
+import ch.taburett.tichu.game.protocol.createMove
 import ch.taburett.tichu.patterns.Empty
 import ch.taburett.tichu.patterns.Single
 import ch.taburett.tichu.patterns.TichuPattern
@@ -19,6 +19,11 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
 
     override fun receiveMessage(message: ServerMessage, player: Player) {
 //        GlobalScope.launch {
+        if(message is WhosMove && message.handcards.size == 14) {
+           if(evaluateSmallTichu(message.handcards)) {
+               listener(Announce.SmallTichu())
+           }
+        }
         val response = strategic(message)
         if (response != null) listener(response)
 //        }
@@ -151,7 +156,11 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
                 val deck = MutableDeck.createStarted(cardMap, iam, goneCards + pat.cards)
                 val tricks = MutableTricks(imTable)
                 // logic for adding a trick must take more responsiblity
-               val move  = if(pat.cards.isEmpty()) IPlayLogEntry.PassMoveEntry(iam) else IPlayLogEntry.RegularMoveEntry(iam, pat.cards)
+                val move =
+                    if (pat.cards.isEmpty()) IPlayLogEntry.PassMoveEntry(iam) else IPlayLogEntry.RegularMoveEntry(
+                        iam,
+                        pat.cards
+                    )
                 tricks.add(move)
                 if (pat.cards.contains(DOG)) {
                     tricks.endTrick()
@@ -247,17 +256,18 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
         message: AckGameStage,
     ): PlayerMessage? {
         return when (message.stage) {
-            Stage.EIGHT_CARDS -> Ack.BigTichu()
-            Stage.PRE_SCHUPF -> Ack.TichuBeforeSchupf()
+            Stage.EIGHT_CARDS -> if (evaluateBigTichu(message.handcards)) Announce.BigTichu() else Ack.BigTichu()
+            Stage.PRE_SCHUPF -> if (evaluateSmallTichu(message.handcards)) Announce.SmallTichu() else Ack.TichuBeforeSchupf()
             Stage.SCHUPF -> {
                 val cards = message.handcards.sorted()
                 // todo: rege, orphans
                 Schupf(cards[0], cards[1], cards.last())
             }
 
-            Stage.POST_SCHUPF -> Ack.TichuBeforePlay()
+            Stage.POST_SCHUPF -> if(evaluateSmallTichu(message.handcards)) Announce.SmallTichu() else Ack.TichuBeforePlay()
             else -> null
         }
     }
+
 }
 

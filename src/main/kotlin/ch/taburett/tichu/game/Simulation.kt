@@ -6,6 +6,7 @@ import ch.taburett.tichu.game.player.BattleRound.AutoPlayer
 import ch.taburett.tichu.game.player.SimpleBattle
 import ch.taburett.tichu.game.player.StupidPlayer
 import ch.taburett.tichu.game.player.hexhex
+import ch.taburett.tichu.game.protocol.Message
 import ch.taburett.tichu.game.protocol.Message.PlayerMessage
 
 class SimulationRound(
@@ -21,6 +22,7 @@ class SimulationRound(
 
     val serverQueue = ArrayDeque<WrappedServerMessage>()
     val playersQueue = ArrayDeque<WrappedPlayerMessage>()
+    val history = mutableListOf<WrappedMessage>()
 
     fun receiveServer(sm: WrappedServerMessage) {
         serverQueue.add(sm)
@@ -50,10 +52,12 @@ class SimulationRound(
             try {
                 val sm = serverQueue.removeFirstOrNull()
                 if (sm != null) {
+                    history.add(sm)
                     players.getValue(sm.u).receiveMessage(sm.message, sm.u)
                 }
                 val pm = playersQueue.removeFirstOrNull()
                 if (pm != null) {
+                    history.add(pm)
                     starved = 0
                     rp.receivePlayerMessage(pm)
                 } else {

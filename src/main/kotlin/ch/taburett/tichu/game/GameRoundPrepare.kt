@@ -41,10 +41,10 @@ class PrepareRound(val com: Out) {
     }
 
     // enum would actually be fine....
-    class bTichu : AckState(Ack.BigTichu::class,BigTichu::class )
-    class preSchupf : AckState(Ack.TichuBeforeSchupf::class,SmallTichu::class)
-    class schupfed : AckState(Ack.SchupfcardReceived::class,SmallTichu::class)
-    class preGame : AckState(Ack.TichuBeforePlay::class,SmallTichu::class)
+    class bTichu : AckState(Ack.BigTichu::class,Announce.BigTichu::class )
+    class preSchupf : AckState(Ack.TichuBeforeSchupf::class,Announce.SmallTichu::class)
+    class schupfed : AckState(Ack.SchupfcardReceived::class,Announce.SmallTichu::class)
+    class preGame : AckState(Ack.TichuBeforePlay::class,Announce.SmallTichu::class)
 
 
     // theory all players could have their own state....
@@ -171,7 +171,7 @@ class PrepareRound(val com: Out) {
 
         val u = wrappedPlayerMessage.u
         when (val m = wrappedPlayerMessage.message) {
-            is Ack, is Schupf, is SmallTichu, is BigTichu -> react(u, m)
+            is Ack, is Schupf, is Announce.SmallTichu, is Announce.BigTichu -> react(u, m)
             else -> {
                 sendMessage(WrappedServerMessage(u, Rejected("Prepare round can't handle this message", m)))
             }

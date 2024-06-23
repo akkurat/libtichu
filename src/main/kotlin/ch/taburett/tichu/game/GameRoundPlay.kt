@@ -3,7 +3,6 @@ package ch.taburett.tichu.game
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.IPlayLogEntry.*
 import ch.taburett.tichu.game.RoundPlay.State.INIT
-import ch.taburett.tichu.game.protocol.*
 import ch.taburett.tichu.game.protocol.Message.*
 import ch.taburett.tichu.patterns.LegalType
 import org.jetbrains.annotations.VisibleForTesting
@@ -157,8 +156,6 @@ class RoundPlay(
         tricks.add(createMove(player, playedCards))
         if (playedCards.contains(DOG)) {
             tricks.endTrick()
-            sendTableAndHandcards()
-            return
         } else if (tricks.table.allPass(mutableDeck.activePlayers())) {
             if (tricks.table.toBeatCards().contains(DRG)) {
                 dragonGiftPending = true
@@ -170,6 +167,7 @@ class RoundPlay(
                 tricks.endTrick()
             }
         }
+
         if (mutableDeck.roundEnded()) {
             endRound()
         } else {
@@ -212,7 +210,7 @@ class RoundPlay(
             is Bomb -> bomb(u, m)
             // wish async doesn't as you have to play the 1 in that trick
 //            is Wish -> placeWish()
-            is Message.SmallTichu ->
+            is Announce.SmallTichu ->
                 if (mutableDeck.cards(u).size != 14) {
                     sendMessage(WrappedServerMessage(u, Rejected("Already cards played")))
                 } else if (!tichuMap.replace(u, ETichu.NONE, ETichu.SMALL)) {
@@ -221,7 +219,7 @@ class RoundPlay(
                     if (name?.startsWith("Sim") == false) {
                         println("$name small tichu")
                     }
-                    tricks.add(IPlayLogEntry.SmallTichuEntry(u))
+                    tricks.add(SmallTichuEntry(u))
                     sendTableAndHandcards()
                 }
 

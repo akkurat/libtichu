@@ -118,8 +118,10 @@ interface Message {
         }
     }
 
-    class SmallTichu : PlayerMessage
-    class BigTichu : PlayerMessage
+    class Announce {
+        class SmallTichu : PlayerMessage
+        class BigTichu : PlayerMessage
+    }
 
     data class Move(val cards: MutableCollection<out PlayCard>, val wish: Int? = null) : PlayerMessage {
         constructor(cards: Collection<PlayCard>) : this(cards.toMutableList())
@@ -132,6 +134,7 @@ interface Message {
      */
 
 }
+
 fun createMove(cards: Collection<PlayCard>, wish: Int? = null) = Move(cards.toMutableList(), wish)
 
 fun moveSingle(card: PlayCard?, wish: Int? = null) =
