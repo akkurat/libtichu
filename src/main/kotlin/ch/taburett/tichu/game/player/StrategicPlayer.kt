@@ -3,18 +3,20 @@ package ch.taburett.tichu.game.player
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.*
 import ch.taburett.tichu.game.protocol.*
-import ch.taburett.tichu.game.protocol.GiftDragon.ReLi.LI
-import ch.taburett.tichu.game.protocol.GiftDragon.ReLi.RE
+import ch.taburett.tichu.game.protocol.Message.*
+import ch.taburett.tichu.game.protocol.Message.GiftDragon.ReLi.LI
+import ch.taburett.tichu.game.protocol.Message.GiftDragon.ReLi.RE
 import ch.taburett.tichu.patterns.Empty
 import ch.taburett.tichu.patterns.Single
 import ch.taburett.tichu.patterns.TichuPattern
 import ch.taburett.tichu.patterns.TichuPatternType.SINGLE
-import kotlinx.coroutines.DelicateCoroutinesApi
+import java.util.function.Consumer
 import kotlin.math.abs
 
 
 class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoPlayer {
-    @OptIn(DelicateCoroutinesApi::class)
+    constructor(listener: Consumer<PlayerMessage>) : this({ listener.accept(it) })
+
     override fun receiveMessage(message: ServerMessage, player: Player) {
 //        GlobalScope.launch {
         val response = strategic(message)
@@ -64,7 +66,7 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
         val handcards = wh.handcards
         val mightFullfillWish = mightFullfillWish(handcards, wh.wish)
         if (handcards.isEmpty()) {
-            return move(listOf())
+            return createMove(listOf())
         }
 
 
@@ -78,8 +80,10 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
         }
 
 
-        var result = emulateRandom(handcards, pats + orphans, wh.goneCards,
-            wh.cardCounts, wh.youAre, wh.tricks)
+        var result = emulateRandom(
+            handcards, pats + orphans, wh.goneCards,
+            wh.cardCounts, wh.youAre, wh.tricks
+        )
 
         mapPatternValues(result.keys, handcards)
 
@@ -103,9 +107,9 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
                 .toSet()
             val rw = (2..14) - ownValues
             val randomWish: Int? = rw.randomOrNull()
-            move(cards, randomWish)
+            createMove(cards, randomWish)
         } else {
-            move(cards)
+            createMove(cards)
         }
         return move
     }
@@ -147,42 +151,47 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
                 val deck = MutableDeck.createStarted(cardMap, iam, goneCards + pat.cards)
                 val tricks = MutableTricks(imTable)
                 // logic for adding a trick must take more responsiblity
-                tricks.add(RegularMoveEntry(iam, pat.cards))
-                if(pat.cards.contains(DOG)) {
+               val move  = if(pat.cards.isEmpty()) IPlayLogEntry.PassMoveEntry(iam) else IPlayLogEntry.RegularMoveEntry(iam, pat.cards)
+                tricks.add(move)
+                if (pat.cards.contains(DOG)) {
                     tricks.endTrick()
                 }
-
 
                 val sim = SimulationRound(deck, tricks) { p, com ->
 //                    if (p == iam && handcards.size==14 ) StrategicPlayer(com) else StupidPlayer(com)
                     StupidPlayer(com)
                 }
-                val result = sim.start()
-                if (result.finished) {
-                    val ri = result.roundPlay
-                    val ow = ri.tricks.orderWinning
+                try {
+
+                    val result = sim.start()
+                    if (result.finished) {
+                        val ri = result.roundPlay
+                        val ow = ri.tricks.orderWinning
 
 
-                    var points: Int = 0
-                    try {
-                        val totalPoints = ri.getRoundInfo().totalPoints
-                        points += totalPoints.getValue(iam.playerGroup)
-                        points -= totalPoints.getValue(iam.playerGroup.other())
-                    } catch (_: Exception) {
-                        //todo: // more generic counting
-                        // however, not possible correctly without all tricks of the game
-                    } /// uuuugly
+                        var points: Int = 0
+                        try {
+                            val totalPoints = ri.getRoundInfo().totalPoints
+                            points += totalPoints.getValue(iam.playerGroup)
+                            points -= totalPoints.getValue(iam.playerGroup.other())
+                        } catch (_: Exception) {
+                            //todo: // more generic counting
+                            // however, not possible correctly without all tricks of the game
+                        } /// uuuugly
 
-                    points += when (ow.indexOf(iam)) {
-                        -1 -> -30
-                        0 -> 120
-                        1 -> 40
-                        else -> 10
+                        points += when (ow.indexOf(iam)) {
+                            -1 -> -30
+                            0 -> 120
+                            1 -> 40
+                            else -> 10
+                        }
+
+
+
+                        out[pat]?.add(points)
                     }
-
-
-
-                    out[pat]?.add(points)
+                } catch (bl: Exception) {
+                    println("who cares $bl")
                 }
             }
 //            println(out)
@@ -241,17 +250,14 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
             Stage.EIGHT_CARDS -> Ack.BigTichu()
             Stage.PRE_SCHUPF -> Ack.TichuBeforeSchupf()
             Stage.SCHUPF -> {
-                val cards = message.cards
-                Schupf(cards[0], cards[1], cards[2])
+                val cards = message.handcards.sorted()
+                // todo: rege, orphans
+                Schupf(cards[0], cards[1], cards.last())
             }
 
             Stage.POST_SCHUPF -> Ack.TichuBeforePlay()
             else -> null
         }
     }
-}
-
-interface TestInter {
-
 }
 

@@ -1,9 +1,8 @@
 package tichu
 
 import ch.taburett.tichu.game.*
-import ch.taburett.tichu.game.protocol.Ack
-import ch.taburett.tichu.game.protocol.Ack.BigTichu
-import ch.taburett.tichu.game.protocol.Ack.TichuBeforeSchupf
+import ch.taburett.tichu.game.protocol.Message
+import ch.taburett.tichu.game.protocol.Message.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
@@ -21,7 +20,7 @@ class GameTest {
             }
             delay(10)
             for (p in playerList) {
-                game.receive(WrappedPlayerMessage(p, TichuBeforeSchupf()))
+                game.receive(WrappedPlayerMessage(p, Ack.TichuBeforeSchupf()))
             }
             delay(10)
             for (p in playerList) {

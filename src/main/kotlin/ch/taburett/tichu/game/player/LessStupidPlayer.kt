@@ -3,13 +3,15 @@ package ch.taburett.tichu.game.player
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.Player
 import ch.taburett.tichu.game.prob
-import ch.taburett.tichu.game.protocol.*
+import ch.taburett.tichu.game.protocol.Message.*
+import ch.taburett.tichu.game.protocol.createMove
+import ch.taburett.tichu.game.protocol.moveSingle
 import ch.taburett.tichu.patterns.Single
 import ch.taburett.tichu.patterns.TichuPattern
 import ch.taburett.tichu.patterns.TichuPatternType.SINGLE
 
 
-class LessStupidPlayer(val listener: PlayerMessageConsumer) : BattleRound.AutoPlayer {
+private class LessStupidPlayer(val listener: PlayerMessageConsumer) : BattleRound.AutoPlayer {
     override fun receiveMessage(message: ServerMessage, player: Player) {
         lessStupidMove(message, player)
     }
@@ -84,7 +86,7 @@ class LessStupidPlayer(val listener: PlayerMessageConsumer) : BattleRound.AutoPl
 
 //    val prices = beatingPatterns.associateWith { weightPossibilites(it, handcards, 0, 1.0) }
         val prices = weightPossibilitesNoRec(handcards)
-        val beatingPrices = mapPatternValues( beatingPatterns, handcards )
+        val beatingPrices = mapPatternValues(beatingPatterns, handcards)
 
 
         return if (beatingPrices.isNotEmpty()) {
@@ -98,12 +100,12 @@ class LessStupidPlayer(val listener: PlayerMessageConsumer) : BattleRound.AutoPl
             if (ratio && (table.toBeat()?.player?.playerGroup != wh.youAre.playerGroup || pat.rank() < 10)
                 || wh.wish != null
             ) {
-                move(beatingCheapest.key.cards)
+                createMove(beatingCheapest.key.cards)
             } else {
-                move(listOf())
+                createMove(listOf())
             }
         } else {
-            move(listOf())
+            createMove(listOf())
         }
     }
 
@@ -119,7 +121,7 @@ class LessStupidPlayer(val listener: PlayerMessageConsumer) : BattleRound.AutoPl
                 // todo: might try to play normal pattern as well
                 val numberCard = handcards
                     .filterIsInstance<NumberCard>()
-                    .filter { nc -> wh.wish!! - nc.getValue()  == 0.0 }
+                    .filter { nc -> wh.wish!! - nc.getValue() == 0.0 }
                     .minByOrNull { it.getValue() }
                 moveSingle(numberCard)
             } else {
@@ -131,10 +133,9 @@ class LessStupidPlayer(val listener: PlayerMessageConsumer) : BattleRound.AutoPl
 
                     val orphans = handcards - price.keys.filter { it.type != SINGLE }.flatMap { it.cards }.toSet()
 
-                    if(handcards.size == 1 && handcards[0] == PHX) {
-                       setOf(PHX.asPlayCard(1.5))
-                    }
-                    else if (orphans.any { it.getSort() < ORPHAN_VALUE }) {
+                    if (handcards.size == 1 && handcards[0] == PHX) {
+                        setOf(PHX.asPlayCard(1.5))
+                    } else if (orphans.any { it.getSort() < ORPHAN_VALUE }) {
                         setOf(orphans.filterIsInstance<PlayCard>().minBy { it.getSort() })
                     } else {
                         price.filter { it.key !is Single || (it.key as Single).card.getSort() >= ORPHAN_VALUE }
@@ -155,9 +156,9 @@ class LessStupidPlayer(val listener: PlayerMessageConsumer) : BattleRound.AutoPl
                         .toSet()
                     val rw = (2..14) - ownValues
                     val randomWish: Int = rw.shuffled().first()
-                    move(cards, randomWish)
+                    createMove(cards, randomWish)
                 } else {
-                    move(cards)
+                    createMove(cards)
                 }
             }
         return move
@@ -169,7 +170,7 @@ class LessStupidPlayer(val listener: PlayerMessageConsumer) : BattleRound.AutoPl
             Stage.EIGHT_CARDS -> listener.accept(Ack.BigTichu())
             Stage.PRE_SCHUPF -> listener.accept(Ack.TichuBeforeSchupf())
             Stage.SCHUPF -> {
-                val cards = message.cards
+                val cards = message.handcards
                 listener.accept(Schupf(cards[0], cards[1], cards[2]))
             }
 

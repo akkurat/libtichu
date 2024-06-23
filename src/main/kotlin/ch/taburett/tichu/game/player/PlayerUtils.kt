@@ -2,8 +2,8 @@ package ch.taburett.tichu.game.player
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.prob
-import ch.taburett.tichu.game.protocol.PlayerMessage
-import ch.taburett.tichu.game.protocol.WhosMove
+import ch.taburett.tichu.game.protocol.Message
+import ch.taburett.tichu.game.protocol.Message.*
 import ch.taburett.tichu.game.wishPredicate
 import ch.taburett.tichu.patterns.Bomb
 import ch.taburett.tichu.patterns.BombStraight

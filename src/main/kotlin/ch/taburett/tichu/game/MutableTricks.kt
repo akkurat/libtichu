@@ -1,34 +1,37 @@
 package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.DOG
+import ch.taburett.tichu.game.IPlayLogEntry.*
 
-class MutableTricks(tricks: ImmutableTricks?): ImmutableTricks{
+class MutableTricks(tricks: ImmutableTricks?) : ImmutableTricks {
 
     private val _tricks = tricks?.tricks?.toMutableList() ?: mutableListOf()
     override val tricks: List<Trick>
         get() = _tricks
-    private var _table = Table(tricks?.table)
+    private var _Mutable_table = MutableTable(tricks?.table)
     override val table: ImmutableTable
-        get() = _table.immutable()
+        get() = _Mutable_table.immutable()
 
     fun endTrick() {
         if (table.toTrick().moves.isNotEmpty()) {
             _tricks.add(table.toTrick())
-            _table = Table()
+            _Mutable_table = MutableTable()
         }
     }
 
     fun nextPlayer(deck: Deck): Player {
+        // first trick
         if (tricks.isEmpty()) {
-            return if (table.moves.filter { it !is Wished }.isEmpty()) {
+            // first regular move
+            return if (table.moves.filterIsInstance<RegularMoveEntry>().none()) {
                 deck.initialPlayer
             } else {
-                val lastPlayer = table.moves.last().player
+                val lastPlayer = table.moves.last { it is MoveEntry }.player
                 deck.nextPlayer(lastPlayer)
             }
         } else {
-            if (table.moves.filter { it !is Wished }.isEmpty()) {
-                val lastMove = tricks.last().moves.last()
+            if (table.moves.none { it is MoveEntry }) {
+                val lastMove = tricks.last().moves.last { it is MoveEntry }
                 if (lastMove is RegularMoveEntry) {
                     if (lastMove.cards.contains(DOG)) {
                         return deck.nextPlayer(lastMove.player, 2)
@@ -36,16 +39,15 @@ class MutableTricks(tricks: ImmutableTricks?): ImmutableTricks{
                 }
                 return deck.nextPlayer(lastMove.player)
             } else {
-                return deck.nextPlayer(table.moves.last(::notWish).player)
+                return deck.nextPlayer(table.moves.last { it is MoveEntry }.player)
             }
         }
     }
 
-    val orderWinning get() = tricks.flatMap { it.playerFinished }
+    val orderWinning get() = tricks.flatMap { it.playerFinishedEntry }
 
-    private fun notWish(it: IPlayLogEntry): Boolean = it !is Wished
     fun add(logEntry: IPlayLogEntry) {
-        _table.add(logEntry)
+        _Mutable_table.add(logEntry)
     }
 
     fun immutable(): Tricks {
@@ -54,10 +56,3 @@ class MutableTricks(tricks: ImmutableTricks?): ImmutableTricks{
 
 }
 
-class Tricks(override val tricks: List<Trick>, override val table: ImmutableTable): ImmutableTricks
-
-interface ImmutableTricks {
-    val tricks: List<Trick>
-    val table: ImmutableTable
-
-}

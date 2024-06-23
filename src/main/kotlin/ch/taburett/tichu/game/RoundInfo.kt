@@ -11,7 +11,7 @@ data class RoundInfo(
     val tichuMap: Map<Player, ETichu>,
     val name: String?,
 ) {
-    val orderOfWinning = tricks.tricks.flatMap { it.playerFinished }
+    val orderOfWinning = tricks.tricks.flatMap { it.playerFinishedEntry }
     val tricksByPlayer: Map<Player, List<Trick>> =
         Player.entries.associateWith { listOf<Trick>() } + tricks.tricks.groupBy { it.pointOwner }
 

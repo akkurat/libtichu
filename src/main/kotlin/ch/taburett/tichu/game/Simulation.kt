@@ -6,7 +6,7 @@ import ch.taburett.tichu.game.player.BattleRound.AutoPlayer
 import ch.taburett.tichu.game.player.SimpleBattle
 import ch.taburett.tichu.game.player.StupidPlayer
 import ch.taburett.tichu.game.player.hexhex
-import ch.taburett.tichu.game.protocol.PlayerMessage
+import ch.taburett.tichu.game.protocol.Message.PlayerMessage
 
 class SimulationRound(
 

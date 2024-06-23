@@ -2,11 +2,19 @@ package ch.taburett.tichu.game.player
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.Player
-import ch.taburett.tichu.game.protocol.*
+import ch.taburett.tichu.game.protocol.Message
+import ch.taburett.tichu.game.protocol.Message.*
+import ch.taburett.tichu.game.protocol.createMove
+import ch.taburett.tichu.game.protocol.moveSingle
 import ch.taburett.tichu.patterns.Single
+import java.util.function.Consumer
 
 
 class StupidPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoPlayer {
+    constructor(listener: Consumer<PlayerMessage>) : this({ listener.accept(it) }) {
+
+    }
+
     override fun receiveMessage(message: ServerMessage, player: Player) {
         val moves = stupidMove(message)
         moves.forEach { listener(it) }
@@ -78,10 +86,10 @@ private fun response(
             }
         }
         if (all.isEmpty()) {
-            move(listOf())
+            createMove(listOf())
         } else {
             val mypat = all.sortedBy { it.rank() }.take(4).randomOrNull()
-            if (mypat != null) move(mypat.cards) else move(listOf())
+            if (mypat != null) createMove(mypat.cards) else createMove(listOf())
         }
     }
 
@@ -119,7 +127,7 @@ private fun opening(
             }
 
             else -> {
-                move(listOf())
+                createMove(listOf())
             }
         }
     }
@@ -135,7 +143,7 @@ private fun ack(
 ): PlayerMessage? {
     return when (message.stage) {
         Stage.EIGHT_CARDS -> {
-            if (evaluateBigTichu(message.cards)) {
+            if (evaluateBigTichu(message.handcards)) {
                 BigTichu()
             } else {
                 Ack.BigTichu()
@@ -143,7 +151,7 @@ private fun ack(
         }
 
         Stage.PRE_SCHUPF -> {
-            if (evaluateSmallTichu(message.cards)) {
+            if (evaluateSmallTichu(message.handcards)) {
                 SmallTichu()
             } else {
                 Ack.TichuBeforeSchupf()
@@ -151,12 +159,12 @@ private fun ack(
         }
 
         Stage.SCHUPF -> {
-            val cards = message.cards.sorted()
+            val cards = message.handcards.sorted()
             Schupf(cards.get(0), cards.get(1), cards.last())
         }
 
         Stage.POST_SCHUPF -> {
-            if (evaluateSmallTichu(message.cards)) {
+            if (evaluateSmallTichu(message.handcards)) {
                 SmallTichu()
             } else {
                 Ack.TichuBeforePlay()

@@ -6,8 +6,8 @@ import ch.taburett.tichu.cards.fulldeck
 import ch.taburett.tichu.game.*
 import ch.taburett.tichu.game.player.BattleRound.AutoPlayer
 import ch.taburett.tichu.game.player.SimpleBattle.BattleResult
-import ch.taburett.tichu.game.protocol.PlayerMessage
-import ch.taburett.tichu.game.protocol.ServerMessage
+import ch.taburett.tichu.game.protocol.Message
+import ch.taburett.tichu.game.protocol.Message.ServerMessage
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
@@ -148,7 +148,7 @@ class BattleRound(val name: String) {
             playersQueue.add(pm)
         }
 
-        val factories: Set<((PlayerMessage) -> Unit) -> AutoPlayer> =
+        val factories: Set<((Message.PlayerMessage) -> Unit) -> AutoPlayer> =
             setOf(
                 { StupidPlayer(it) },
                 { StrategicPlayer(it) },

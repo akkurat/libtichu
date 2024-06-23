@@ -2,6 +2,7 @@ package tichu
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.*
+import ch.taburett.tichu.game.IPlayLogEntry.*
 import ch.taburett.tichu.game.Player.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertAll
@@ -25,13 +26,13 @@ class TestBattleRoundInfo {
         val b2: List<HandCard> = (fulldeck - a1 - b1 - a2)
 
         val tricks = listOf(
-            listOf(RegularMoveEntry(A1, a1.toList()), PlayerFinished(A1), p(B1), p(A2), p(B2)),
+            listOf(RegularMoveEntry(A1, a1.toList()), PlayerFinishedEntry(A1), p(B1), p(A2), p(B2)),
             listOf(RegularMoveEntry(B1, b1_str.toList()), p(A2), p(B2)),
             listOf(RegularMoveEntry(B1, b1_fh.toList()), p(A2), p(B2)),
-            listOf(RegularMoveEntry(B1, DRG), p(A2), p(B2), DrgGift(B1, A2)),
-            listOf(RegularMoveEntry(B1, listOf(PHX.asPlayCard(13), J13)), PlayerFinished(B1), p(A2), p(B2)),
+            listOf(RegularMoveEntry(B1, DRG), p(A2), p(B2), DrgGiftedEntry(B1, A2)),
+            listOf(RegularMoveEntry(B1, listOf(PHX.asPlayCard(13), J13)), PlayerFinishedEntry(B1), p(A2), p(B2)),
         ) + a2.dropLast(1).map { listOf(RegularMoveEntry(A2, it), p(B2)) } + a2.takeLast(1)
-            .map { listOf(RegularMoveEntry(A2, it), PlayerFinished(A2)) }
+            .map { listOf(RegularMoveEntry(A2, it), PlayerFinishedEntry(A2)) }
 
         val initMap = mapOf(
             A1 to a1,
@@ -98,11 +99,11 @@ class TestBattleRoundInfo {
 
         val tricks = listOf(
             listOf(RegularMoveEntry(A1, a1 - DOG), p(B1), p(A2), p(B2)),
-            listOf(RegularMoveEntry(A1, DOG), PlayerFinished(A1), p(B1), p(A2), p(B2)),
+            listOf(RegularMoveEntry(A1, DOG), PlayerFinishedEntry(A1), p(B1), p(A2), p(B2)),
             listOf(RegularMoveEntry(A2, a2_str), p(B2), p(B1)),
             listOf(RegularMoveEntry(A2, a2_fh.toList()), p(B2), p(B1)),
             listOf(RegularMoveEntry(A2, DRG), p(B2), p(B1)),
-            listOf(RegularMoveEntry(A2, setOf(PHX.asPlayCard(13), J13)), PlayerFinished(A2))
+            listOf(RegularMoveEntry(A2, setOf(PHX.asPlayCard(13), J13)), PlayerFinishedEntry(A2))
         )
 
         val initMap = mapOf(
@@ -135,7 +136,7 @@ class TestBattleRoundInfo {
             )
     }
 
-    private fun p(player: Player): RegularMoveEntry = RegularMoveEntry(player)
+    private fun p(player: Player): PassMoveEntry = PassMoveEntry(player)
 }
 
 

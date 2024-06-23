@@ -1,9 +1,10 @@
 package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.*
+import ch.taburett.tichu.game.IPlayLogEntry.*
 import ch.taburett.tichu.game.RoundPlay.State.INIT
 import ch.taburett.tichu.game.protocol.*
-import ch.taburett.tichu.game.protocol.SmallTichu
+import ch.taburett.tichu.game.protocol.Message.*
 import ch.taburett.tichu.patterns.LegalType
 import org.jetbrains.annotations.VisibleForTesting
 
@@ -13,14 +14,14 @@ class RoundPlay(
     deck: Deck,
     val preparationInfo: PreparationInfo?,
     soFar: ImmutableTricks?,
-    val name: String? = null
+    val name: String? = null,
 ) {
     constructor(
         com: Out,
         cardMap: Map<Player, Collection<HandCard>>,
         preparationInfo: PreparationInfo?,
         soFar: Tricks?, // hm.. how about outsourcing all logic inside a trick to the trick class?
-        name: String? = null
+        name: String? = null,
     ) : this(com, MutableDeck.createInitial(cardMap), preparationInfo, soFar, name)
 
     enum class State { INIT, RUNNING, FINISHED }
@@ -80,7 +81,8 @@ class RoundPlay(
                 player, determineCurrentPlayer(),
                 mutableDeck.cards(player), tricks.table, tricks.tricks.lastOrNull(),
                 tricks.immutable(), pendingWish, dragonGiftPending,
-                mutableDeck.deckSizes(), mutableDeck.goneCards()
+                mutableDeck.deckSizes(),
+                tichuMap.toMap(), mutableDeck.goneCards(),
             )
             sendMessage(WrappedServerMessage(player, message))
         }
@@ -114,7 +116,7 @@ class RoundPlay(
             if (move.cards.contains(MAH)) {
                 if (2 <= move.wish && move.wish <= 14) {
                     pendingWish = move.wish
-                    tricks.add(Wished(player, pendingWish!!))
+                    tricks.add(WishedEntry(player, pendingWish!!))
                 } else {
                     sendMessage(WrappedServerMessage(player, Rejected("illegal wish range", move)))
                     return
@@ -144,15 +146,15 @@ class RoundPlay(
         val handCards = removePlayedCards(player, playedCards)
         if (pendingWish != null) {
             if (playedCards.filterIsInstance<NumberCard>().any { it.getValue() - pendingWish!! == 0.0 }) {
-                tricks.add(WishFullfilled(player, pendingWish!!))
+                tricks.add(WishFullfilledEntry(player, pendingWish!!))
                 pendingWish = null
             }
         }
         if (handCards.isEmpty()) {
-            tricks.add(PlayerFinished(player))
+            tricks.add(PlayerFinishedEntry(player))
         }
 
-        tricks.add(RegularMoveEntry(player, playedCards.toList()))
+        tricks.add(createMove(player, playedCards))
         if (playedCards.contains(DOG)) {
             tricks.endTrick()
             sendTableAndHandcards()
@@ -174,6 +176,11 @@ class RoundPlay(
             sendTableAndHandcards()
         }
     }
+
+    private fun createMove(
+        player: Player,
+        playedCards: Collection<PlayCard>,
+    ) = if (playedCards.isEmpty() ) PassMoveEntry(player) else RegularMoveEntry(player, playedCards.toList())
 
     private fun removePlayedCards(player: Player, playedCards: Collection<PlayCard>): List<HandCard> {
         mutableDeck.playCards(player, playedCards)
@@ -205,16 +212,16 @@ class RoundPlay(
             is Bomb -> bomb(u, m)
             // wish async doesn't as you have to play the 1 in that trick
 //            is Wish -> placeWish()
-            is SmallTichu ->
+            is Message.SmallTichu ->
                 if (mutableDeck.cards(u).size != 14) {
                     sendMessage(WrappedServerMessage(u, Rejected("Already cards played")))
                 } else if (!tichuMap.replace(u, ETichu.NONE, ETichu.SMALL)) {
                     sendMessage(WrappedServerMessage(u, Rejected("Already a tichu announced")))
                 } else {
-                    if(name?.startsWith("Sim") == false) {
+                    if (name?.startsWith("Sim") == false) {
                         println("$name small tichu")
                     }
-                    tricks.add(Tichu(u))
+                    tricks.add(IPlayLogEntry.SmallTichuEntry(u))
                     sendTableAndHandcards()
                 }
 
@@ -235,7 +242,7 @@ class RoundPlay(
             val beats = m.pattern.beats(pattern(tricks.table.toBeatCards()))
             if (beats.type == LegalType.OK) {
                 dragonGiftPending = false
-                tricks.add(BombPlayed(u, m.cards))
+                tricks.add(BombEntry(u, m.cards))
                 removePlayedCards(u, m.cards)
                 tricks.endTrick()
                 sendTableAndHandcards()
@@ -249,7 +256,7 @@ class RoundPlay(
     private fun giftDragon(u: Player, m: GiftDragon) {
         val to = m.to.map(u)
         if (to.playerGroup != u.playerGroup) {
-            tricks.add(DrgGift(u, to))
+            tricks.add(DrgGiftedEntry(u, to))
             dragonGiftPending = false
             tricks.endTrick()
             sendTableAndHandcards()
@@ -262,91 +269,3 @@ class RoundPlay(
         return name ?: super.toString()
     }
 }
-
-data class BombPlayed(override val player: Player, val cards: List<PlayCard>) : IPlayLogEntry {
-    override val type = "Bomb"
-    override fun toString(): String = "B:$player:$cards"
-
-}
-
-
-interface IPlayLogEntry {
-    // ugly but still need to figure out subtypes cleanly
-    // maybe afterall don't make multiple interfaces...
-    // just have type and nullable cards and stuff
-    val type: String
-    val player: Player
-}
-
-data class RegularMoveEntry(override val player: Player, val cards: Collection<PlayCard> = listOf()) : IPlayLogEntry {
-    constructor(player: Player, card: PlayCard) : this(player, listOf(card))
-
-    val pass get() = cards.isEmpty()
-    override val type = "RegularMove"
-    override fun toString(): String = "${player.name}:$cards"
-}
-
-data class PlayerFinished(override val player: Player) : IPlayLogEntry {
-    override val type = "Finished"
-    override fun toString(): String = "F:$player"
-}
-
-data class Tichu(override val player: Player) : IPlayLogEntry {
-    override val type = "Tichu"
-    override fun toString(): String = "t:$player"
-
-}
-
-data class BigTichu(override val player: Player) : IPlayLogEntry {
-    override val type = "BigTichu"
-    override fun toString(): String = "T:$player"
-
-}
-
-data class Wished(override val player: Player, val value: Int) : IPlayLogEntry {
-    override val type = "Wished"
-    override fun toString(): String = "w:$player:$value"
-
-}
-
-data class WishFullfilled(override val player: Player, val value: Int) : IPlayLogEntry {
-    override val type = "WishFullfilled"
-    override fun toString(): String = "W:$player:$value"
-
-}
-
-data class DrgGift(override val player: Player, val to: Player) : IPlayLogEntry {
-    override val type = "DrgGift"
-    override fun toString(): String = "D:$player->$to"
-
-}
-
-/**
- *  log
- *
- */
-data class Trick(val moves: List<IPlayLogEntry>) {
-    /**
-     * points
-     */
-    val pointOwner: Player
-        get() {
-            // dragon or
-            val drg = moves.filterIsInstance<DrgGift>().firstOrNull()
-            return if (drg != null) {
-                drg.to;
-            } else {
-                moves.filterIsInstance<RegularMoveEntry>().last { !it.pass }.player
-            }
-        }
-
-    val playerFinished: List<Player>
-        get() {
-            return moves.filterIsInstance<PlayerFinished>().map { it.player }
-        }
-
-    val allCards: List<PlayCard>
-        get() = moves.filterIsInstance<RegularMoveEntry>().flatMap { it.cards }
-
-}
-

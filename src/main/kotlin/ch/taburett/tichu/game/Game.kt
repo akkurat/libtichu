@@ -35,7 +35,8 @@ class Game(com: Out) {
         } else {
             // no shupf for quick testing
             var rigged = setOf(DRG, DOG, PHX, MAH, D2, S2, P2, J2)
-            val paeckli = ((fulldeck - rigged).shuffled() + rigged).chunked(14)
+//            val paeckli = ((fulldeck - rigged).shuffled() + rigged).chunked(14)
+            val paeckli = fulldeck.shuffled().chunked(14)
             val cardmap = playerList.zip(paeckli).toMap()
 
             roundPlay = RoundPlay(com, cardmap, null, null)
@@ -69,7 +70,7 @@ class Game(com: Out) {
             val roundInfo = roundPlay!!.getRoundInfo()
             playLog.add(roundInfo)
             playerList.forEach {
-                com.send(WrappedServerMessage(it, Points(roundInfo)))
+                com.send(WrappedServerMessage(it, Message.Points(roundInfo)))
             }
             roundPlay = null
             prepareRound = PrepareRound(com)

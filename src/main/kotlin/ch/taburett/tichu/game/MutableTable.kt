@@ -1,11 +1,12 @@
 package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.PlayCard
+import ch.taburett.tichu.game.IPlayLogEntry.*
 
 /**
  * Current open trick
  */
-class Table(moves: ImmutableTable? = null) : ImmutableTable {
+class MutableTable(moves: ImmutableTable? = null) : ImmutableTable {
 
     override val moves = moves?.moves?.toMutableList() ?: mutableListOf()
 
@@ -40,10 +41,10 @@ interface ImmutableTable {
 
         val passedPlayers = mutableSetOf<Player>()
 
-        for (p in moves.reversed().filterIsInstance<RegularMoveEntry>()) {
-            if (p.pass) {
+        for (p in moves.reversed().filter{it is RegularMoveEntry || it is PassMoveEntry} ) {
+            if (p is PassMoveEntry) {
                 passedPlayers.add(p.player)
-            } else {
+            } else { // at first non-pass move
                 val playerMove = p.player
                 return passedPlayers.containsAll(activePlayers.minus(playerMove))
             }
@@ -53,7 +54,7 @@ interface ImmutableTable {
     }
 
     fun toBeat(): RegularMoveEntry? {
-        return moves.filterIsInstance<RegularMoveEntry>().lastOrNull() { !it.pass }
+        return moves.filterIsInstance<RegularMoveEntry>().lastOrNull()
     }
 
     fun toBeatCards(): Collection<PlayCard> {

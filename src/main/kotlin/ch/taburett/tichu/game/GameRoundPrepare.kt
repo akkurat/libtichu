@@ -2,9 +2,7 @@ package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.fulldeck
-import ch.taburett.tichu.game.protocol.*
-import ch.taburett.tichu.game.protocol.BigTichu
-import ch.taburett.tichu.game.protocol.SmallTichu
+import ch.taburett.tichu.game.protocol.Message.*
 import kotlin.reflect.KClass
 
 interface State {

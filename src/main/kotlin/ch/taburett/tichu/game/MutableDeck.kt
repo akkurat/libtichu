@@ -79,7 +79,7 @@ class MutableDeck private constructor(
         if (cnt >= 3) {
             throw IllegalStateException("game should have ended already")
         }
-        val nextIdx = ((playerList.indexOf(lastPlayer)) + 1) % playerList.size
+        val nextIdx = ((playerList.indexOf(lastPlayer)) + step) % playerList.size
         val player = playerList[nextIdx]
         return if (cardMap.getValue(player).isEmpty()) {
             nextPlayer(player, 1, cnt + 1)
