@@ -1,4 +1,4 @@
-package tichu
+package tichu.game
 
 import ch.taburett.tichu.game.*
 import ch.taburett.tichu.game.protocol.Message.*

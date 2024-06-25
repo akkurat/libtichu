@@ -1,4 +1,4 @@
-package tichu
+package tichu.player
 
 import ch.taburett.tichu.game.player.BattleRound
 import kotlin.test.Test

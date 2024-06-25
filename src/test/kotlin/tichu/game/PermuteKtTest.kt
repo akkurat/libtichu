@@ -1,4 +1,4 @@
-package tichu
+package tichu.game
 
 import org.junit.jupiter.api.Assertions.*
 import pickK

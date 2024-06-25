@@ -13,7 +13,7 @@ class Empty : TichuPattern(TichuPatternType.ANSPIEL, setOf()) {
         }
         // puh.. in theory this should return all possible pattern
         // maybe it's better not to have Empty pattern at all
-        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?): Set<TichuPattern> {
+        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?, incPhx: Boolean): Set<TichuPattern> {
             return setOf()
         }
     }

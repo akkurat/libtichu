@@ -1,11 +1,13 @@
-package tichu
+package tichu.game
 
 import ch.taburett.tichu.cards.fulldeck
 import ch.taburett.tichu.game.*
 import ch.taburett.tichu.game.Player.*
-import ch.taburett.tichu.game.PrepareRound.*
+import ch.taburett.tichu.game.PrepareRound.preGame
+import ch.taburett.tichu.game.PrepareRound.schupfed
 import ch.taburett.tichu.game.protocol.Message
-import ch.taburett.tichu.game.protocol.Message.*
+import ch.taburett.tichu.game.protocol.Message.Ack
+import ch.taburett.tichu.game.protocol.Message.Schupf
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertAll
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -15,7 +17,7 @@ import kotlin.test.Test
 
 val out = Out { println(it) }
 
-class PrepareBattleRoundTest {
+class PrepareRoundTest {
 
 
     @Test
@@ -81,6 +83,35 @@ class PrepareBattleRoundTest {
             { assertTrue("finished", round.isFinished) }
         )
 
+    }
+
+    @Test
+    fun testCardsAvailable() {
+
+        val outCollector = OutCollector()
+        val round = PrepareRound(outCollector)
+        round.start()
+        playerList.forEach { a -> round.react(a, Ack.BigTichu()) }
+        playerList.forEach { a -> round.react(a, Ack.TichuBeforeSchupf()) }
+        // todo: where to check validity of schupf payload?
+        // assumming it's only occuring deliberately
+        //
+        val cards = round.cardMap.getValue(B2)
+        listOf(A1, A2).forEach { randomShupf(round, it) }
+        round.react(B1, Schupf(cards[0], cards[1], cards[2]))
+        round.react(B2, Schupf(cards[0], cards[0], cards[0]))
+
+        assertThat(outCollector.list).containsSubsequence(
+            WrappedServerMessage(B1, Message.Rejected("Cheating!")),
+            (WrappedServerMessage(B2, Message.Rejected("Cheating!")))
+        )
+    }
+}
+
+class OutCollector : Out {
+    val list = mutableListOf<WrappedServerMessage>()
+    override fun send(wrappedServerMessage: WrappedServerMessage) {
+        list.add(wrappedServerMessage)
     }
 
 }

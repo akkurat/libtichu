@@ -13,7 +13,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 
 
-private const val N = 10000
+private const val N = 100
 
 fun main() {
     val simpleBattle = SimpleBattle(N)
@@ -21,7 +21,8 @@ fun main() {
     runBlocking {
         simpleBattle.start().consumeEach { info ->
             val roundName = info.roundPlay.name
-            val out = if (info is BattleResult) mapResult(info).toString() else "starved"
+            val out =
+                if (info is BattleResult) "${mapPoints(info).toMap()} ${info.roundPlay.getRoundInfo().tichuPointsPerPlayer}" else "starved"
             println("$roundName $out")
             roundlog.add(info)
             printAvg(roundlog)
@@ -40,19 +41,36 @@ fun main() {
         val player = s.roundPlay.determineCurrentPlayer()
         println(s.players.getValue(player))
     }
-
 }
 
 private fun printAvg(roundlog: MutableList<SimpleBattle.Linfo>) {
     val rb = roundlog.filterIsInstance<BattleResult>()
-        .flatMap(::mapResult)
+        .flatMap(::mapPoints)
         .groupBy({ it.first }, { it.second })
     println(rb.mapValues { it.value.average() })
+
+    val s = roundlog.filterIsInstance<BattleResult>()
+        .flatMap { br ->
+            val rp = br.roundPlay
+            rp.tichuMap.mapValues {
+                it.value to rp.getRoundInfo().tichuPointsPerPlayer.getValue(it.key)
+            }.mapKeys { br.players.getValue(it.key).type }
+                .toList()
+
+        }
+
+    val grouped = s.groupBy { it.first }.mapValues { it.value.groupBy { it.second } }
+//        .groupBy({ it.first }, { it.second })
+    println(grouped.mapValues { it.value.values.size })
 }
 
-private fun mapResult(s: BattleResult): List<Pair<Grr, Int>> {
+
+private fun mapPoints(s: BattleResult): List<Pair<Grr, Int>> {
     val ri = s.roundPlay.getRoundInfo()
     val lu = s.players::getValue
+    if (ri.tichuMap.any { it.value == ETichu.BIG }) {
+        ri.tichuPoints
+    }
     val battleResult = ri.pointsPerPlayer
         .map { (p, v) ->
             Grr(setOf(lu(p).type, lu(p.partner).type), setOf(lu(p.re).type, lu(p.li).type)) to v
@@ -95,6 +113,13 @@ class SimpleBattle(private val n: Int = 5000) {
         override val finished: Boolean = true
     }
 
+    data class PrepareInterrupted(
+        override val roundPlay: PrepareRound,
+        override val players: Map<Player, AutoPlayer>,
+    ) : Linfo {
+        override val finished: Boolean = false
+    }
+
     data class BattleInterrupted(
         override val roundPlay: RoundPlay,
         override val players: Map<Player, AutoPlayer>,
@@ -104,7 +129,7 @@ class SimpleBattle(private val n: Int = 5000) {
 
     interface Linfo {
         val finished: Boolean
-        val roundPlay: RoundPlay
+        val roundPlay: TichuGameStage
         val players: Map<Player, AutoPlayer>
     }
 
@@ -112,6 +137,7 @@ class SimpleBattle(private val n: Int = 5000) {
     suspend fun start(): Channel<Linfo> {
         val channel = Channel<Linfo>()
         val out = (1..n).map {
+            // limit is useful for debugging
             GlobalScope.async(Dispatchers.Default) {
                 val battleRound = BattleRound(it.toHexString(hexhex))
                 val info = battleRound.start()
@@ -128,8 +154,6 @@ class SimpleBattle(private val n: Int = 5000) {
 
 class BattleRound(val name: String) {
 
-
-    // todo: class per round
     fun start(): SimpleBattle.Linfo {
 
         val cardMap = Player.entries.zip(fulldeck.shuffled().chunked(14)).toMap()
@@ -165,11 +189,31 @@ class BattleRound(val name: String) {
 //        val players =
 //            Player.entries.associateWith { p -> factories.random()({ m -> receivePlayer(WrappedPlayerMessage(p, m)) }) }
 
-        val rp = RoundPlay(::receiveServer, cardMap, null, null, name)
+        val prep = PrepareRound(::receiveServer, name)
+        prep.start()
+        var starved = 0
+        while (!prep.isFinished) {
+            val sm = serverQueue.removeFirstOrNull()
+            if (sm != null) {
+                players.getValue(sm.u).receiveMessage(sm.message, sm.u)
+            }
+            val pm = playersQueue.removeFirstOrNull()
+            if (pm != null) {
+                starved = 0
+                prep.receivePlayerMessage(pm)
+            } else {
+                starved++
+            }
+            if (starved > 200) {
+                return SimpleBattle.PrepareInterrupted(prep, players)
+            }
 
+        }
+
+        val rp = RoundPlay(::receiveServer, cardMap, prep.preparationInfo, null, name)
         rp.start()
 
-        var starved = 0
+        starved = 0
 
         while (rp.state == RoundPlay.State.RUNNING) {
             try {

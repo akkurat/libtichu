@@ -12,13 +12,13 @@ data class RoundInfo(
     val name: String?,
 ) {
     val orderOfWinning = tricks.tricks.flatMap { it.playerFinishedEntry }
-    val tricksByPlayer: Map<Player, List<Trick>> =
+    val tricksByPlayer: Map<Player, List<Trick>> by lazy {
         Player.entries.associateWith { listOf<Trick>() } + tricks.tricks.groupBy { it.pointOwner }
+    }
 
-    val pointsPerPlayer: Map<Player, Int>
-        get() {
-            return Player.entries.associateWith { totalPoints.getValue(it.playerGroup) }
-        }
+    val pointsPerPlayer: Map<Player, Int> by lazy {
+        Player.entries.associateWith { totalPoints.getValue(it.playerGroup) }
+    }
 
 
     val totalPoints: Map<PlayerGroup, Int> by lazy {
@@ -27,31 +27,30 @@ data class RoundInfo(
         }
     }
 
-    val tichuPoints: Map<PlayerGroup, Int>
-        get() {
-            val s =
-                tichuMap.mapValues { if (orderOfWinning.indexOf(it.key) == 0) it.value.points else -it.value.points }
+    val tichuPoints: Map<PlayerGroup, Int> by lazy {
+        val s = tichuPointsPerPlayer
+        PlayerGroup.entries.associateWith { g -> g.players.sumOf { s.getValue(it) } }
+    }
 
-            return PlayerGroup.entries.associateWith { g -> g.players.sumOf { s.getValue(it) } }
+    val tichuPointsPerPlayer: Map<Player, Int> by lazy {
+        tichuMap.mapValues { if (orderOfWinning.indexOf(it.key) == 0) it.value.points else -it.value.points }
+    }
+
+
+    val bonusPoints: Map<PlayerGroup, Int> by lazy {
+        val (first, second) = orderOfWinning
+        // double win
+        if (first.playerGroup == second.playerGroup) {
+            mapOf(first.playerGroup to 100, first.playerGroup.other() to 0)
+        } else {
+            PlayerGroup.entries.associateWith { 0 }
         }
+    }
 
-
-    val bonusPoints: Map<PlayerGroup, Int>
-        get() {
-            val (first, second) = orderOfWinning
-            // double win
-            if (first.playerGroup == second.playerGroup) {
-                return mapOf(first.playerGroup to 100, first.playerGroup.other() to 0)
-            }
-            return PlayerGroup.entries.associateWith { 0 }
-
-        }
-
-    val cardPoints: Map<PlayerGroup, Int>
-        get() {
-            val cards = cards
-            return cards.mapValues { (_, v) -> v.sumOf { c -> c.getPoints() } }
-        }
+    val cardPoints: Map<PlayerGroup, Int> by lazy {
+        val cards = cards
+        cards.mapValues { (_, v) -> v.sumOf { c -> c.getPoints() } }
+    }
 
     val cards: Map<PlayerGroup, List<HandCard>>
         get() {
@@ -73,8 +72,7 @@ data class RoundInfo(
 
                 cards[second.playerGroup]!!.addAll(tricksByPlayer[second]!!.flatMap { it.allCards })
                 cards[third.playerGroup]!!.addAll(tricksByPlayer[third]!!.flatMap { it.allCards })
-
-                cards.mapValues { (_, v) -> v.sumOf { it.getPoints() } }
+//                cards.mapValues { (_, v) -> v.sumOf { it.getPoints() } }
 
                 return cards;
             }

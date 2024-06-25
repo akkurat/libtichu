@@ -13,8 +13,8 @@ class RoundPlay(
     deck: Deck,
     val preparationInfo: PreparationInfo?,
     soFar: ImmutableTricks?,
-    val name: String? = null,
-) {
+    override val name: String? = null,
+) : TichuGameStage {
     constructor(
         com: Out,
         cardMap: Map<Player, Collection<HandCard>>,
@@ -217,7 +217,7 @@ class RoundPlay(
                     sendMessage(WrappedServerMessage(u, Rejected("Already a tichu announced")))
                 } else {
                     if (name?.startsWith("Sim") == false) {
-                        println("$name small tichu")
+                        println("$name:$u small tichu in Round")
                     }
                     tricks.add(SmallTichuEntry(u))
                     sendTableAndHandcards()

@@ -26,12 +26,12 @@ class Straight(cards: Iterable<PlayCard>) : TichuPattern(TichuPatternType.STRAIG
             return true
         }
 
-        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?): Set<TichuPattern> {
+        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?, incPhx: Boolean): Set<TichuPattern> {
             if (cardinality == null) {
-                return wPhx(cards)
+                return wPhx(cards, incPhx)
             } else {
                 val filter = { it: Straight -> it.cardinality() >= cardinality }
-                val minlengthStraights = wPhx(cards).filter(filter)
+                val minlengthStraights = wPhx(cards, incPhx).filter(filter)
                 return minlengthStraights.flatMap { allShifts(it, cardinality) }.toSet()
             }
         }
@@ -48,7 +48,7 @@ class Straight(cards: Iterable<PlayCard>) : TichuPattern(TichuPatternType.STRAIG
             }
         }
 
-        private fun wPhx(cards: Collection<HandCard>): Set<Straight> {
+        private fun wPhx(cards: Collection<HandCard>, incPhx: Boolean): Set<Straight> {
             //                .toSortedMap()
             val byValue = cards.filter { it is NumberCard || it == MAH }
                 .map { it as PlayCard }
@@ -64,7 +64,7 @@ class Straight(cards: Iterable<PlayCard>) : TichuPattern(TichuPatternType.STRAIG
             if (heights.size >= 5) {
                 var i = 0;
                 while (i < heights.size - 4) {
-                    var phxAvailable = cards.contains(PHX)
+                    var phxAvailable = cards.contains(PHX) && incPhx
                     val possibleRuelle = mutableListOf(heights[i].value)
                     i++
                     while (i < heights.size) {

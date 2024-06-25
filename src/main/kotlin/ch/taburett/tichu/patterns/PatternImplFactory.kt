@@ -5,5 +5,5 @@ import ch.taburett.tichu.cards.PlayCard
 
 interface PatternImplFactory {
     fun pattern(cards: Collection<PlayCard>): TichuPattern?
-    fun allPatterns(cards: Collection<HandCard>, cardinality: Int? = null): Set<TichuPattern>
+    fun allPatterns(cards: Collection<HandCard>, cardinality: Int? = null, incPhx: Boolean = false): Set<TichuPattern>
 }

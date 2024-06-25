@@ -1,6 +1,5 @@
-package tichu
+package tichu.player
 
-import ch.taburett.tichu.cards.NumberCard
 import ch.taburett.tichu.cards.PlayCard
 import ch.taburett.tichu.game.Player
 import ch.taburett.tichu.game.WrappedPlayerMessage

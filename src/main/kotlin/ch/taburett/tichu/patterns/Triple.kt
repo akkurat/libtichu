@@ -27,7 +27,7 @@ class Triple private constructor(cards: Collection<PlayCard>, private val height
             return null
         }
 
-        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?): Set<Triple> {
+        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?, incPhx: Boolean): Set<Triple> {
 
             val groups = cards.filter{it is NumberCard || it is PlayCard }
                 .map { it as PlayCard }

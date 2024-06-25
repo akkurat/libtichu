@@ -56,7 +56,7 @@ class Game(com: Out) {
     @Synchronized
     fun receive(wrappedPlayerMessage: WrappedPlayerMessage) {
         // todo: shouldn't switching happen inside state machine?
-        prepareRound?.receive(wrappedPlayerMessage)
+        prepareRound?.receivePlayerMessage(wrappedPlayerMessage)
         roundPlay?.receivePlayerMessage(wrappedPlayerMessage)
         checkTransition()
     }

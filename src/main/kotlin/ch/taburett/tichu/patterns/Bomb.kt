@@ -15,7 +15,7 @@ class Bomb(cards: Collection<PlayCard>) : TichuPattern(TichuPatternType.BOMB,car
             return null
         }
 
-        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?): Set<TichuPattern> {
+        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?, incPhx: Boolean): Set<TichuPattern> {
             val useableCards = cards.filterIsInstance<NumberCard>()
             val patterns = useableCards.groupBy { it.getValue() }.values
                 .filter{ it.size == 4 }

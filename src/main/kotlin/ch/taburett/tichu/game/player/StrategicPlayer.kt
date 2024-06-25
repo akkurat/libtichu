@@ -2,31 +2,98 @@ package ch.taburett.tichu.game.player
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.*
+import ch.taburett.tichu.game.protocol.CardsMessage
 import ch.taburett.tichu.game.protocol.Message.*
 import ch.taburett.tichu.game.protocol.Message.GiftDragon.ReLi.LI
 import ch.taburett.tichu.game.protocol.Message.GiftDragon.ReLi.RE
 import ch.taburett.tichu.game.protocol.createMove
 import ch.taburett.tichu.patterns.Empty
 import ch.taburett.tichu.patterns.Single
+import ch.taburett.tichu.patterns.Straight
 import ch.taburett.tichu.patterns.TichuPattern
 import ch.taburett.tichu.patterns.TichuPatternType.SINGLE
+import ch.taburett.tichu.patterns.Triple
 import java.util.function.Consumer
 import kotlin.math.abs
+import kotlin.math.pow
+import kotlin.math.roundToInt
 
 
 class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoPlayer {
     constructor(listener: Consumer<PlayerMessage>) : this({ listener.accept(it) })
 
+    fun evaluateSmallTichuBeforeSchupf(message: AckGameStage): Boolean {
+        val cards = message.handcards
+        val iam = message.youAre
+
+        if (message.tichuMap.getValue(iam) != ETichu.NONE ||
+            message.tichuMap.getValue(iam.partner) != ETichu.NONE ||
+            cards.size != 14
+        ) {
+            return false
+        }
+        val thresh = 10
+        val (heightness, orphPenalties) = evaluateCardsBeforeSchupf(cards)
+        return heightness - orphPenalties > thresh
+    }
+
+    private fun evaluateCardsBeforeSchupf(cards: List<HandCard>): Pair<Double, Double> {
+        val heightness = cards.map {
+            when (it) {
+                // norming to
+                is NumberCard -> 2 * normValue(it).pow(2)
+                PHX, DRG, DOG -> 3.0
+                else -> 0.0
+            }
+        }.sum()
+        val (pats, orphs) = _allPatterns(cards, false)
+        val orphPenalties = orphs.map {
+            when (it.card) {
+                DOG, DRG -> -1.0
+                else -> (1 - normValue(it.card)).pow(3)
+            }
+        }.sum()
+        return Pair(heightness, orphPenalties)
+    }
+
+    fun evaluateSmallTichuAfterSchupf(message: CardsMessage): Boolean {
+        val cards = message.handcards
+        val iam = message.youAre
+        if (message.tichuMap.getValue(iam) != ETichu.NONE ||
+            message.tichuMap.getValue(iam.partner) != ETichu.NONE ||
+            cards.size != 14
+        ) {
+            return false
+        }
+        val thresh = 13
+        val heightness = cards.map {
+            when (it) {
+                // norming to
+                is NumberCard -> 2 * normValue(it).pow(2)
+                PHX, DRG -> 3.0
+                DOG -> -1.0
+                else -> 0.0
+            }
+        }.sum()
+        val (pats, orphs) = _allPatterns(cards, false)
+        val orphPenalties = orphs.map {
+            when (it.card) {
+                DRG -> -1.0
+                DOG -> 1.0
+                else -> (1 - normValue(it.card)).pow(3)
+            }
+        }.sum()
+        return heightness - orphPenalties > thresh
+    }
+
     override fun receiveMessage(message: ServerMessage, player: Player) {
-//        GlobalScope.launch {
-        if(message is WhosMove && message.handcards.size == 14) {
-           if(evaluateSmallTichu(message.handcards)) {
-               listener(Announce.SmallTichu())
-           }
+        if (message is WhosMove && message.handcards.size == 14) {
+            if (evaluateSmallTichuAfterSchupf(message)) {
+                listener(Announce.SmallTichu())
+            }
         }
         val response = strategic(message)
         if (response != null) listener(response)
-//        }
     }
 
     override val type: String = "Strat"
@@ -76,7 +143,7 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
 
 
 
-        var (pats, orphans) = _allPatterns(handcards)
+        var (pats, orphans) = _allPatterns(handcards, true)
 
 
         if (mightFullfillWish) {
@@ -119,10 +186,10 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
         return move
     }
 
-    private fun _allPatterns(handcards: List<HandCard>): Pair<Set<TichuPattern>, Set<Single>> {
-        val pats = allPatterns(handcards).filter { it.type != SINGLE }.toSet()
+    private fun _allPatterns(handcards: List<HandCard>, incPhx: Boolean): Pair<Set<TichuPattern>, Set<Single>> {
+        val pats = allPatterns(handcards, incPhx).filter { it.type != SINGLE }.toSet()
 
-        val orphans = Single.allPatterns(handcards - pats.flatMap { it.cards })
+        val orphans = Single.allPatterns(handcards - pats.flatMap { it.cards }, incPhx = incPhx)
         return Pair(pats, orphans)
     }
 
@@ -173,7 +240,7 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
                 try {
 
                     val result = sim.start()
-                    if (result.finished) {
+                    if (result is SimpleBattle.BattleResult) {
                         val ri = result.roundPlay
                         val ow = ri.tricks.orderWinning
 
@@ -238,7 +305,7 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
             }
         }
 
-        val pats = _allPatterns(handcards)
+        val pats = _allPatterns(handcards, true)
 
         val simlated =
             emulateRandom(handcards, beatingPatterns + Empty(), wh.goneCards, wh.cardCounts, wh.youAre, wh.tricks)
@@ -256,18 +323,121 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
         message: AckGameStage,
     ): PlayerMessage? {
         return when (message.stage) {
-            Stage.EIGHT_CARDS -> if (evaluateBigTichu(message.handcards)) Announce.BigTichu() else Ack.BigTichu()
-            Stage.PRE_SCHUPF -> if (evaluateSmallTichu(message.handcards)) Announce.SmallTichu() else Ack.TichuBeforeSchupf()
-            Stage.SCHUPF -> {
-                val cards = message.handcards.sorted()
-                // todo: rege, orphans
-                Schupf(cards[0], cards[1], cards.last())
+            Stage.EIGHT_CARDS -> if (evalBigTichu(message)
+            ) {
+                Announce.BigTichu()
+            } else {
+                Ack.BigTichu()
             }
-
-            Stage.POST_SCHUPF -> if(evaluateSmallTichu(message.handcards)) Announce.SmallTichu() else Ack.TichuBeforePlay()
+            Stage.PRE_SCHUPF -> if (evaluateSmallTichuBeforeSchupf(message)) Announce.SmallTichu() else Ack.TichuBeforeSchupf()
+            Stage.SCHUPF -> schupf(message)
+            Stage.POST_SCHUPF -> if (evaluateSmallTichuAfterSchupf(message)) Announce.SmallTichu() else Ack.TichuBeforePlay()
             else -> null
         }
     }
+
+    private fun evalBigTichu(message: AckGameStage): Boolean {
+
+        val cards = message.handcards
+        val iam = message.youAre
+
+        if (message.tichuMap.getValue(iam) != ETichu.NONE ||
+            message.tichuMap.getValue(iam.partner) != ETichu.NONE ||
+            cards.size != 8
+        ) {
+            return false
+        }
+        val thresh = 10
+        val (heightness, orphPenalties) = evaluateCardsBeforeSchupf(cards)
+        return heightness - orphPenalties > thresh
+    }
+
+    private fun schupf(message: AckGameStage): Schupf {
+        val anytichu = message.tichuMap.any{it.value != ETichu.NONE}
+        val availableCards = message.handcards.sorted().toMutableList()
+
+        val partnerTichu =message.tichuMap.getValue(message.youAre.partner)
+        if( partnerTichu!= ETichu.NONE) {
+            availableCards.remove(DOG) // keep dog if available
+        }
+
+
+        val one = removeLeastViable(availableCards)
+        val two = removeLeastViable(availableCards)
+
+        var le: PlayCard
+        var re: PlayCard
+
+        if (one.getValue() == two.getValue()) {
+            re = one
+            le = two
+        } else {
+            if (one.getValue() % 2 == 0.0) {
+                re = one
+                if (two.getValue() % 2 == 1.0) {
+                    le = two
+                } else {
+                    le = removeLeastViable(availableCards)
+                }
+            } else {
+                le = one
+                if (two.getValue() % 2 == 0.0) {
+                    re = two
+                } else {
+                    re = removeLeastViable(availableCards)
+                }
+            }
+        }
+
+        val tichu =message.tichuMap.getValue(message.youAre)
+        val partner = if (tichu != ETichu.NONE) {
+            if (availableCards.remove(DOG)) {
+                DOG
+            } else {
+                removeLeastViable(availableCards)
+            }
+        } else {
+            availableCards.removeLast()
+        }
+        return Schupf(re, le, partner)
+    }
+
+    // todo: do not remove, just return
+    private fun removeLeastViable(cards: MutableList<HandCard>): PlayCard {
+        val pats = allPatterns(cards, false)
+        val ratings = cards.filterIsInstance<PlayCard>().associateWith { 0 }.toMutableMap()
+        for (pat in pats) {
+
+            when (pat) {
+                is Straight -> {
+                    val grp = cards.filterIsInstance<PlayCard>().groupBy { it.getValue() }
+                    for ((index, c) in pat.cards.sortedDescending().withIndex()) {
+                        val rating = if (index >= 5) 10 else 50
+                        if (grp.getValue(c.getValue()).size == 1) {
+                            ratings[c] = ratings[c]!! + rating
+                        }
+                    }
+                }
+
+                is Triple -> { // poss. bomb
+                    for (c in pat.cards) {
+                        ratings[c] = ratings[c]!! + 100
+                    }
+                }
+
+                else -> {
+                    for (c in pat.cards) {
+                        ratings[c] = (ratings[c]!! + cardCost(c.asHandcard()) * 15).roundToInt()
+                    }
+                }
+
+            }
+        }
+        val card = ratings.minBy { it.value }.key
+        cards.remove(card)
+        return card
+    }
+
 
 }
 

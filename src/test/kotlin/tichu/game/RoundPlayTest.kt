@@ -1,4 +1,4 @@
-package tichu
+package tichu.game
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.MutableDeck
@@ -10,6 +10,7 @@ import ch.taburett.tichu.game.protocol.Message.*
 import ch.taburett.tichu.game.protocol.createMove as move
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertAll
+import tichu.player.play
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -54,7 +55,10 @@ class RoundPlayTest {
             B2 to mutableListOf(S2),
         )
         val messageSink = ArrayDeque<WrappedServerMessage>()
-        val round = RoundPlay(messageSink::add, map, null, null)
+        val goneCards = (fulldeck - map.values.flatten()).filterIsInstance<PlayCard>()
+        val deck = MutableDeck.createStarted(map, A2,goneCards )
+        val round = RoundPlay(messageSink::add, deck, null, null)
+
         round.start()
         round.regularMove(A2, move(setOf(MAH), 5))
 
@@ -69,7 +73,9 @@ class RoundPlayTest {
             A2 to mutableListOf(MAH, D2),
             B2 to mutableListOf(S2),
         )
-        val round = RoundPlay(out, map, null, null)
+        val goneCards = (fulldeck - map.values.flatten()).filterIsInstance<PlayCard>()
+        val deck = MutableDeck.createStarted(map, A2,goneCards )
+        val round = RoundPlay(out, deck, null, null)
         round.start()
         round.regularMove(A1, Move(setOf(J5)))
 
@@ -85,7 +91,9 @@ class RoundPlayTest {
             B2 to mutableListOf(S2),
         )
 
-        val round = RoundPlay(out, map, null, null)
+        val goneCards = (fulldeck - map.values.flatten()).filterIsInstance<PlayCard>()
+        val deck = MutableDeck.createStarted(map, A2,goneCards )
+        val round = RoundPlay(out, deck, null, null)
 
         round.start()
         round.regularMove(A2, Move(setOf(MAH)))
@@ -107,7 +115,9 @@ class RoundPlayTest {
 
 
 
-        val round = RoundPlay(out, map, null, null)
+        val goneCards = (fulldeck - map.values.flatten()).filterIsInstance<PlayCard>()
+        val deck = MutableDeck.createStarted(map, A2,goneCards )
+        val round = RoundPlay(out, deck, null, null)
 
         round.start()
         round.regularMove(A2, Move(setOf(MAH)))

@@ -9,10 +9,12 @@ import ch.taburett.tichu.patterns.Single
 import java.util.function.Consumer
 
 
+
 class StupidPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoPlayer {
     constructor(listener: Consumer<PlayerMessage>) : this({ listener.accept(it) }) {
 
     }
+
 
     override fun receiveMessage(message: ServerMessage, player: Player) {
         val moves = stupidMove(message)
@@ -92,7 +94,7 @@ private fun response(
         }
     }
 
-    return if (evaluateSmallTichu(m.handcards)) {
+    return if (evaluateSmallTichuBeforeSchupf(m.handcards)) {
         listOf(Announce.SmallTichu(), move)
     } else {
         listOf(move)
@@ -130,7 +132,7 @@ private fun opening(
             }
         }
     }
-    return if (evaluateSmallTichu(message.handcards)) {
+    return if (evaluateSmallTichuBeforeSchupf(message.handcards)) {
         listOf(Announce.SmallTichu(), move)
     } else {
         listOf(move)
@@ -150,7 +152,7 @@ private fun ack(
         }
 
         Stage.PRE_SCHUPF -> {
-            if (evaluateSmallTichu(message.handcards)) {
+            if (evaluateSmallTichuBeforeSchupf(message.handcards)) {
                 Announce.SmallTichu()
             } else {
                 Ack.TichuBeforeSchupf()
@@ -163,7 +165,7 @@ private fun ack(
         }
 
         Stage.POST_SCHUPF -> {
-            if (evaluateSmallTichu(message.handcards)) {
+            if (evaluateSmallTichuBeforeSchupf(message.handcards)) {
                 Announce.SmallTichu()
             } else {
                 Ack.TichuBeforePlay()
@@ -176,7 +178,7 @@ private fun ack(
     }
 }
 
-fun evaluateSmallTichu(cards: List<HandCard>): Boolean {
+fun evaluateSmallTichuBeforeSchupf(cards: List<HandCard>): Boolean {
     if (cards.size != 14) {
         return false
     }

@@ -19,8 +19,10 @@ enum class TichuPatternType(val factory: PatternImplFactory) {
         return factory.pattern(cards);
     }
 
-    fun patterns(cards: Collection<HandCard>, cardinality: Int? = null): Set<TichuPattern> {
-        return factory.allPatterns(cards, cardinality)
+    // hm.. is param for phx really necessary? just filter it out?
+    // same would work for height... just filter the lower cards..?
+    fun allPatterns(cards: Collection<HandCard>, cardinality: Int? = null, incPhx: Boolean = true, ): Set<TichuPattern> {
+        return factory.allPatterns(cards, cardinality, incPhx)
     }
 
 

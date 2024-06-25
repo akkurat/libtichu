@@ -9,7 +9,7 @@ internal class FullHouseTest {
     @Test
     fun findAllFullhouses() {
         val deck = setOf(MAH, DRG, DOG, D2, S2, J2, J14, P14, S14, D6, J9)
-        val out = FullHouse.allPatterns(deck)
+        val out = FullHouse.allPatterns(deck, incPhx = true)
 
         val fhcards = setOf(D2, S2, J2, J14, P14, S14)
         val expect = setOf(
@@ -26,7 +26,7 @@ internal class FullHouseTest {
     @Test
     fun findAllFullhousesPhx() {
         val deck = setOf(S2, J2, D9, P9, PHX)
-        val out = FullHouse.allPatterns(deck)
+        val out = FullHouse.allPatterns(deck, incPhx = true)
         val fhcards = setOf(S2, J2, D9, P9)
 
         val expect = setOf(
@@ -39,7 +39,7 @@ internal class FullHouseTest {
     @Test
     fun findAllFullhousesPhxMore() {
         val deck = setOf(S2, J2, D2, D9, P9, PHX)
-        val out = FullHouse.allPatterns(deck)
+        val out = FullHouse.allPatterns(deck, incPhx = true)
         val fhcards = setOf(S2, J2, D2, D9, P9)
 
         val expect = setOf(

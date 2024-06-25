@@ -1,4 +1,4 @@
-package tichu
+package tichu.player
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.player.weightPossibilitesNoRec
@@ -7,9 +7,7 @@ import ch.taburett.tichu.patterns.Single
 import ch.taburett.tichu.patterns.Straight
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.assertAll
-import kotlin.math.exp
 import kotlin.test.Test
-import kotlin.test.asserter
 
 class PlayerUtilsKtTest {
 

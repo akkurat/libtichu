@@ -31,8 +31,13 @@ interface Message {
 
     data class Rejected(val msg: String, val orginal: Any? = null) : ServerMessage
 
-    data class AckGameStage(val stage: Stage, val handcards: List<HandCard>, val tichuMap: Map<Player, ETichu>) :
-        ServerMessage {
+    data class AckGameStage(
+        override val youAre: Player,
+        val stage: Stage,
+        override val handcards: List<HandCard>,
+        override val tichuMap: Map<Player, ETichu>
+    ) :
+        ServerMessage, CardsMessage{
 
         init {
             when (stage) {
@@ -59,19 +64,19 @@ interface Message {
     // todo merge with WhosTurn and make YOU a flag
 // all the
     data class WhosMove(
-        val youAre: Player,
+        override val youAre: Player,
         val who: Player,
-        val handcards: List<HandCard>,
+        override val handcards: List<HandCard>,
         val table: ImmutableTable,
         val last: Trick?,
         val tricks: ImmutableTricks,
         val wish: Int? = null,
         val dragonGift: Boolean = false,
         val cardCounts: Map<Player, Int>,
-        val tichuMap: Map<Player, ETichu>,
+        override val tichuMap: Map<Player, ETichu>,
         val goneCards: Set<PlayCard>,
-    ) : ServerMessage {
-        val yourMove = youAre == who
+    ) : ServerMessage, CardsMessage {
+        val yourMove = this.youAre == who
         val stage = if (yourMove) {
             if (dragonGift) {
                 GIFT_DRAGON
@@ -132,6 +137,14 @@ interface Message {
     /**
      *
      */
+
+}
+
+
+interface CardsMessage: Message.ServerMessage {
+    val youAre: Player
+    val handcards: List<HandCard>
+    val tichuMap: Map<Player, ETichu>
 
 }
 

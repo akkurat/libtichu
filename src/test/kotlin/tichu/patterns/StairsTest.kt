@@ -42,7 +42,7 @@ internal class StairsTest {
                 pattern(listOf(D3, P2, P3, J2)),
                 pattern(listOf(P3, P2, J3, J2)),
             ),
-            Stairs.allPatterns(cards)
+            Stairs.allPatterns(cards, incPhx = true)
         )
     }
 
@@ -55,14 +55,14 @@ internal class StairsTest {
                 pattern(listOf(D3, P2, P3, J2, J4, S4)),
                 pattern(listOf(P3, P2, J3, J2, J4, S4)),
             ),
-            Stairs.allPatterns(cards)
+            Stairs.allPatterns(cards, incPhx = true)
         )
     }
 
     @Test
     fun findAll() {
         val handcards = listOf(D7, P4, D3, D4, S8, J12, S12, S9, D11, J2, J11, P6, J5, S5)
-        val all = Stairs.allPatterns(handcards)
+        val all = Stairs.allPatterns(handcards, incPhx = true)
 
         assertThat(all).containsExactly(
             Stairs.pattern(listOf(P4, D4, J5, S5)),

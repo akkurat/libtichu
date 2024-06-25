@@ -2,7 +2,6 @@ package ch.taburett.tichu.game.player
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.prob
-import ch.taburett.tichu.game.protocol.Message
 import ch.taburett.tichu.game.protocol.Message.*
 import ch.taburett.tichu.game.wishPredicate
 import ch.taburett.tichu.patterns.Bomb
@@ -35,7 +34,7 @@ fun cardGettingRidIncentive(hc: HandCard): Double {
     }
 }
 
-fun normValue(hc: NumberCard) = hc.getValue() / 14
+fun normValue(hc: PlayCard) = hc.getValue() / 14
 
 // dep. on the played cards also the pattern values change
 fun patValue(pat: TichuPattern): Double {
@@ -136,8 +135,8 @@ fun WhosMove.probabilitiesByMessage(): Map<TichuPattern, Double> {
 fun WhosMove.probabilitiesByMessage(myPatterns: Set<TichuPattern>): Map<TichuPattern, Double> {
     return prob(
         handcards, goneCards,
-        myPatterns, cardCounts.getValue(youAre.partner),
-        cardCounts.getValue(youAre.li),
-        cardCounts.getValue(youAre.re)
+        myPatterns, cardCounts.getValue(this.youAre.partner),
+        cardCounts.getValue(this.youAre.li),
+        cardCounts.getValue(this.youAre.re)
     )
 }

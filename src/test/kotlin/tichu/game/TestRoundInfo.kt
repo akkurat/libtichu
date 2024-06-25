@@ -1,4 +1,4 @@
-package tichu
+package tichu.game
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.*
@@ -51,7 +51,7 @@ class TestBattleRoundInfo {
         val ri =
             RoundInfo(
                 null,
-                mapTricksToObj(tricks),
+                tichuPointsPerPlayerTricksToObj(tricks),
                 initMap,
                 laterMap,
                 Player.entries.associateWith { ETichu.NONE },
@@ -78,7 +78,7 @@ class TestBattleRoundInfo {
         )
     }
 
-    private fun mapTricksToObj(tricks: List<List<IPlayLogEntry>>): MutableTricks {
+    private fun tichuPointsPerPlayerTricksToObj(tricks: List<List<IPlayLogEntry>>): MutableTricks {
         val tricksO = MutableTricks(null)
         for (trick in tricks) {
             trick.forEach { tricksO.add(it) }
@@ -121,7 +121,7 @@ class TestBattleRoundInfo {
         val ri =
             RoundInfo(
                 null,
-                mapTricksToObj(tricks),
+                tichuPointsPerPlayerTricksToObj(tricks),
                 initMap,
                 laterMap,
                 Player.entries.associateWith { ETichu.NONE },

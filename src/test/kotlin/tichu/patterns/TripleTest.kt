@@ -9,7 +9,7 @@ internal class TripleTest {
     @Test
     fun allTriples() {
         val input = listOf(J2, D2, S2, D11, P11, J14, D14, S14, P14)
-        val out = Triple.allPatterns(input)
+        val out = Triple.allPatterns(input, incPhx = true)
         println(out)
         val expect = setOf(
             Triple.of(J2, D2, S2),
@@ -24,7 +24,7 @@ internal class TripleTest {
     @Test
     fun testOnePhx() {
         val input = listOf(J2, D2, S5, PHX, S10)
-        val out = Triple.allPatterns(input)
+        val out = Triple.allPatterns(input, incPhx = true)
         val expect = setOf(Triple.of(J2, D2, PHX.asPlayCard(2)))
         Assertions.assertThat(out).hasSameElementsAs(expect)
     }
@@ -32,7 +32,7 @@ internal class TripleTest {
     @Test
     fun testMultiPhx() {
         val input = listOf(J2, D2, S2, S5, D5, PHX, S10)
-        val out = Triple.allPatterns(input)
+        val out = Triple.allPatterns(input, incPhx = true)
         val expect = setOf(
             Triple.of(J2, D2, S2),
             Triple.of(J2, D2, PHX.asPlayCard(2)),
@@ -46,7 +46,7 @@ internal class TripleTest {
     @Test
     fun testnone() {
         val input = listOf(J2, MAH, S5, PHX, S10)
-        val out = Triple.allPatterns(input)
+        val out = Triple.allPatterns(input, incPhx = true)
         Assertions.assertThat(out).hasSameElementsAs(listOf())
     }
 

@@ -27,8 +27,9 @@ class Stairs private constructor(cards: List<PlayCard>) : TichuPattern(TichuPatt
             return Stairs(sortedcards)
         }
 
-        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?): Set<Stairs> {
+        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?, incPhx: Boolean): Set<Stairs> {
 
+            // todo: phx support
             // maybe a class for deck would be more appropriate than just a list?
             val cardByValue = cards.filterIsInstance<NumberCard>()
                 .groupBy { it.getValue() }
@@ -69,7 +70,6 @@ class Stairs private constructor(cards: List<PlayCard>) : TichuPattern(TichuPatt
                 return found
 
             }
-            // todo: phx
             return setOf();
         }
     }

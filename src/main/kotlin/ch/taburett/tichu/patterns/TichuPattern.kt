@@ -69,7 +69,7 @@ sealed class TichuPattern(val type: TichuPatternType, cards: Iterable<PlayCard>)
     }
 
     fun findBeatingPatterns(handcards: List<HandCard>): List<TichuPattern> {
-        return type.patterns(handcards, cardinality())
+        return type.allPatterns(handcards, cardinality())
             .filter { it.beats(this).type ==LegalType.OK }
     }
 

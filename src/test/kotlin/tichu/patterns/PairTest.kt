@@ -8,7 +8,7 @@ internal class PairTest {
     @Test
     fun allPairs() {
         val input = listOf(J2, D2, S2, D11, P11, J14, D14, S14, P14)
-        val out = Pair.allPatterns(input)
+        val out = Pair.allPatterns(input, incPhx = true)
         println(out)
         val expect = setOf(
             Pair.of(J2, D2),
@@ -29,7 +29,7 @@ internal class PairTest {
     fun testPairWithPhx()
     {
         val input = listOf(J2, D2, S5, PHX, S10 )
-        val out = Pair.allPatterns(input)
+        val out = Pair.allPatterns(input, incPhx = true)
         val expect = setOf(
             Pair.of(J2, D2),
             Pair.of(J2, PHX.asPlayCard(2)),

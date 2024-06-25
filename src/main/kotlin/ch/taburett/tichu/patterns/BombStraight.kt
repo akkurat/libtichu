@@ -14,9 +14,9 @@ class BombStraight(cards: Collection<PlayCard>) : TichuPattern(TichuPatternType.
             return null
         }
 
-        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?): Set<TichuPattern> {
+        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?, incPhx: Boolean): Set<TichuPattern> {
             // inefficient but working:
-            return Straight.allPatterns(cards)
+            return Straight.allPatterns(cards, incPhx = true)
                 .filter { pat -> pat.cards.all { it.getColor() == pat.cards.first().getColor() } }
                 .toSet()
         }

@@ -17,9 +17,9 @@ fun pattern(cards: Collection<PlayCard >): TichuPattern {
     throw IllegalArgumentException("No Pattern matched")
 }
 
-fun allPatterns(cards: Collection<HandCard>): Set<TichuPattern> {
+fun allPatterns(cards: Collection<HandCard>, incPhx: Boolean = true): Set<TichuPattern> {
     return TichuPatternType.entries
-        .flatMap { it.patterns(cards) }
+        .flatMap { it.allPatterns(cards, incPhx = incPhx) }
         .toSet()
 }
 

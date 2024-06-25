@@ -22,8 +22,8 @@ class FullHouse(val three: Collection<PlayCard>, val two: Collection<PlayCard>) 
         }
 
         private fun allFullhouses(cards: Collection<PlayCard>): Set<TichuPattern> {
-            val allPairs = Pair.allPatterns(cards)
-            val allTriples = Triple.allPatterns(cards)
+            val allPairs = Pair.allPatterns(cards, incPhx = true)
+            val allTriples = Triple.allPatterns(cards, incPhx = true)
 
             return Generator.cartesianProduct(allTriples.toList(), allPairs.toList())
                 .filter { it.first().getHeight() != it.last().getHeight() }
@@ -31,8 +31,8 @@ class FullHouse(val three: Collection<PlayCard>, val two: Collection<PlayCard>) 
                 .toSet()
         }
 
-        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?): Set<TichuPattern> {
-            if (cards.contains(PHX)) {
+        override fun allPatterns(cards: Collection<HandCard>, cardinality: Int?, incPhx: Boolean): Set<TichuPattern> {
+            if (incPhx && cards.contains(PHX)) {
                 val numbers = cards.filterIsInstance<NumberCard>()
                     .map { it.getValue() }
                     .toSet()

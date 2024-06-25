@@ -8,11 +8,17 @@ import kotlin.reflect.KClass
 interface State {
     fun complete(): Boolean
     fun reactsTo(value: PlayerMessage): Boolean
-    fun react(u: Player, s: PlayerMessage)
+    fun react(
+        u: Player,
+        s: PlayerMessage,
+        cardMap: Map<Player, MutableList<HandCard>>,
+        tichuMap: PlayerETichuMutableMap,
+        name: String?
+    ): WrappedServerMessage?
 }
 
 
-class PrepareRound(val com: Out) {
+class PrepareRound(val com: Out, override val name: String? = null) : TichuGameStage {
 
     private lateinit var cards6: Map<Player, List<HandCard>>
     private lateinit var cards8: Map<Player, MutableList<HandCard>>
@@ -34,20 +40,34 @@ class PrepareRound(val com: Out) {
 
         }
 
-        override fun react(u: Player, s: PlayerMessage) {
+        override fun react(
+            u: Player,
+            s: PlayerMessage,
+            cardMap: Map<Player, MutableList<HandCard>>,
+            tichuMap: PlayerETichuMutableMap,
+            name: String?,
+        ): WrappedServerMessage? {
             assert(reactsTo(s))
+            if( s is Announce.BigTichu ) {
+               println("$name $u big tichu")
+                // todo gamelog
+                tichuMap[u] = ETichu.BIG
+            } else if ( s is Announce.SmallTichu ) {
+                println("$name $u small tichu")
+                // todo gamelog
+                tichuMap[u] = ETichu.SMALL
+            }
             ack.add(u)
+            return null
         }
     }
 
     // enum would actually be fine....
-    class bTichu : AckState(Ack.BigTichu::class,Announce.BigTichu::class )
-    class preSchupf : AckState(Ack.TichuBeforeSchupf::class,Announce.SmallTichu::class)
-    class schupfed : AckState(Ack.SchupfcardReceived::class,Announce.SmallTichu::class)
-    class preGame : AckState(Ack.TichuBeforePlay::class,Announce.SmallTichu::class)
+    class bTichu : AckState(Ack.BigTichu::class, Announce.BigTichu::class)
+    class preSchupf : AckState(Ack.TichuBeforeSchupf::class, Announce.SmallTichu::class)
+    class schupfed : AckState(Ack.SchupfcardReceived::class, Announce.SmallTichu::class)
+    class preGame : AckState(Ack.TichuBeforePlay::class, Announce.SmallTichu::class)
 
-
-    // theory all players could have their own state....
     class SchupfState : State {
         //                           <from, Map<to, handcar>>
         val schupfBuffer: MutableMap<Player, Map<Player, HandCard>> = mutableMapOf()
@@ -59,10 +79,26 @@ class PrepareRound(val com: Out) {
             return Schupf::class.isInstance(value)
         }
 
-        override fun react(u: Player, s: PlayerMessage) {
+        override fun react(
+            u: Player,
+            s: PlayerMessage,
+            cardMap: Map<Player, MutableList<HandCard>>,
+            tichuMap: PlayerETichuMutableMap,
+            name: String?,
+        ): WrappedServerMessage? {
             if (s is Schupf) {
-                schupfBuffer[u] = mapSchupfEvent(u, s)
+                if (checkCardsLegal(u, s, cardMap.getValue(u))) {
+                    schupfBuffer[u] = mapSchupfEvent(u, s)
+                } else {
+                    return WrappedServerMessage(u, Rejected("Cheating!"))
+                }
             }
+            return null
+        }
+
+        private fun checkCardsLegal(u: Player, s: Schupf, value: List<HandCard>): Boolean {
+            val avCards = value.toMutableList()
+            return avCards.remove(s.re) && avCards.remove(s.li) && avCards.remove(s.partner)
         }
     }
 
@@ -72,7 +108,6 @@ class PrepareRound(val com: Out) {
     val states = listOf(
         bTichu() to {
             cardMap = playerList.zip(first8.chunked(8))
-                //                        .groupByTo(mutableMapOf(), { z -> z.first }, {z -> z.second.toMutableList()} )
                 .associateBy({ z -> z.first }, { z -> z.second.toMutableList() })
             cards8 = cardMap.toMap()
             sendStage(Stage.EIGHT_CARDS)
@@ -103,7 +138,7 @@ class PrepareRound(val com: Out) {
 
     private fun sendStage(stage: Stage) {
         for ((u, c) in cardMap) {
-            val message = AckGameStage(stage, c, tichuMap)
+            val message = AckGameStage(u,stage, c, tichuMap)
             sendMessage(WrappedServerMessage(u, message))
         }
     }
@@ -112,8 +147,10 @@ class PrepareRound(val com: Out) {
 
     fun react(u: Player, s: PlayerMessage) {
         if (currentState.reactsTo(s)) {
-            currentState.react(u, s)
-            if (currentState.complete()) {
+            val error = currentState.react(u, s, cardMap, tichuMap, name)
+            if (error != null) {
+                sendMessage(error)
+            } else if (currentState.complete()) {
                 if (stateIterator.hasNext()) {
                     val (state, transition) = stateIterator.next()
                     currentState = state
@@ -167,7 +204,7 @@ class PrepareRound(val com: Out) {
 
     }
 
-    fun receive(wrappedPlayerMessage: WrappedPlayerMessage) {
+    fun receivePlayerMessage(wrappedPlayerMessage: WrappedPlayerMessage) {
 
         val u = wrappedPlayerMessage.u
         when (val m = wrappedPlayerMessage.message) {
@@ -190,7 +227,7 @@ data class PreparationInfo(
     val cards6: Map<Player, List<HandCard>>,
     val schupf: SchupfLog,
     val tichuLog: List<IPlayLogEntry>,
-    val tichuMap: Map<Player,ETichu>
+    val tichuMap: Map<Player, ETichu>,
 ) {
     data class SchupfLog(
         val to: Map<Player, Map<Player, HandCard>>,
