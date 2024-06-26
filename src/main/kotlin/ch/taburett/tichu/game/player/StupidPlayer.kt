@@ -1,13 +1,14 @@
 package ch.taburett.tichu.game.player
 
 import ch.taburett.tichu.cards.*
+import ch.taburett.tichu.game.ETichu
 import ch.taburett.tichu.game.Player
+import ch.taburett.tichu.game.protocol.CardsMessage
 import ch.taburett.tichu.game.protocol.Message.*
 import ch.taburett.tichu.game.protocol.createMove
 import ch.taburett.tichu.game.protocol.moveSingle
 import ch.taburett.tichu.patterns.Single
 import java.util.function.Consumer
-
 
 
 class StupidPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoPlayer {
@@ -94,7 +95,7 @@ private fun response(
         }
     }
 
-    return if (evaluateSmallTichuBeforeSchupf(m.handcards)) {
+    return if (evaluateSmallTichu(m)) {
         listOf(Announce.SmallTichu(), move)
     } else {
         listOf(move)
@@ -132,7 +133,7 @@ private fun opening(
             }
         }
     }
-    return if (evaluateSmallTichuBeforeSchupf(message.handcards)) {
+    return if (evaluateSmallTichu(message)) {
         listOf(Announce.SmallTichu(), move)
     } else {
         listOf(move)
@@ -152,7 +153,7 @@ private fun ack(
         }
 
         Stage.PRE_SCHUPF -> {
-            if (evaluateSmallTichuBeforeSchupf(message.handcards)) {
+            if (evaluateSmallTichu(message)) {
                 Announce.SmallTichu()
             } else {
                 Ack.TichuBeforeSchupf()
@@ -165,7 +166,7 @@ private fun ack(
         }
 
         Stage.POST_SCHUPF -> {
-            if (evaluateSmallTichuBeforeSchupf(message.handcards)) {
+            if (evaluateSmallTichu(message)) {
                 Announce.SmallTichu()
             } else {
                 Ack.TichuBeforePlay()
@@ -178,8 +179,14 @@ private fun ack(
     }
 }
 
-fun evaluateSmallTichuBeforeSchupf(cards: List<HandCard>): Boolean {
-    if (cards.size != 14) {
+private fun evaluateSmallTichu(message: CardsMessage): Boolean {
+    val cards: List<HandCard> = message.handcards
+    val iam = message.youAre
+
+    if (message.tichuMap.getValue(iam) != ETichu.NONE ||
+        message.tichuMap.getValue(iam.partner) != ETichu.NONE ||
+        cards.size != 14
+    ) {
         return false
     }
     return (cards.contains(PHX) || cards.contains(DRG)) &&
@@ -189,8 +196,13 @@ fun evaluateSmallTichuBeforeSchupf(cards: List<HandCard>): Boolean {
             cards.filterIsInstance<NumberCard>().count { it.getValue() == 14.0 } >= 1
 }
 
-fun evaluateBigTichu(cards: List<HandCard>): Boolean {
-    return cards.containsAll(listOf(PHX, DRG))
-            && cards.filterIsInstance<NumberCard>().count { it.getValue() == 14.0 } >= 2
+private fun evaluateBigTichu(cards: List<HandCard>): Boolean {
+    val bigTichu = (cards.containsAll(listOf(PHX, DRG))
+            && cards.filterIsInstance<NumberCard>().count { it.getValue() == 14.0 } >= 1 )||
+
+            (cards.contains(PHX) || cards.contains(DRG)) &&
+                    cards.filterIsInstance<NumberCard>().count { it.getValue() == 14.0 } >= 2
+    if (bigTichu) println("Stupid: bigTichu")
+    return bigTichu
 
 }

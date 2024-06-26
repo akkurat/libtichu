@@ -27,7 +27,7 @@ class PrepareRound(val com: Out, override val name: String? = null) : TichuGameS
     private val tichuMap: PlayerETichuMutableMap = Player.entries
         .associateWith { ETichu.NONE }.toMutableMap()
 
-    sealed class AckState(private vararg val reactsTo: KClass<out PlayerMessage>) : State {
+    sealed class AckState(val name: String, private vararg val reactsTo: KClass<out PlayerMessage>) : State {
 
         private val ack = mutableSetOf<Player>()
 
@@ -53,7 +53,7 @@ class PrepareRound(val com: Out, override val name: String? = null) : TichuGameS
                 // todo gamelog
                 tichuMap[u] = ETichu.BIG
             } else if ( s is Announce.SmallTichu ) {
-                println("$name $u small tichu")
+                println("$name $u small tichu ${this.name}")
                 // todo gamelog
                 tichuMap[u] = ETichu.SMALL
             }
@@ -63,10 +63,10 @@ class PrepareRound(val com: Out, override val name: String? = null) : TichuGameS
     }
 
     // enum would actually be fine....
-    class bTichu : AckState(Ack.BigTichu::class, Announce.BigTichu::class)
-    class preSchupf : AckState(Ack.TichuBeforeSchupf::class, Announce.SmallTichu::class)
-    class schupfed : AckState(Ack.SchupfcardReceived::class, Announce.SmallTichu::class)
-    class preGame : AckState(Ack.TichuBeforePlay::class, Announce.SmallTichu::class)
+    class bTichu : AckState("BigTichu", Ack.BigTichu::class, Announce.BigTichu::class)
+    class preSchupf : AckState("PreSchupf", Ack.TichuBeforeSchupf::class, Announce.SmallTichu::class)
+    class schupfed : AckState("AfterSchupf", Ack.SchupfcardReceived::class, Announce.SmallTichu::class)
+    class preGame : AckState("PreGame", Ack.TichuBeforePlay::class, Announce.SmallTichu::class)
 
     class SchupfState : State {
         //                           <from, Map<to, handcar>>

@@ -13,7 +13,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 
 
-private const val N = 100
+private const val N = 10000
 
 fun main() {
     val simpleBattle = SimpleBattle(N)
@@ -44,24 +44,59 @@ fun main() {
 }
 
 private fun printAvg(roundlog: MutableList<SimpleBattle.Linfo>) {
-    val rb = roundlog.filterIsInstance<BattleResult>()
+    val finishedRounds = roundlog.filterIsInstance<BattleResult>()
+    val rb = finishedRounds
         .flatMap(::mapPoints)
         .groupBy({ it.first }, { it.second })
     println(rb.mapValues { it.value.average() })
 
-    val s = roundlog.filterIsInstance<BattleResult>()
-        .flatMap { br ->
-            val rp = br.roundPlay
-            rp.tichuMap.mapValues {
-                it.value to rp.getRoundInfo().tichuPointsPerPlayer.getValue(it.key)
-            }.mapKeys { br.players.getValue(it.key).type }
-                .toList()
+    val bigTichuCounts = mutableMapOf<String, Int>()
+    val smallTichuCounts = mutableMapOf<String, Int>()
+    val bigTichuWins = mutableMapOf<String, Int>()
+    val smallTichuWins = mutableMapOf<String, Int>()
 
+    for (round in finishedRounds) {
+        for (tm in round.roundPlay.tichuMap) {
+            val type = round.players.getValue(tm.key).type
+            if (tm.value == ETichu.BIG) {
+                bigTichuCounts[type] = bigTichuCounts.getOrPut(type) { 0 } + 1
+                if (round.roundPlay.getRoundInfo().orderOfWinning.first() == tm.key) {
+                    bigTichuWins[type] = bigTichuWins.getOrPut(type) { 0 } + 1
+                }
+            } else if (tm.value == ETichu.SMALL) {
+                smallTichuCounts[type] = smallTichuCounts.getOrPut(type) { 0 } + 1
+                if (round.roundPlay.getRoundInfo().orderOfWinning.first() == tm.key) {
+                    smallTichuWins[type] = smallTichuWins.getOrPut(type) { 0 } + 1
+                }
+            }
         }
+    }
 
-    val grouped = s.groupBy { it.first }.mapValues { it.value.groupBy { it.second } }
-//        .groupBy({ it.first }, { it.second })
-    println(grouped.mapValues { it.value.values.size })
+    // sometimes a map and a for loop are way easieer than mapping the shit
+//    val s = roundlog.filterIsInstance<BattleResult>()
+//        .flatMap { br ->
+//            val rp = br.roundPlay
+//            rp.tichuMap.mapValues {
+//                it.value to rp.getRoundInfo().tichuPointsPerPlayer.getValue(it.key)
+//            }.mapKeys { br.players.getValue(it.key).type }
+//                .toList()
+//
+//        }
+//
+//    val grouped = s.groupBy { it.first }.mapValues { it.value.groupBy { it.second } }
+////        .groupBy({ it.first }, { it.second })
+//    println(grouped.mapValues { it.value.values.size })
+    val numRounds = finishedRounds.count()
+
+    val big = bigTichuCounts.mapValues { it.value.toDouble() / numRounds }
+    val small = smallTichuCounts.mapValues { it.value.toDouble() / numRounds }
+
+    val bigwins = bigTichuWins.mapValues { it.value.toDouble() / bigTichuCounts.getValue(it.key) }
+    val smallwins = smallTichuWins.mapValues { it.value.toDouble() / smallTichuCounts.getValue(it.key) }
+
+    println("small $small wins $smallwins big $big wins $bigwins")
+
+
 }
 
 

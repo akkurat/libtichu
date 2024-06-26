@@ -7,13 +7,10 @@ import ch.taburett.tichu.game.protocol.Message.*
 import ch.taburett.tichu.game.protocol.Message.GiftDragon.ReLi.LI
 import ch.taburett.tichu.game.protocol.Message.GiftDragon.ReLi.RE
 import ch.taburett.tichu.game.protocol.createMove
-import ch.taburett.tichu.patterns.Empty
-import ch.taburett.tichu.patterns.Single
-import ch.taburett.tichu.patterns.Straight
-import ch.taburett.tichu.patterns.TichuPattern
+import ch.taburett.tichu.patterns.*
 import ch.taburett.tichu.patterns.TichuPatternType.SINGLE
-import ch.taburett.tichu.patterns.Triple
 import java.util.function.Consumer
+import kotlin.Pair
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.roundToInt
@@ -22,69 +19,7 @@ import kotlin.math.roundToInt
 class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoPlayer {
     constructor(listener: Consumer<PlayerMessage>) : this({ listener.accept(it) })
 
-    fun evaluateSmallTichuBeforeSchupf(message: AckGameStage): Boolean {
-        val cards = message.handcards
-        val iam = message.youAre
 
-        if (message.tichuMap.getValue(iam) != ETichu.NONE ||
-            message.tichuMap.getValue(iam.partner) != ETichu.NONE ||
-            cards.size != 14
-        ) {
-            return false
-        }
-        val thresh = 10
-        val (heightness, orphPenalties) = evaluateCardsBeforeSchupf(cards)
-        return heightness - orphPenalties > thresh
-    }
-
-    private fun evaluateCardsBeforeSchupf(cards: List<HandCard>): Pair<Double, Double> {
-        val heightness = cards.map {
-            when (it) {
-                // norming to
-                is NumberCard -> 2 * normValue(it).pow(2)
-                PHX, DRG, DOG -> 3.0
-                else -> 0.0
-            }
-        }.sum()
-        val (pats, orphs) = _allPatterns(cards, false)
-        val orphPenalties = orphs.map {
-            when (it.card) {
-                DOG, DRG -> -1.0
-                else -> (1 - normValue(it.card)).pow(3)
-            }
-        }.sum()
-        return Pair(heightness, orphPenalties)
-    }
-
-    fun evaluateSmallTichuAfterSchupf(message: CardsMessage): Boolean {
-        val cards = message.handcards
-        val iam = message.youAre
-        if (message.tichuMap.getValue(iam) != ETichu.NONE ||
-            message.tichuMap.getValue(iam.partner) != ETichu.NONE ||
-            cards.size != 14
-        ) {
-            return false
-        }
-        val thresh = 13
-        val heightness = cards.map {
-            when (it) {
-                // norming to
-                is NumberCard -> 2 * normValue(it).pow(2)
-                PHX, DRG -> 3.0
-                DOG -> -1.0
-                else -> 0.0
-            }
-        }.sum()
-        val (pats, orphs) = _allPatterns(cards, false)
-        val orphPenalties = orphs.map {
-            when (it.card) {
-                DRG -> -1.0
-                DOG -> 1.0
-                else -> (1 - normValue(it.card)).pow(3)
-            }
-        }.sum()
-        return heightness - orphPenalties > thresh
-    }
 
     override fun receiveMessage(message: ServerMessage, player: Player) {
         if (message is WhosMove && message.handcards.size == 14) {
@@ -329,6 +264,7 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
             } else {
                 Ack.BigTichu()
             }
+
             Stage.PRE_SCHUPF -> if (evaluateSmallTichuBeforeSchupf(message)) Announce.SmallTichu() else Ack.TichuBeforeSchupf()
             Stage.SCHUPF -> schupf(message)
             Stage.POST_SCHUPF -> if (evaluateSmallTichuAfterSchupf(message)) Announce.SmallTichu() else Ack.TichuBeforePlay()
@@ -336,28 +272,13 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
         }
     }
 
-    private fun evalBigTichu(message: AckGameStage): Boolean {
-
-        val cards = message.handcards
-        val iam = message.youAre
-
-        if (message.tichuMap.getValue(iam) != ETichu.NONE ||
-            message.tichuMap.getValue(iam.partner) != ETichu.NONE ||
-            cards.size != 8
-        ) {
-            return false
-        }
-        val thresh = 10
-        val (heightness, orphPenalties) = evaluateCardsBeforeSchupf(cards)
-        return heightness - orphPenalties > thresh
-    }
 
     private fun schupf(message: AckGameStage): Schupf {
-        val anytichu = message.tichuMap.any{it.value != ETichu.NONE}
+        val anytichu = message.tichuMap.any { it.value != ETichu.NONE }
         val availableCards = message.handcards.sorted().toMutableList()
 
-        val partnerTichu =message.tichuMap.getValue(message.youAre.partner)
-        if( partnerTichu!= ETichu.NONE) {
+        val partnerTichu = message.tichuMap.getValue(message.youAre.partner)
+        if (partnerTichu != ETichu.NONE) {
             availableCards.remove(DOG) // keep dog if available
         }
 
@@ -389,7 +310,7 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
             }
         }
 
-        val tichu =message.tichuMap.getValue(message.youAre)
+        val tichu = message.tichuMap.getValue(message.youAre)
         val partner = if (tichu != ETichu.NONE) {
             if (availableCards.remove(DOG)) {
                 DOG
@@ -436,6 +357,98 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
         val card = ratings.minBy { it.value }.key
         cards.remove(card)
         return card
+    }
+
+    private fun evalBigTichu(message: AckGameStage): Boolean {
+
+        val cards = message.handcards
+        val iam = message.youAre
+
+        if (message.tichuMap.getValue(iam) != ETichu.NONE ||
+            message.tichuMap.getValue(iam.partner) != ETichu.NONE ||
+            cards.size != 8
+        ) {
+            return false
+        }
+        val (heightness, orphPenalties) = evaluateCardsBeforeSchupf(cards)
+        return heightness - orphPenalties > 17
+    }
+
+    private fun evaluateSmallTichuBeforeSchupf(message: AckGameStage): Boolean {
+        val cards = message.handcards
+        val iam = message.youAre
+
+        if (message.tichuMap.getValue(iam) != ETichu.NONE ||
+            message.tichuMap.getValue(iam.partner) != ETichu.NONE ||
+            cards.size != 14
+        ) {
+            return false
+        }
+        val (heightness, orphPenalties) = evaluateCardsBeforeSchupf(cards)
+        return heightness - orphPenalties > 22
+    }
+
+    private fun evaluateSmallTichuAfterSchupf(message: CardsMessage): Boolean {
+        val cards = message.handcards
+        val iam = message.youAre
+        if (message.tichuMap.getValue(iam) != ETichu.NONE ||
+            message.tichuMap.getValue(iam.partner) != ETichu.NONE ||
+            cards.size != 14
+        ) {
+            return false
+        }
+        val (heightness, orphPenalties) = evaluateCardsAfterSchupf(cards)
+        return heightness - orphPenalties > 18
+    }
+
+    private fun evaluateCardsBeforeSchupf(cards: List<HandCard>): Pair<Double, Double> {
+        var heightness = cards.map {
+            when (it) {
+                // norming to
+                is NumberCard -> 2 * normValue(it).pow(2)
+                PHX, DRG -> 5.0
+                DOG -> 2.0
+                else -> 0.0
+            }
+        }.sum()
+        val (pats, orphs) = _allPatterns(cards, false)
+        val bomb = pats.any { it is ch.taburett.tichu.patterns.Bomb || it is BombStraight }
+        if (bomb) {
+            heightness += 7.0
+        }
+        val orphPenalties = orphs.map {
+            when (it.card) {
+                DOG, DRG -> 0.0
+                else -> (1 - normValue(it.card)).pow(3)
+            }
+        }.sum()
+        return Pair(heightness, orphPenalties)
+    }
+
+    private fun evaluateCardsAfterSchupf(cards: List<HandCard>): Pair<Double, Double> {
+        var heightness = cards.map {
+            when (it) {
+                // norming to
+                is NumberCard -> 2 * normValue(it).pow(2)
+                PHX, DRG -> 5.0
+                DOG -> -3.0
+                else -> 0.0
+            }
+        }.sum()
+
+        val (pats, orphs) = _allPatterns(cards, false)
+        val bomb = pats.any { it is ch.taburett.tichu.patterns.Bomb || it is BombStraight }
+        if (bomb) {
+            heightness += 7.0
+        }
+        val orphPenalties = orphs.map {
+            when (it.card) {
+                DRG -> -1.0
+                DOG -> 1.0
+                else -> (1 - normValue(it.card)).pow(3)
+            }
+        }.sum()
+        return Pair(heightness, orphPenalties)
     }
 
 
