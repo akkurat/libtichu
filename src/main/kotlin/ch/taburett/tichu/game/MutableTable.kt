@@ -1,7 +1,9 @@
 package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.PlayCard
-import ch.taburett.tichu.game.IPlayLogEntry.*
+import ch.taburett.tichu.game.gamelog.IPlayLogEntry
+import ch.taburett.tichu.game.gamelog.IPlayLogEntry.*
+import ch.taburett.tichu.game.gamelog.Trick
 
 /**
  * Current open trick

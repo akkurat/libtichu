@@ -2,7 +2,6 @@ package ch.taburett.tichu.player
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.Player
-import ch.taburett.tichu.game.prob
 import ch.taburett.tichu.game.protocol.Message.*
 import ch.taburett.tichu.game.protocol.createMove
 import ch.taburett.tichu.game.protocol.moveSingle

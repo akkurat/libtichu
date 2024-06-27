@@ -61,6 +61,7 @@ class Game(com: Out) {
         checkTransition()
     }
 
+    // TODO: 1000 points, maybe configurable
     private fun checkTransition() {
         if (prepareRound != null && prepareRound!!.isFinished) {
             roundPlay = RoundPlay(com, prepareRound!!.cardMap, prepareRound!!.preparationInfo, null)

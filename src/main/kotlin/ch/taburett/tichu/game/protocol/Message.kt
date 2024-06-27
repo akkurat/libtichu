@@ -4,6 +4,7 @@ import ch.taburett.tichu.cards.DRG
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.PlayCard
 import ch.taburett.tichu.game.*
+import ch.taburett.tichu.game.gamelog.Trick
 import ch.taburett.tichu.game.protocol.Message.Move
 import ch.taburett.tichu.game.protocol.Message.Stage.*
 import ch.taburett.tichu.patterns.BombStraight

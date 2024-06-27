@@ -1,7 +1,10 @@
 package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.DOG
-import ch.taburett.tichu.game.IPlayLogEntry.*
+import ch.taburett.tichu.game.gamelog.IPlayLogEntry
+import ch.taburett.tichu.game.gamelog.IPlayLogEntry.*
+import ch.taburett.tichu.game.gamelog.Trick
+import ch.taburett.tichu.game.gamelog.Tricks
 
 class MutableTricks(tricks: ImmutableTricks?) : ImmutableTricks {
 

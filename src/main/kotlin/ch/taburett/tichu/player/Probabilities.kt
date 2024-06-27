@@ -1,4 +1,4 @@
-package ch.taburett.tichu.game
+package ch.taburett.tichu.player
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.patterns.Single

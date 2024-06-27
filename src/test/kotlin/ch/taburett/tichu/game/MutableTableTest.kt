@@ -2,9 +2,7 @@ package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.MAH
 import ch.taburett.tichu.cards.S2
-import ch.taburett.tichu.game.IPlayLogEntry
-import ch.taburett.tichu.game.MutableTable
-import ch.taburett.tichu.game.Player
+import ch.taburett.tichu.game.gamelog.IPlayLogEntry
 import ch.taburett.tichu.game.Player.*
 import kotlin.test.Test
 import kotlin.test.assertFalse

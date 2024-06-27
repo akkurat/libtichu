@@ -2,6 +2,7 @@ package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.fulldeck
+import ch.taburett.tichu.game.gamelog.Trick
 
 data class RoundInfo(
     val prepareLog: PreparationInfo?,

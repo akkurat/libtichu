@@ -1,9 +1,9 @@
 package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.*
-import ch.taburett.tichu.game.*
-import ch.taburett.tichu.game.IPlayLogEntry.*
+import ch.taburett.tichu.game.gamelog.IPlayLogEntry.*
 import ch.taburett.tichu.game.Player.*
+import ch.taburett.tichu.game.gamelog.IPlayLogEntry
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertAll
 import kotlin.test.Test

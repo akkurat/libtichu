@@ -1,8 +1,9 @@
 package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.*
-import ch.taburett.tichu.game.IPlayLogEntry.*
+import ch.taburett.tichu.game.gamelog.IPlayLogEntry.*
 import ch.taburett.tichu.game.RoundPlay.State.INIT
+import ch.taburett.tichu.game.gamelog.Tricks
 import ch.taburett.tichu.game.protocol.Message.*
 import ch.taburett.tichu.patterns.LegalType
 import org.jetbrains.annotations.VisibleForTesting

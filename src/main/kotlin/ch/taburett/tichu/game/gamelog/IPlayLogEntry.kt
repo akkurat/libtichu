@@ -1,6 +1,7 @@
-package ch.taburett.tichu.game
+package ch.taburett.tichu.game.gamelog
 
 import ch.taburett.tichu.cards.PlayCard
+import ch.taburett.tichu.game.Player
 
 interface IPlayLogEntry {
     // ugly but still need to figure out subtypes cleanly
