@@ -3,7 +3,7 @@ package ch.taburett.tichu.game.core.preparation
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.game.communication.Message
 import ch.taburett.tichu.game.communication.WrappedServerMessage
-import ch.taburett.tichu.game.core.PlayerETichuMutableMap
+import ch.taburett.tichu.game.core.common.PlayerETichuMutableMap
 import ch.taburett.tichu.game.core.common.EPlayer
 
 interface IPreparationState {

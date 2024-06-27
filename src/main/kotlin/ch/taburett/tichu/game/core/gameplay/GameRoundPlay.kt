@@ -4,7 +4,7 @@ import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.core.*
 import ch.taburett.tichu.game.core.common.*
 import ch.taburett.tichu.game.gamelog.IPlayLogEntry.*
-import ch.taburett.tichu.game.core.gameplay.RoundPlay.State.INIT
+import ch.taburett.tichu.game.core.gameplay.GameRoundPlay.State.INIT
 import ch.taburett.tichu.game.core.preparation.PreparationInfo
 import ch.taburett.tichu.game.gamelog.MutableTricks
 import ch.taburett.tichu.game.gamelog.RoundInfo
@@ -17,15 +17,15 @@ import ch.taburett.tichu.patterns.LegalType
 import org.jetbrains.annotations.VisibleForTesting
 
 
-class RoundPlay(
-    val com: Out,
+class GameRoundPlay(
+    val serverMessageSink: IServerMessageSink,
     deck: IDeck,
     val preparationInfo: PreparationInfo?,
     soFar: ITricks?,
     override val name: String? = null,
 ) : ITichuGameStage {
     constructor(
-        com: Out,
+        com: IServerMessageSink,
         cardMap: Map<EPlayer, Collection<HandCard>>,
         preparationInfo: PreparationInfo?,
         soFar: Tricks?, // hm.. how about outsourcing all logic inside a trick to the trick class?
@@ -202,7 +202,7 @@ class RoundPlay(
     }
 
     private fun sendMessage(wrappedServerMessage: WrappedServerMessage) {
-        com.send(wrappedServerMessage)
+        serverMessageSink.send(wrappedServerMessage)
     }
 
 

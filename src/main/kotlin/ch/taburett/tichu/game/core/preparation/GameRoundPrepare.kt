@@ -3,17 +3,13 @@ package ch.taburett.tichu.game.core.preparation
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.fulldeck
 import ch.taburett.tichu.game.core.*
-import ch.taburett.tichu.game.core.common.ETichu
-import ch.taburett.tichu.game.core.common.EPlayer
-import ch.taburett.tichu.game.core.common.ITichuGameStage
-import ch.taburett.tichu.game.core.common.playerList
 import ch.taburett.tichu.game.communication.Message.*
 import ch.taburett.tichu.game.communication.WrappedPlayerMessage
 import ch.taburett.tichu.game.communication.WrappedServerMessage
-import kotlin.reflect.KClass
+import ch.taburett.tichu.game.core.common.*
 
 
-class PrepareRound(val com: Out, override val name: String? = null) : ITichuGameStage {
+class GameRoundPrepare(val com: IServerMessageSink, override val name: String? = null) : ITichuGameStage {
 
     private lateinit var cards6: Map<EPlayer, List<HandCard>>
     private lateinit var cards8: Map<EPlayer, MutableList<HandCard>>
@@ -22,90 +18,11 @@ class PrepareRound(val com: Out, override val name: String? = null) : ITichuGame
     private val tichuMap: PlayerETichuMutableMap = EPlayer.entries
         .associateWith { ETichu.NONE }.toMutableMap()
 
-    sealed class AckState(val name: String, private vararg val reactsTo: KClass<out PlayerMessage>) : IPreparationState {
-
-        private val ack = mutableSetOf<EPlayer>()
-
-        override fun complete(): Boolean {
-            return ack.size == playerList.size
-        }
-
-        override fun reactsTo(value: PlayerMessage): Boolean {
-            return reactsTo.contains(value::class)
-
-        }
-
-        override fun react(
-            u: EPlayer,
-            s: PlayerMessage,
-            cardMap: Map<EPlayer, MutableList<HandCard>>,
-            tichuMap: PlayerETichuMutableMap,
-            name: String?,
-        ): WrappedServerMessage? {
-            assert(reactsTo(s))
-            if( s is Announce.BigTichu ) {
-               println("$name $u big tichu")
-                // todo gamelog
-                tichuMap[u] = ETichu.BIG
-            } else if ( s is Announce.SmallTichu ) {
-                println("$name $u small tichu ${this.name}")
-                // todo gamelog
-                tichuMap[u] = ETichu.SMALL
-            }
-            ack.add(u)
-            return null
-        }
-    }
-
     // enum would actually be fine....
     class bTichu : AckState("BigTichu", Ack.BigTichu::class, Announce.BigTichu::class)
     class preSchupf : AckState("PreSchupf", Ack.TichuBeforeSchupf::class, Announce.SmallTichu::class)
     class schupfed : AckState("AfterSchupf", Ack.SchupfcardReceived::class, Announce.SmallTichu::class)
     class preGame : AckState("PreGame", Ack.TichuBeforePlay::class, Announce.SmallTichu::class)
-
-    class SchupfState : IPreparationState {
-        //                           <from, Map<to, handcar>>
-        val schupfBuffer: MutableMap<EPlayer, Map<EPlayer, HandCard>> = mutableMapOf()
-        override fun complete(): Boolean {
-            return schupfBuffer.size == playerList.size
-        }
-
-        override fun reactsTo(value: PlayerMessage): Boolean {
-            return Schupf::class.isInstance(value)
-        }
-
-        override fun react(
-            u: EPlayer,
-            s: PlayerMessage,
-            cardMap: Map<EPlayer, MutableList<HandCard>>,
-            tichuMap: PlayerETichuMutableMap,
-            name: String?,
-        ): WrappedServerMessage? {
-            if (s is Schupf) {
-                if (Companion.checkCardsLegal(u, s, cardMap.getValue(u))) {
-                    schupfBuffer[u] = Companion.mapSchupfEvent(u, s)
-                } else {
-                    return WrappedServerMessage(u, Rejected("Cheating!"))
-                }
-            }
-            return null
-        }
-
-        companion object {
-            private fun mapSchupfEvent(u: EPlayer, schupf: Schupf): Map<EPlayer, HandCard> {
-                return mapOf(
-                    u.partner to schupf.partner,
-                    u.li to schupf.li,
-                    u.re to schupf.re,
-                )
-            }
-
-            private fun checkCardsLegal(u: EPlayer, s: Schupf, value: List<HandCard>): Boolean {
-                val avCards = value.toMutableList()
-                return avCards.remove(s.re) && avCards.remove(s.li) && avCards.remove(s.partner)
-            }
-        }
-    }
 
     var isFinished: Boolean = false
     lateinit var currentPreparationState: IPreparationState

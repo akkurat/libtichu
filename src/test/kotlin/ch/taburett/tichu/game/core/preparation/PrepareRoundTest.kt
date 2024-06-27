@@ -1,12 +1,12 @@
-package ch.taburett.tichu.game
+package ch.taburett.tichu.game.core.preparation
 
 import ch.taburett.tichu.cards.fulldeck
 import ch.taburett.tichu.game.core.common.EPlayer.*
-import ch.taburett.tichu.game.core.preparation.PrepareRound.preGame
-import ch.taburett.tichu.game.core.preparation.PrepareRound.schupfed
-import ch.taburett.tichu.game.core.Out
+import ch.taburett.tichu.game.core.preparation.GameRoundPrepare.preGame
+import ch.taburett.tichu.game.core.preparation.GameRoundPrepare.schupfed
+import ch.taburett.tichu.game.core.common.IServerMessageSink
 import ch.taburett.tichu.game.core.common.EPlayer
-import ch.taburett.tichu.game.core.preparation.PrepareRound
+import ch.taburett.tichu.game.core.preparation.GameRoundPrepare
 import ch.taburett.tichu.game.core.common.playerList
 import ch.taburett.tichu.game.communication.Message
 import ch.taburett.tichu.game.communication.Message.Ack
@@ -19,15 +19,15 @@ import org.junit.jupiter.api.function.Executable
 import kotlin.test.DefaultAsserter.assertTrue
 import kotlin.test.Test
 
-val out = Out { println(it) }
 
 class PrepareRoundTest {
 
+    val out = IServerMessageSink { println(it) }
 
     @Test
     fun test8Cards() {
 
-        val round = PrepareRound(out)
+        val round = GameRoundPrepare(out)
         round.start()
 
         val cardsCheck = round.cardMap.values
@@ -42,7 +42,7 @@ class PrepareRoundTest {
 
     @Test
     fun transtionToAllCards() {
-        val round = PrepareRound(out)
+        val round = GameRoundPrepare(out)
         round.start()
         playerList.forEach { a -> round.react(a, Ack.BigTichu()) }
         val cardsCheck = round.cardMap.values
@@ -62,7 +62,7 @@ class PrepareRoundTest {
 
     @Test
     fun transtionPostSchupf() {
-        val round = PrepareRound(out)
+        val round = GameRoundPrepare(out)
         round.start()
         playerList.forEach { a -> round.react(a, Ack.BigTichu()) }
         playerList.forEach { a -> round.react(a, Ack.TichuBeforeSchupf()) }
@@ -93,7 +93,7 @@ class PrepareRoundTest {
     fun testCardsAvailable() {
 
         val outCollector = OutCollector()
-        val round = PrepareRound(outCollector)
+        val round = GameRoundPrepare(outCollector)
         round.start()
         playerList.forEach { a -> round.react(a, Ack.BigTichu()) }
         playerList.forEach { a -> round.react(a, Ack.TichuBeforeSchupf()) }
@@ -112,7 +112,7 @@ class PrepareRoundTest {
     }
 }
 
-class OutCollector : Out {
+class OutCollector : IServerMessageSink {
     val list = mutableListOf<WrappedServerMessage>()
     override fun send(wrappedServerMessage: WrappedServerMessage) {
         list.add(wrappedServerMessage)
@@ -120,7 +120,7 @@ class OutCollector : Out {
 
 }
 
-fun randomShupf(round: PrepareRound, player: EPlayer) {
+fun randomShupf(round: GameRoundPrepare, player: EPlayer) {
     val input = round.cardMap.get(player)
     if (input != null) {
         val toSchupf = input.take(3)

@@ -1,10 +1,12 @@
-package ch.taburett.tichu.game
+package ch.taburett.tichu.game.core
 
 import ch.taburett.tichu.game.core.Game
-import ch.taburett.tichu.game.core.gameplay.RoundPlay
+import ch.taburett.tichu.game.core.gameplay.GameRoundPlay
 import ch.taburett.tichu.game.core.common.playerList
 import ch.taburett.tichu.game.communication.Message.*
 import ch.taburett.tichu.game.communication.WrappedPlayerMessage
+import ch.taburett.tichu.game.core.common.IServerMessageSink
+import ch.taburett.tichu.game.core.preparation.randomShupf
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
@@ -12,7 +14,9 @@ import org.junit.jupiter.api.assertAll
 import kotlin.test.Test
 
 class GameTest {
+    val out = IServerMessageSink { println(it) }
     @Test
+    // todo: delay is BS
     fun testFinished() {
         runBlocking {
             val game = Game(out)
@@ -38,7 +42,7 @@ class GameTest {
             }
             assertAll(
                 { assertThat(game.prepareRound).isNull() },
-                { assertThat(game.roundPlay!!.state == RoundPlay.State.RUNNING).isTrue() },
+                { assertThat(game.roundPlay!!.state == GameRoundPlay.State.RUNNING).isTrue() },
             )
         }
     }

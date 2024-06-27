@@ -1,16 +1,16 @@
 @file:OptIn(ExperimentalStdlibApi::class)
 
-package ch.taburett.tichu.player
+package ch.taburett.tichu.botplayer
 
 import ch.taburett.tichu.cards.fulldeck
 import ch.taburett.tichu.game.core.common.ETichu
 import ch.taburett.tichu.game.core.common.EPlayer
 import ch.taburett.tichu.game.core.common.EPlayerGroup
 import ch.taburett.tichu.game.core.common.ITichuGameStage
-import ch.taburett.tichu.game.core.gameplay.RoundPlay
-import ch.taburett.tichu.game.core.preparation.PrepareRound
-import ch.taburett.tichu.player.BattleRound.AutoPlayer
-import ch.taburett.tichu.player.SimpleBattle.BattleResult
+import ch.taburett.tichu.game.core.gameplay.GameRoundPlay
+import ch.taburett.tichu.game.core.preparation.GameRoundPrepare
+import ch.taburett.tichu.botplayer.BattleRound.AutoPlayer
+import ch.taburett.tichu.botplayer.SimpleBattle.BattleResult
 import ch.taburett.tichu.game.communication.Message
 import ch.taburett.tichu.game.communication.Message.ServerMessage
 import ch.taburett.tichu.game.communication.WrappedPlayerMessage
@@ -150,20 +150,20 @@ class Grr(val myteam: Set<String>, val otherPlayers: Set<String>) {
  * when close to 1000
  */
 class SimpleBattle(private val n: Int = 5000) {
-    data class BattleResult(override val roundPlay: RoundPlay, override val players: Map<EPlayer, AutoPlayer>) :
+    data class BattleResult(override val roundPlay: GameRoundPlay, override val players: Map<EPlayer, AutoPlayer>) :
         Linfo {
         override val finished: Boolean = true
     }
 
     data class PrepareInterrupted(
-        override val roundPlay: PrepareRound,
+        override val roundPlay: GameRoundPrepare,
         override val players: Map<EPlayer, AutoPlayer>,
     ) : Linfo {
         override val finished: Boolean = false
     }
 
     data class BattleInterrupted(
-        override val roundPlay: RoundPlay,
+        override val roundPlay: GameRoundPlay,
         override val players: Map<EPlayer, AutoPlayer>,
     ) : Linfo {
         override val finished: Boolean = false
@@ -231,7 +231,7 @@ class BattleRound(val name: String) {
 //        val players =
 //            Player.entries.associateWith { p -> factories.random()({ m -> receivePlayer(WrappedPlayerMessage(p, m)) }) }
 
-        val prep = PrepareRound(::receiveServer, name)
+        val prep = GameRoundPrepare(::receiveServer, name)
         prep.start()
         var starved = 0
         while (!prep.isFinished) {
@@ -252,12 +252,12 @@ class BattleRound(val name: String) {
 
         }
 
-        val rp = RoundPlay(::receiveServer, cardMap, prep.preparationInfo, null, name)
+        val rp = GameRoundPlay(::receiveServer, cardMap, prep.preparationInfo, null, name)
         rp.start()
 
         starved = 0
 
-        while (rp.state == RoundPlay.State.RUNNING) {
+        while (rp.state == GameRoundPlay.State.RUNNING) {
             try {
                 val sm = serverQueue.removeFirstOrNull()
                 if (sm != null) {

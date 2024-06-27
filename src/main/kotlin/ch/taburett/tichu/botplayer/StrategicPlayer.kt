@@ -1,4 +1,4 @@
-package ch.taburett.tichu.player
+package ch.taburett.tichu.botplayer
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.core.common.ETichu

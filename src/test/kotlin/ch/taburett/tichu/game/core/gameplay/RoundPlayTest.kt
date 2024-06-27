@@ -1,27 +1,28 @@
-package ch.taburett.tichu.game
+package ch.taburett.tichu.game.core.gameplay
 
 import ch.taburett.tichu.cards.*
-import ch.taburett.tichu.game.core.gameplay.MutableDeck
 import ch.taburett.tichu.game.core.common.EPlayer
 import ch.taburett.tichu.game.core.common.EPlayer.*
-import ch.taburett.tichu.game.core.gameplay.RoundPlay
 import ch.taburett.tichu.game.communication.WrappedServerMessage
 import ch.taburett.tichu.game.communication.Message.*
 import ch.taburett.tichu.game.communication.createMove as move
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertAll
-import ch.taburett.tichu.player.play
+import ch.taburett.tichu.botplayer.play
+import ch.taburett.tichu.game.core.common.IServerMessageSink
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
 
 class RoundPlayTest {
 
+    val out = IServerMessageSink { println(it) }
+
 
     @Test
     fun testStartPlayer() {
         val map = EPlayer.entries.zip(fulldeck.chunked(14)).toMap()
-        val round = RoundPlay(out, map, null, null)
+        val round = GameRoundPlay(out, map, null, null)
         round.start()
         assertThat(round.mutableDeck.initialPlayer).isEqualTo(A1)
 
@@ -38,7 +39,7 @@ class RoundPlayTest {
         val messageSink = ArrayDeque<WrappedServerMessage>()
         val goneCards = (fulldeck-map.values.flatten()).filterIsInstance<PlayCard>()
         val deck = MutableDeck.createStarted(map, A2, goneCards)
-        val round = RoundPlay(messageSink::add, deck, null, null)
+        val round = GameRoundPlay(messageSink::add, deck, null, null)
         round.start()
         round.regularMove(A2, move(setOf(MAH), 5))
 
@@ -57,7 +58,7 @@ class RoundPlayTest {
         val messageSink = ArrayDeque<WrappedServerMessage>()
         val goneCards = (fulldeck - map.values.flatten()).filterIsInstance<PlayCard>()
         val deck = MutableDeck.createStarted(map, A2,goneCards )
-        val round = RoundPlay(messageSink::add, deck, null, null)
+        val round = GameRoundPlay(messageSink::add, deck, null, null)
 
         round.start()
         round.regularMove(A2, move(setOf(MAH), 5))
@@ -75,7 +76,7 @@ class RoundPlayTest {
         )
         val goneCards = (fulldeck - map.values.flatten()).filterIsInstance<PlayCard>()
         val deck = MutableDeck.createStarted(map, A2,goneCards )
-        val round = RoundPlay(out, deck, null, null)
+        val round = GameRoundPlay(out, deck, null, null)
         round.start()
         round.regularMove(A1, Move(setOf(J5)))
 
@@ -93,7 +94,7 @@ class RoundPlayTest {
 
         val goneCards = (fulldeck - map.values.flatten()).filterIsInstance<PlayCard>()
         val deck = MutableDeck.createStarted(map, A2,goneCards )
-        val round = RoundPlay(out, deck, null, null)
+        val round = GameRoundPlay(out, deck, null, null)
 
         round.start()
         round.regularMove(A2, Move(setOf(MAH)))
@@ -117,7 +118,7 @@ class RoundPlayTest {
 
         val goneCards = (fulldeck - map.values.flatten()).filterIsInstance<PlayCard>()
         val deck = MutableDeck.createStarted(map, A2,goneCards )
-        val round = RoundPlay(out, deck, null, null)
+        val round = GameRoundPlay(out, deck, null, null)
 
         round.start()
         round.regularMove(A2, Move(setOf(MAH)))
@@ -138,7 +139,7 @@ class RoundPlayTest {
         )
 
         val goneCards = (fulldeck - map.values.flatten()).filterIsInstance<PlayCard>()
-        val round = RoundPlay(out, MutableDeck.createStarted(map, A2, goneCards), null, null)
+        val round = GameRoundPlay(out, MutableDeck.createStarted(map, A2, goneCards), null, null)
 
         round.start()
         round.regularMove(A2, Move(setOf(MAH)))
@@ -148,7 +149,7 @@ class RoundPlayTest {
         round.regularMove(A1, Move(setOf(PHX.asPlayCard(8))))
 
         assertAll(
-            { assertThat(round.state == RoundPlay.State.FINISHED).isTrue() },
+            { assertThat(round.state == GameRoundPlay.State.FINISHED).isTrue() },
         )
     }
 
@@ -163,11 +164,11 @@ class RoundPlayTest {
 
         val goneCards = fulldeckAsPlayCards(2.5) - map.values.flatten()
         val deck = MutableDeck.createStarted(map, A2, goneCards)
-        val round = RoundPlay(out, deck, null, null)
+        val round = GameRoundPlay(out, deck, null, null)
 
         round.receivePlayerMessage(A2.play(DOG))
 
-        assertTrue { round.state == RoundPlay.State.FINISHED }
+        assertTrue { round.state == GameRoundPlay.State.FINISHED }
 
     }
 

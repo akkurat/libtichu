@@ -1,7 +1,6 @@
-package ch.taburett.tichu.player
+package ch.taburett.tichu.botplayer
 
 import ch.taburett.tichu.cards.*
-import ch.taburett.tichu.player.weightPossibilitesNoRec
 import ch.taburett.tichu.patterns.FullHouse
 import ch.taburett.tichu.patterns.Single
 import ch.taburett.tichu.patterns.Straight
@@ -9,7 +8,7 @@ import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.assertAll
 import kotlin.test.Test
 
-class EPlayerUtilsKtTest {
+class PlayerUtilsKtTest {
 
     @Test
     fun test() {

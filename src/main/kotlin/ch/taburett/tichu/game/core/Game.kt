@@ -1,25 +1,23 @@
 package ch.taburett.tichu.game.core
 
 import ch.taburett.tichu.cards.*
-import ch.taburett.tichu.game.core.common.ETichu
-import ch.taburett.tichu.game.core.common.EPlayer
 import ch.taburett.tichu.game.core.common.playerList
-import ch.taburett.tichu.game.core.gameplay.RoundPlay
-import ch.taburett.tichu.game.core.preparation.PrepareRound
+import ch.taburett.tichu.game.core.gameplay.GameRoundPlay
+import ch.taburett.tichu.game.core.preparation.GameRoundPrepare
 import ch.taburett.tichu.game.gamelog.RoundInfo
 import ch.taburett.tichu.game.communication.*
+import ch.taburett.tichu.game.core.common.IServerMessageSink
 import java.util.concurrent.Executors
 
 
-typealias PlayerETichuMutableMap = MutableMap<EPlayer, ETichu>
-
-class Game(com: Out) {
+class Game(serverMessageSink: IServerMessageSink) {
     val executor = Executors.newCachedThreadPool()
 
-    val com = Out { msg ->
+    // todo: use async and not real threads
+    val com = IServerMessageSink { msg ->
         executor.execute {
             try {
-                com.send(msg)
+                serverMessageSink.send(msg)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -28,15 +26,15 @@ class Game(com: Out) {
 
     val playLog = mutableListOf<RoundInfo>()
 
-    var prepareRound: PrepareRound? = null
+    var prepareRound: GameRoundPrepare? = null
 
-    var roundPlay: RoundPlay? = null
+    var roundPlay: GameRoundPlay? = null
 
     // todo: deserialize a stored game
     @JvmOverloads
     fun start(jumpPrepartion: Boolean = false) {
         if (!jumpPrepartion) {
-            prepareRound = PrepareRound(com)
+            prepareRound = GameRoundPrepare(com)
             prepareRound!!.start()
         } else {
             // no shupf for quick testing
@@ -45,7 +43,7 @@ class Game(com: Out) {
             val paeckli = fulldeck.shuffled().chunked(14)
             val cardmap = playerList.zip(paeckli).toMap()
 
-            roundPlay = RoundPlay(com, cardmap, null, null)
+            roundPlay = GameRoundPlay(com, cardmap, null, null)
             roundPlay!!.start()
         }
 
@@ -59,6 +57,8 @@ class Game(com: Out) {
         roundPlay?.sendTableAndHandcards();
     }
 
+    // todo: this is probably still necessary
+    // or look up how to use a "scheduler" thread for communication order and a
     @Synchronized
     fun receive(wrappedPlayerMessage: WrappedPlayerMessage) {
         // todo: shouldn't switching happen inside state machine?
@@ -70,26 +70,19 @@ class Game(com: Out) {
     // TODO: 1000 points, maybe configurable
     private fun checkTransition() {
         if (prepareRound != null && prepareRound!!.isFinished) {
-            roundPlay = RoundPlay(com, prepareRound!!.cardMap, prepareRound!!.preparationInfo, null)
+            roundPlay = GameRoundPlay(com, prepareRound!!.cardMap, prepareRound!!.preparationInfo, null)
             prepareRound = null
             roundPlay!!.start()
-        } else if (roundPlay != null && roundPlay!!.state == RoundPlay.State.FINISHED) {
+        } else if (roundPlay != null && roundPlay!!.state == GameRoundPlay.State.FINISHED) {
             val roundInfo = roundPlay!!.getRoundInfo()
             playLog.add(roundInfo)
             playerList.forEach {
                 com.send(WrappedServerMessage(it, Message.Points(roundInfo)))
             }
             roundPlay = null
-            prepareRound = PrepareRound(com)
+            prepareRound = GameRoundPrepare(com)
             prepareRound!!.start()
         }
     }
 }
 
-fun interface Out {
-    fun send(wrappedServerMessage: WrappedServerMessage)
-}
-
-enum class TichuType {
-    BIG, SMALL
-}
