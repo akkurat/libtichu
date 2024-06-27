@@ -1,20 +1,19 @@
 package ch.taburett.tichu.game.gamelog
 
 import ch.taburett.tichu.cards.DOG
-import ch.taburett.tichu.game.core.common.Deck
+import ch.taburett.tichu.game.core.common.IDeck
 import ch.taburett.tichu.game.core.gameplay.MutableTichuTable
-import ch.taburett.tichu.game.core.gameplay.TichuTable
-import ch.taburett.tichu.game.core.common.Player
+import ch.taburett.tichu.game.core.gameplay.ITichuTable
+import ch.taburett.tichu.game.core.common.EPlayer
 import ch.taburett.tichu.game.gamelog.IPlayLogEntry.*
 
-class MutableTricks(tricks: Tricks?) :
-    Tricks {
+class MutableTricks(tricks: ITricks?) : ITricks {
 
     private val _tricks = tricks?.tricks?.toMutableList() ?: mutableListOf()
     override val tricks: List<Trick>
         get() = _tricks
     private var _Mutable_table = MutableTichuTable(tricks?.table)
-    override val table: TichuTable
+    override val table: ITichuTable
         get() = _Mutable_table.immutable()
 
     fun endTrick() {
@@ -24,7 +23,7 @@ class MutableTricks(tricks: Tricks?) :
         }
     }
 
-    fun nextPlayer(deck: Deck): Player {
+    fun nextPlayer(deck: IDeck): EPlayer {
         // first trick
         if (tricks.isEmpty()) {
             // first regular move
@@ -55,8 +54,8 @@ class MutableTricks(tricks: Tricks?) :
         _Mutable_table.add(logEntry)
     }
 
-    fun immutable(): TricksImpl {
-        return TricksImpl(tricks, table)
+    fun immutable(): Tricks {
+        return Tricks(tricks, table)
     }
 
 }

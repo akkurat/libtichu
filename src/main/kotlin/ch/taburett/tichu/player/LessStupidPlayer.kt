@@ -1,17 +1,17 @@
 package ch.taburett.tichu.player
 
 import ch.taburett.tichu.cards.*
-import ch.taburett.tichu.game.core.common.Player
-import ch.taburett.tichu.game.protocol.Message.*
-import ch.taburett.tichu.game.protocol.createMove
-import ch.taburett.tichu.game.protocol.moveSingle
+import ch.taburett.tichu.game.core.common.EPlayer
+import ch.taburett.tichu.game.communication.Message.*
+import ch.taburett.tichu.game.communication.createMove
+import ch.taburett.tichu.game.communication.moveSingle
 import ch.taburett.tichu.patterns.Single
 import ch.taburett.tichu.patterns.TichuPattern
 import ch.taburett.tichu.patterns.TichuPatternType.SINGLE
 
 
 private class LessStupidPlayer(val listener: PlayerMessageConsumer) : BattleRound.AutoPlayer {
-    override fun receiveMessage(message: ServerMessage, player: Player) {
+    override fun receiveMessage(message: ServerMessage, player: EPlayer) {
         lessStupidMove(message, player)
     }
 
@@ -19,7 +19,7 @@ private class LessStupidPlayer(val listener: PlayerMessageConsumer) : BattleRoun
 
     override val type: String = "LessStupid"
 
-    private fun lessStupidMove(message: ServerMessage, player: Player) {
+    private fun lessStupidMove(message: ServerMessage, player: EPlayer) {
         when (message) {
             is AckGameStage -> ack(message)
             is Schupf -> listener.accept(Ack.SchupfcardReceived())

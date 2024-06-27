@@ -1,5 +1,5 @@
 package ch.taburett.tichu.game.core.common
 
-interface TichuGameStage {
+interface ITichuGameStage {
     val name: String?
 }

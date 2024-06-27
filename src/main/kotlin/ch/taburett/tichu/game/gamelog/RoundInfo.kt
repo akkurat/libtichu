@@ -4,59 +4,59 @@ import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.fulldeck
 import ch.taburett.tichu.game.core.preparation.PreparationInfo
 import ch.taburett.tichu.game.core.common.ETichu
-import ch.taburett.tichu.game.core.common.Player
-import ch.taburett.tichu.game.core.common.PlayerGroup
+import ch.taburett.tichu.game.core.common.EPlayer
+import ch.taburett.tichu.game.core.common.EPlayerGroup
 
 data class RoundInfo(
     val prepareLog: PreparationInfo?,
     val tricks: MutableTricks,
-    val initialCardmap: Map<Player, Collection<HandCard>>,
-    val leftoverHandcards: Map<Player, Collection<HandCard>>,
-    val tichuMap: Map<Player, ETichu>,
+    val initialCardmap: Map<EPlayer, Collection<HandCard>>,
+    val leftoverHandcards: Map<EPlayer, Collection<HandCard>>,
+    val tichuMap: Map<EPlayer, ETichu>,
     val name: String?,
 ) {
     val orderOfWinning = tricks.tricks.flatMap { it.playerFinishedEntry }
-    val tricksByPlayer: Map<Player, List<Trick>> by lazy {
-        Player.entries.associateWith { listOf<Trick>() } + tricks.tricks.groupBy { it.pointOwner }
+    val tricksByPlayer: Map<EPlayer, List<Trick>> by lazy {
+        EPlayer.entries.associateWith { listOf<Trick>() } + tricks.tricks.groupBy { it.pointOwner }
     }
 
-    val pointsPerPlayer: Map<Player, Int> by lazy {
-        Player.entries.associateWith { totalPoints.getValue(it.playerGroup) }
+    val pointsPerPlayer: Map<EPlayer, Int> by lazy {
+        EPlayer.entries.associateWith { totalPoints.getValue(it.playerGroup) }
     }
 
 
-    val totalPoints: Map<PlayerGroup, Int> by lazy {
+    val totalPoints: Map<EPlayerGroup, Int> by lazy {
         cardPoints.mapValues { (k, v) ->
             v + bonusPoints.getValue(k) + tichuPoints.getValue(k)
         }
     }
 
-    val tichuPoints: Map<PlayerGroup, Int> by lazy {
+    val tichuPoints: Map<EPlayerGroup, Int> by lazy {
         val s = tichuPointsPerPlayer
-        PlayerGroup.entries.associateWith { g -> g.players.sumOf { s.getValue(it) } }
+        EPlayerGroup.entries.associateWith { g -> g.players.sumOf { s.getValue(it) } }
     }
 
-    val tichuPointsPerPlayer: Map<Player, Int> by lazy {
+    val tichuPointsPerPlayer: Map<EPlayer, Int> by lazy {
         tichuMap.mapValues { if (orderOfWinning.indexOf(it.key) == 0) it.value.points else -it.value.points }
     }
 
 
-    val bonusPoints: Map<PlayerGroup, Int> by lazy {
+    val bonusPoints: Map<EPlayerGroup, Int> by lazy {
         val (first, second) = orderOfWinning
         // double win
         if (first.playerGroup == second.playerGroup) {
             mapOf(first.playerGroup to 100, first.playerGroup.other() to 0)
         } else {
-            PlayerGroup.entries.associateWith { 0 }
+            EPlayerGroup.entries.associateWith { 0 }
         }
     }
 
-    val cardPoints: Map<PlayerGroup, Int> by lazy {
+    val cardPoints: Map<EPlayerGroup, Int> by lazy {
         val cards = cards
         cards.mapValues { (_, v) -> v.sumOf { c -> c.getPoints() } }
     }
 
-    val cards: Map<PlayerGroup, List<HandCard>>
+    val cards: Map<EPlayerGroup, List<HandCard>>
         get() {
             val (first, second) = orderOfWinning
             // double win
@@ -64,9 +64,9 @@ data class RoundInfo(
                 return mapOf(first.playerGroup to fulldeck.toList(), first.playerGroup.other() to listOf())
             } else {
                 val third = orderOfWinning[2]
-                val last = Player.entries.minus(setOf(first, second, third))[0]
-                val cards: Map<PlayerGroup, MutableList<HandCard>> =
-                    mapOf(PlayerGroup.A to mutableListOf(), PlayerGroup.B to mutableListOf())
+                val last = EPlayer.entries.minus(setOf(first, second, third))[0]
+                val cards: Map<EPlayerGroup, MutableList<HandCard>> =
+                    mapOf(EPlayerGroup.A to mutableListOf(), EPlayerGroup.B to mutableListOf())
                 // first player keeps cards
                 cards[first.playerGroup]!!.addAll(tricksByPlayer[first]!!.flatMap { it.allCards })
                 // last player tricks go to winner

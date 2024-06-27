@@ -8,36 +8,36 @@ import ch.taburett.tichu.game.core.gameplay.RoundPlay.State.INIT
 import ch.taburett.tichu.game.core.preparation.PreparationInfo
 import ch.taburett.tichu.game.gamelog.MutableTricks
 import ch.taburett.tichu.game.gamelog.RoundInfo
+import ch.taburett.tichu.game.gamelog.ITricks
 import ch.taburett.tichu.game.gamelog.Tricks
-import ch.taburett.tichu.game.gamelog.TricksImpl
-import ch.taburett.tichu.game.protocol.Message.*
-import ch.taburett.tichu.game.protocol.WrappedPlayerMessage
-import ch.taburett.tichu.game.protocol.WrappedServerMessage
+import ch.taburett.tichu.game.communication.Message.*
+import ch.taburett.tichu.game.communication.WrappedPlayerMessage
+import ch.taburett.tichu.game.communication.WrappedServerMessage
 import ch.taburett.tichu.patterns.LegalType
 import org.jetbrains.annotations.VisibleForTesting
 
 
 class RoundPlay(
     val com: Out,
-    deck: Deck,
+    deck: IDeck,
     val preparationInfo: PreparationInfo?,
-    soFar: Tricks?,
+    soFar: ITricks?,
     override val name: String? = null,
-) : TichuGameStage {
+) : ITichuGameStage {
     constructor(
         com: Out,
-        cardMap: Map<Player, Collection<HandCard>>,
+        cardMap: Map<EPlayer, Collection<HandCard>>,
         preparationInfo: PreparationInfo?,
-        soFar: TricksImpl?, // hm.. how about outsourcing all logic inside a trick to the trick class?
+        soFar: Tricks?, // hm.. how about outsourcing all logic inside a trick to the trick class?
         name: String? = null,
     ) : this(com, MutableDeck.createInitial(cardMap), preparationInfo, soFar, name)
 
     enum class State { INIT, RUNNING, FINISHED }
 
-    private lateinit var leftoverHandcards: Map<Player, Collection<HandCard>>
+    private lateinit var leftoverHandcards: Map<EPlayer, Collection<HandCard>>
 
     val tichuMap: PlayerETichuMutableMap =
-        preparationInfo?.tichuMap?.toMutableMap() ?: Player.entries.associateWith { ETichu.NONE }.toMutableMap()
+        preparationInfo?.tichuMap?.toMutableMap() ?: EPlayer.entries.associateWith { ETichu.NONE }.toMutableMap()
 
     var state = INIT
 
@@ -77,7 +77,7 @@ class RoundPlay(
 
 
     @VisibleForTesting
-    fun determineCurrentPlayer(): Player {
+    fun determineCurrentPlayer(): EPlayer {
         return tricks.nextPlayer(mutableDeck)
     }
 
@@ -97,7 +97,7 @@ class RoundPlay(
     }
 
 
-    fun regularMove(player: Player, move: Move) {
+    fun regularMove(player: EPlayer, move: Move) {
 
         // TODO: make all logic external
         val playerCards = mutableDeck.cards(player)
@@ -145,7 +145,7 @@ class RoundPlay(
     /**
      *
      */
-    private fun _regularMove(player: Player, playedCards: Collection<PlayCard>) {
+    private fun _regularMove(player: EPlayer, playedCards: Collection<PlayCard>) {
         if (player != determineCurrentPlayer()) {
             sendMessage(WrappedServerMessage(player, Rejected("not your turn yet")))
             return
@@ -185,11 +185,11 @@ class RoundPlay(
     }
 
     private fun createMove(
-        player: Player,
+        player: EPlayer,
         playedCards: Collection<PlayCard>,
     ) = if (playedCards.isEmpty() ) PassMoveEntry(player) else RegularMoveEntry(player, playedCards.toList())
 
-    private fun removePlayedCards(player: Player, playedCards: Collection<PlayCard>): List<HandCard> {
+    private fun removePlayedCards(player: EPlayer, playedCards: Collection<PlayCard>): List<HandCard> {
         mutableDeck.playCards(player, playedCards)
         return mutableDeck.cards(player)
     }
@@ -238,7 +238,7 @@ class RoundPlay(
 
     }
 
-    private fun bomb(u: Player, m: Bomb) {
+    private fun bomb(u: EPlayer, m: Bomb) {
         if (tricks.table.isEmpty()) {
             if (u == determineCurrentPlayer()) { // ok as regular move
                 _regularMove(u, m.cards)
@@ -260,7 +260,7 @@ class RoundPlay(
         }
     }
 
-    private fun giftDragon(u: Player, m: GiftDragon) {
+    private fun giftDragon(u: EPlayer, m: GiftDragon) {
         val to = m.to.map(u)
         if (to.playerGroup != u.playerGroup) {
             tricks.add(DrgGiftedEntry(u, to))

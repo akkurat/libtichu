@@ -1,17 +1,17 @@
 package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.fulldeck
-import ch.taburett.tichu.game.core.common.Player.*
+import ch.taburett.tichu.game.core.common.EPlayer.*
 import ch.taburett.tichu.game.core.preparation.PrepareRound.preGame
 import ch.taburett.tichu.game.core.preparation.PrepareRound.schupfed
 import ch.taburett.tichu.game.core.Out
-import ch.taburett.tichu.game.core.common.Player
+import ch.taburett.tichu.game.core.common.EPlayer
 import ch.taburett.tichu.game.core.preparation.PrepareRound
 import ch.taburett.tichu.game.core.common.playerList
-import ch.taburett.tichu.game.protocol.Message
-import ch.taburett.tichu.game.protocol.Message.Ack
-import ch.taburett.tichu.game.protocol.Message.Schupf
-import ch.taburett.tichu.game.protocol.WrappedServerMessage
+import ch.taburett.tichu.game.communication.Message
+import ch.taburett.tichu.game.communication.Message.Ack
+import ch.taburett.tichu.game.communication.Message.Schupf
+import ch.taburett.tichu.game.communication.WrappedServerMessage
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertAll
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -35,7 +35,7 @@ class PrepareRoundTest {
             .toList()
 
         assertAll(
-            { println(round.currentState) },
+            { println(round.currentPreparationState) },
             { assertAll(cardsCheck) },
         )
     }
@@ -70,13 +70,13 @@ class PrepareRoundTest {
         // assumming it's only occuring deliberately
         //
         randomShupf(round, A1)
-        val state1 = round.currentState
+        val state1 = round.currentPreparationState
         listOf(A2, B1, B2).forEach { p -> randomShupf(round, p) }
 
-        val state2 = round.currentState
+        val state2 = round.currentPreparationState
 
         playerList.forEach { p -> round.react(p, Ack.SchupfcardReceived()) }
-        val state3 = round.currentState
+        val state3 = round.currentPreparationState
 
         playerList.forEach { p -> round.react(p, Ack.TichuBeforePlay()) }
 
@@ -120,7 +120,7 @@ class OutCollector : Out {
 
 }
 
-fun randomShupf(round: PrepareRound, player: Player) {
+fun randomShupf(round: PrepareRound, player: EPlayer) {
     val input = round.cardMap.get(player)
     if (input != null) {
         val toSchupf = input.take(3)

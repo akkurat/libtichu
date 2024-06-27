@@ -1,7 +1,7 @@
 package ch.taburett.tichu.game.gamelog
 
 import ch.taburett.tichu.cards.PlayCard
-import ch.taburett.tichu.game.core.common.Player
+import ch.taburett.tichu.game.core.common.EPlayer
 
 /**
  *  log
@@ -11,7 +11,7 @@ data class Trick(val moves: List<IPlayLogEntry>) {
     /**
      * points
      */
-    val pointOwner: Player
+    val pointOwner: EPlayer
         get() {
             // dragon or
             val drg = moves.filterIsInstance<IPlayLogEntry.DrgGiftedEntry>().firstOrNull()
@@ -22,7 +22,7 @@ data class Trick(val moves: List<IPlayLogEntry>) {
             }
         }
 
-    val playerFinishedEntry: List<Player>
+    val playerFinishedEntry: List<EPlayer>
         get() {
             return moves.filterIsInstance<IPlayLogEntry.PlayerFinishedEntry>().map { it.player }
         }

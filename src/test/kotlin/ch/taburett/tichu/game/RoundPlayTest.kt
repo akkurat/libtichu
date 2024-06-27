@@ -1,13 +1,13 @@
 package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.*
-import ch.taburett.tichu.game.core.MutableDeck
-import ch.taburett.tichu.game.core.common.Player
-import ch.taburett.tichu.game.core.common.Player.*
+import ch.taburett.tichu.game.core.gameplay.MutableDeck
+import ch.taburett.tichu.game.core.common.EPlayer
+import ch.taburett.tichu.game.core.common.EPlayer.*
 import ch.taburett.tichu.game.core.gameplay.RoundPlay
-import ch.taburett.tichu.game.protocol.WrappedServerMessage
-import ch.taburett.tichu.game.protocol.Message.*
-import ch.taburett.tichu.game.protocol.createMove as move
+import ch.taburett.tichu.game.communication.WrappedServerMessage
+import ch.taburett.tichu.game.communication.Message.*
+import ch.taburett.tichu.game.communication.createMove as move
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertAll
 import ch.taburett.tichu.player.play
@@ -20,7 +20,7 @@ class RoundPlayTest {
 
     @Test
     fun testStartPlayer() {
-        val map = Player.entries.zip(fulldeck.chunked(14)).toMap()
+        val map = EPlayer.entries.zip(fulldeck.chunked(14)).toMap()
         val round = RoundPlay(out, map, null, null)
         round.start()
         assertThat(round.mutableDeck.initialPlayer).isEqualTo(A1)

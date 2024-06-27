@@ -2,16 +2,16 @@ package ch.taburett.tichu.game.core
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.core.common.ETichu
-import ch.taburett.tichu.game.core.common.Player
+import ch.taburett.tichu.game.core.common.EPlayer
 import ch.taburett.tichu.game.core.common.playerList
 import ch.taburett.tichu.game.core.gameplay.RoundPlay
 import ch.taburett.tichu.game.core.preparation.PrepareRound
 import ch.taburett.tichu.game.gamelog.RoundInfo
-import ch.taburett.tichu.game.protocol.*
+import ch.taburett.tichu.game.communication.*
 import java.util.concurrent.Executors
 
 
-typealias PlayerETichuMutableMap = MutableMap<Player, ETichu>
+typealias PlayerETichuMutableMap = MutableMap<EPlayer, ETichu>
 
 class Game(com: Out) {
     val executor = Executors.newCachedThreadPool()

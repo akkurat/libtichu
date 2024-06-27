@@ -2,11 +2,11 @@ package ch.taburett.tichu.player
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.core.common.ETichu
-import ch.taburett.tichu.game.core.common.Player
-import ch.taburett.tichu.game.protocol.CardsMessage
-import ch.taburett.tichu.game.protocol.Message.*
-import ch.taburett.tichu.game.protocol.createMove
-import ch.taburett.tichu.game.protocol.moveSingle
+import ch.taburett.tichu.game.core.common.EPlayer
+import ch.taburett.tichu.game.communication.CardsMessage
+import ch.taburett.tichu.game.communication.Message.*
+import ch.taburett.tichu.game.communication.createMove
+import ch.taburett.tichu.game.communication.moveSingle
 import ch.taburett.tichu.patterns.Single
 import java.util.function.Consumer
 
@@ -17,7 +17,7 @@ class StupidPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoPlay
     }
 
 
-    override fun receiveMessage(message: ServerMessage, player: Player) {
+    override fun receiveMessage(message: ServerMessage, player: EPlayer) {
         val moves = stupidMove(message)
         moves.forEach { listener(it) }
     }

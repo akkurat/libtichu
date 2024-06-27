@@ -2,16 +2,16 @@ package ch.taburett.tichu.player
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.core.common.ETichu
-import ch.taburett.tichu.game.core.MutableDeck
-import ch.taburett.tichu.game.core.common.Player
+import ch.taburett.tichu.game.core.gameplay.MutableDeck
+import ch.taburett.tichu.game.core.common.EPlayer
 import ch.taburett.tichu.game.gamelog.IPlayLogEntry
 import ch.taburett.tichu.game.gamelog.MutableTricks
-import ch.taburett.tichu.game.gamelog.Tricks
-import ch.taburett.tichu.game.protocol.CardsMessage
-import ch.taburett.tichu.game.protocol.Message.*
-import ch.taburett.tichu.game.protocol.Message.GiftDragon.ReLi.LI
-import ch.taburett.tichu.game.protocol.Message.GiftDragon.ReLi.RE
-import ch.taburett.tichu.game.protocol.createMove
+import ch.taburett.tichu.game.gamelog.ITricks
+import ch.taburett.tichu.game.communication.CardsMessage
+import ch.taburett.tichu.game.communication.Message.*
+import ch.taburett.tichu.game.communication.Message.GiftDragon.ReLi.LI
+import ch.taburett.tichu.game.communication.Message.GiftDragon.ReLi.RE
+import ch.taburett.tichu.game.communication.createMove
 import ch.taburett.tichu.patterns.*
 import ch.taburett.tichu.patterns.TichuPatternType.SINGLE
 import java.util.function.Consumer
@@ -26,7 +26,7 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
 
 
 
-    override fun receiveMessage(message: ServerMessage, player: Player) {
+    override fun receiveMessage(message: ServerMessage, player: EPlayer) {
         if (message is WhosMove && message.handcards.size == 14) {
             if (evaluateSmallTichuAfterSchupf(message)) {
                 listener(Announce.SmallTichu())
@@ -137,9 +137,9 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
         handcards: List<HandCard>,
         pats: Set<TichuPattern>,
         goneCards: Set<PlayCard>,
-        cardCounts: Map<Player, Int>,
-        iam: Player,
-        imTable: Tricks,
+        cardCounts: Map<EPlayer, Int>,
+        iam: EPlayer,
+        imTable: ITricks,
     ): Map<TichuPattern, Double> {
 
         val restcards = fulldeck - goneCards.map { it.asHandcard() } - handcards

@@ -2,23 +2,23 @@
 
 package ch.taburett.tichu.player
 
-import ch.taburett.tichu.game.core.common.Deck
-import ch.taburett.tichu.game.core.MutableDeck
+import ch.taburett.tichu.game.core.common.IDeck
+import ch.taburett.tichu.game.core.gameplay.MutableDeck
 import ch.taburett.tichu.game.gamelog.MutableTricks
 import ch.taburett.tichu.game.core.gameplay.RoundPlay
-import ch.taburett.tichu.game.core.common.Player
-import ch.taburett.tichu.game.core.common.PlayerGroup
+import ch.taburett.tichu.game.core.common.EPlayer
+import ch.taburett.tichu.game.core.common.EPlayerGroup
 import ch.taburett.tichu.player.BattleRound.AutoPlayer
-import ch.taburett.tichu.game.protocol.Message.PlayerMessage
-import ch.taburett.tichu.game.protocol.WrappedMessage
-import ch.taburett.tichu.game.protocol.WrappedPlayerMessage
-import ch.taburett.tichu.game.protocol.WrappedServerMessage
+import ch.taburett.tichu.game.communication.Message.PlayerMessage
+import ch.taburett.tichu.game.communication.WrappedMessage
+import ch.taburett.tichu.game.communication.WrappedPlayerMessage
+import ch.taburett.tichu.game.communication.WrappedServerMessage
 
 class SimulationRound(
 
-    _deck: Deck? = null,
+    _deck: IDeck? = null,
     soFareMoves: MutableTricks,
-    _playersFactory: ((a: Player, b: (PlayerMessage) -> Unit) -> AutoPlayer)? = null,
+    _playersFactory: ((a: EPlayer, b: (PlayerMessage) -> Unit) -> AutoPlayer)? = null,
 ) {
 
     // todo: class per round
@@ -37,11 +37,11 @@ class SimulationRound(
         playersQueue.add(pm)
     }
 
-    val groupFactory = PlayerGroup.entries.associateWith { p -> }
+    val groupFactory = EPlayerGroup.entries.associateWith { p -> }
 
     val playersFactory = _playersFactory ?: { a, com -> StupidPlayer(com) }
 
-    val players = Player.entries.associateWith {
+    val players = EPlayer.entries.associateWith {
         playersFactory(it) { m: PlayerMessage -> receivePlayer(WrappedPlayerMessage(it, m)) }
     }
     val rp = RoundPlay(::receiveServer, deck, null, soFareMoves, "Sim${deck.hashCode().toHexString(hexhex)}")

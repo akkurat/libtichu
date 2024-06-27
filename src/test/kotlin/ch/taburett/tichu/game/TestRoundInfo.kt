@@ -2,10 +2,10 @@ package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.gamelog.IPlayLogEntry.*
-import ch.taburett.tichu.game.core.common.Player.*
+import ch.taburett.tichu.game.core.common.EPlayer.*
 import ch.taburett.tichu.game.core.common.ETichu
-import ch.taburett.tichu.game.core.common.Player
-import ch.taburett.tichu.game.core.common.PlayerGroup
+import ch.taburett.tichu.game.core.common.EPlayer
+import ch.taburett.tichu.game.core.common.EPlayerGroup
 import ch.taburett.tichu.game.gamelog.IPlayLogEntry
 import ch.taburett.tichu.game.gamelog.MutableTricks
 import ch.taburett.tichu.game.gamelog.RoundInfo
@@ -76,10 +76,10 @@ class TestBattleRoundInfo {
         assertAll(
             { assertThat(allCardsLeft.size + allCardsPlayed.size).isEqualByComparingTo(fulldeck.size) },
             { assertThat(points.values.sum()).isEqualTo(100) },
-            { assertThat(points[PlayerGroup.A]).isEqualTo(sumA) },
-            { assertThat(points[PlayerGroup.B]).isEqualTo(sumB) },
-            { assertThat(ri.cards.getValue(PlayerGroup.A).contains(DRG)) },
-            { assertThat(ri.cards.getValue(PlayerGroup.B).contains(PHX)) },
+            { assertThat(points[EPlayerGroup.A]).isEqualTo(sumA) },
+            { assertThat(points[EPlayerGroup.B]).isEqualTo(sumB) },
+            { assertThat(ri.cards.getValue(EPlayerGroup.A).contains(DRG)) },
+            { assertThat(ri.cards.getValue(EPlayerGroup.B).contains(PHX)) },
         )
     }
 
@@ -135,13 +135,13 @@ class TestBattleRoundInfo {
         val cardPoints = ri.cardPoints
         val bonus = ri.bonusPoints
         assertAll(
-            { assertThat(cardPoints).containsExactly(Entry(PlayerGroup.A, 100), Entry(PlayerGroup.B, 0)) },
-            { assertThat(bonus).containsExactly(Entry(PlayerGroup.A, 100), Entry(PlayerGroup.B, 0)) },
+            { assertThat(cardPoints).containsExactly(Entry(EPlayerGroup.A, 100), Entry(EPlayerGroup.B, 0)) },
+            { assertThat(bonus).containsExactly(Entry(EPlayerGroup.A, 100), Entry(EPlayerGroup.B, 0)) },
 
             )
     }
 
-    private fun p(player: Player): PassMoveEntry = PassMoveEntry(player)
+    private fun p(player: EPlayer): PassMoveEntry = PassMoveEntry(player)
 }
 
 

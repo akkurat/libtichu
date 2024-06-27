@@ -4,17 +4,17 @@ package ch.taburett.tichu.player
 
 import ch.taburett.tichu.cards.fulldeck
 import ch.taburett.tichu.game.core.common.ETichu
-import ch.taburett.tichu.game.core.common.Player
-import ch.taburett.tichu.game.core.common.PlayerGroup
-import ch.taburett.tichu.game.core.common.TichuGameStage
+import ch.taburett.tichu.game.core.common.EPlayer
+import ch.taburett.tichu.game.core.common.EPlayerGroup
+import ch.taburett.tichu.game.core.common.ITichuGameStage
 import ch.taburett.tichu.game.core.gameplay.RoundPlay
 import ch.taburett.tichu.game.core.preparation.PrepareRound
 import ch.taburett.tichu.player.BattleRound.AutoPlayer
 import ch.taburett.tichu.player.SimpleBattle.BattleResult
-import ch.taburett.tichu.game.protocol.Message
-import ch.taburett.tichu.game.protocol.Message.ServerMessage
-import ch.taburett.tichu.game.protocol.WrappedPlayerMessage
-import ch.taburett.tichu.game.protocol.WrappedServerMessage
+import ch.taburett.tichu.game.communication.Message
+import ch.taburett.tichu.game.communication.Message.ServerMessage
+import ch.taburett.tichu.game.communication.WrappedPlayerMessage
+import ch.taburett.tichu.game.communication.WrappedServerMessage
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
@@ -150,29 +150,29 @@ class Grr(val myteam: Set<String>, val otherPlayers: Set<String>) {
  * when close to 1000
  */
 class SimpleBattle(private val n: Int = 5000) {
-    data class BattleResult(override val roundPlay: RoundPlay, override val players: Map<Player, AutoPlayer>) :
+    data class BattleResult(override val roundPlay: RoundPlay, override val players: Map<EPlayer, AutoPlayer>) :
         Linfo {
         override val finished: Boolean = true
     }
 
     data class PrepareInterrupted(
         override val roundPlay: PrepareRound,
-        override val players: Map<Player, AutoPlayer>,
+        override val players: Map<EPlayer, AutoPlayer>,
     ) : Linfo {
         override val finished: Boolean = false
     }
 
     data class BattleInterrupted(
         override val roundPlay: RoundPlay,
-        override val players: Map<Player, AutoPlayer>,
+        override val players: Map<EPlayer, AutoPlayer>,
     ) : Linfo {
         override val finished: Boolean = false
     }
 
     interface Linfo {
         val finished: Boolean
-        val roundPlay: TichuGameStage
-        val players: Map<Player, AutoPlayer>
+        val roundPlay: ITichuGameStage
+        val players: Map<EPlayer, AutoPlayer>
     }
 
     @OptIn(DelicateCoroutinesApi::class)
@@ -198,7 +198,7 @@ class BattleRound(val name: String) {
 
     fun start(): SimpleBattle.Linfo {
 
-        val cardMap = Player.entries.zip(fulldeck.shuffled().chunked(14)).toMap()
+        val cardMap = EPlayer.entries.zip(fulldeck.shuffled().chunked(14)).toMap()
 
         val serverQueue = ArrayDeque<WrappedServerMessage>()
         val playersQueue = ArrayDeque<WrappedPlayerMessage>()
@@ -220,9 +220,9 @@ class BattleRound(val name: String) {
                 { StrategicPlayer(it) },
 //            { LessStupidPlayer(it) },
             )
-        val groupFactory = PlayerGroup.entries.zip(factories).toMap()
+        val groupFactory = EPlayerGroup.entries.zip(factories).toMap()
 
-        val players = Player.entries.associateWith {
+        val players = EPlayer.entries.associateWith {
             groupFactory.getValue(it.playerGroup)({ m ->
                 receivePlayer(WrappedPlayerMessage(it, m))
             })
@@ -289,7 +289,7 @@ class BattleRound(val name: String) {
     }
 
     interface AutoPlayer {
-        fun receiveMessage(message: ServerMessage, player: Player)
+        fun receiveMessage(message: ServerMessage, player: EPlayer)
         val type: String
     }
 }

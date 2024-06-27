@@ -1,15 +1,15 @@
-package ch.taburett.tichu.game.protocol
+package ch.taburett.tichu.game.communication
 
 import ch.taburett.tichu.cards.DRG
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.PlayCard
 import ch.taburett.tichu.game.core.common.ETichu
-import ch.taburett.tichu.game.core.common.Player
-import ch.taburett.tichu.game.core.gameplay.TichuTable
+import ch.taburett.tichu.game.core.common.EPlayer
+import ch.taburett.tichu.game.core.gameplay.ITichuTable
 import ch.taburett.tichu.game.gamelog.Trick
-import ch.taburett.tichu.game.gamelog.Tricks
-import ch.taburett.tichu.game.protocol.Message.Move
-import ch.taburett.tichu.game.protocol.Message.Stage.*
+import ch.taburett.tichu.game.gamelog.ITricks
+import ch.taburett.tichu.game.communication.Message.Move
+import ch.taburett.tichu.game.communication.Message.Stage.*
 import ch.taburett.tichu.patterns.BombStraight
 import ch.taburett.tichu.patterns.TichuPattern
 
@@ -36,10 +36,10 @@ interface Message {
     data class Rejected(val msg: String, val orginal: Any? = null) : ServerMessage
 
     data class AckGameStage(
-        override val youAre: Player,
+        override val youAre: EPlayer,
         val stage: Stage,
         override val handcards: List<HandCard>,
-        override val tichuMap: Map<Player, ETichu>
+        override val tichuMap: Map<EPlayer, ETichu>
     ) :
         ServerMessage, CardsMessage{
 
@@ -68,16 +68,16 @@ interface Message {
     // todo merge with WhosTurn and make YOU a flag
 // all the
     data class WhosMove(
-        override val youAre: Player,
-        val who: Player,
+        override val youAre: EPlayer,
+        val who: EPlayer,
         override val handcards: List<HandCard>,
-        val table: TichuTable,
+        val table: ITichuTable,
         val last: Trick?,
-        val tricks: Tricks,
+        val tricks: ITricks,
         val wish: Int? = null,
         val dragonGift: Boolean = false,
-        val cardCounts: Map<Player, Int>,
-        override val tichuMap: Map<Player, ETichu>,
+        val cardCounts: Map<EPlayer, Int>,
+        override val tichuMap: Map<EPlayer, ETichu>,
         val goneCards: Set<PlayCard>,
     ) : ServerMessage, CardsMessage {
         val yourMove = this.youAre == who
@@ -97,13 +97,13 @@ interface Message {
     data class GiftDragon(val to: ReLi) : PlayerMessage {
         enum class ReLi {
             RE {
-                override fun map(u: Player): Player = u.re
+                override fun map(u: EPlayer): EPlayer = u.re
             },
             LI {
-                override fun map(u: Player): Player = u.li
+                override fun map(u: EPlayer): EPlayer = u.li
             };
 
-            abstract fun map(u: Player): Player
+            abstract fun map(u: EPlayer): EPlayer
         }
     }
 
@@ -146,9 +146,9 @@ interface Message {
 
 
 interface CardsMessage: Message.ServerMessage {
-    val youAre: Player
+    val youAre: EPlayer
     val handcards: List<HandCard>
-    val tichuMap: Map<Player, ETichu>
+    val tichuMap: Map<EPlayer, ETichu>
 
 }
 

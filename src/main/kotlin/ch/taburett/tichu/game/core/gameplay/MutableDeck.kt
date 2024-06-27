@@ -1,18 +1,18 @@
-package ch.taburett.tichu.game.core
+package ch.taburett.tichu.game.core.gameplay
 
 import ch.taburett.tichu.cards.*
-import ch.taburett.tichu.game.core.common.Deck
-import ch.taburett.tichu.game.core.common.Player
+import ch.taburett.tichu.game.core.common.IDeck
+import ch.taburett.tichu.game.core.common.EPlayer
 import ch.taburett.tichu.game.core.common.playerList
 
 class MutableDeck private constructor(
-    _cardMap: Map<Player, Collection<HandCard>>,
-    override val initialPlayer: Player,
+    _cardMap: Map<EPlayer, Collection<HandCard>>,
+    override val initialPlayer: EPlayer,
     _goneCards: Collection<PlayCard>,
-) : Deck {
+) : IDeck {
     companion object {
 
-        fun createInitial(cardMap: Map<Player, Collection<HandCard>>): MutableDeck {
+        fun createInitial(cardMap: Map<EPlayer, Collection<HandCard>>): MutableDeck {
             // logic later on works only if all cards in map are present
             val valid = fulldeckSet == cardMap.values.flatten().toSet()
             if (!valid) {
@@ -26,8 +26,8 @@ class MutableDeck private constructor(
         }
 
         fun createStarted(
-            cardMap: Map<Player, Collection<HandCard>>,
-            initialPlayer: Player,
+            cardMap: Map<EPlayer, Collection<HandCard>>,
+            initialPlayer: EPlayer,
             _goneCards: Collection<PlayCard>,
         ): MutableDeck {
             val deckVAlid = (cardMap.values.flatten() + _goneCards.map { it.asHandcard() }).toSet() == fulldeckSet
@@ -38,7 +38,7 @@ class MutableDeck private constructor(
             }
         }
 
-        fun copy(deck: Deck): MutableDeck {
+        fun copy(deck: IDeck): MutableDeck {
             return if (deck is MutableDeck) {
                 deck.copy()
             } else {
@@ -47,23 +47,23 @@ class MutableDeck private constructor(
         }
 
         fun createInitial(): MutableDeck {
-            return createInitial(Player.entries.zip(fulldeck.shuffled().chunked(14)).toMap())
+            return createInitial(EPlayer.entries.zip(fulldeck.shuffled().chunked(14)).toMap())
         }
     }
 
-    private val cardMap: Map<Player, MutableList<HandCard>> = _cardMap.mapValues { (_, l) -> l.toMutableList() }
+    private val cardMap: Map<EPlayer, MutableList<HandCard>> = _cardMap.mapValues { (_, l) -> l.toMutableList() }
     private val _goneCards = _goneCards.toMutableSet() ?: mutableSetOf()
 
 
-    override fun activePlayers(): Set<Player> {
+    override fun activePlayers(): Set<EPlayer> {
         return cardMap.filter { (p, v) -> v.isNotEmpty() }.keys
     }
 
-    override fun finishedPlayers(): Set<Player> {
+    override fun finishedPlayers(): Set<EPlayer> {
         return cardMap.filter { (p, v) -> v.isEmpty() }.keys
     }
 
-    override tailrec fun nextPlayer(lastPlayer: Player, step: Int, cnt: Int): Player {
+    override tailrec fun nextPlayer(lastPlayer: EPlayer, step: Int, cnt: Int): EPlayer {
         if (cnt >= 3) {
             throw IllegalStateException("game should have ended already")
         }
@@ -77,7 +77,7 @@ class MutableDeck private constructor(
     }
 
     override fun deckSizes() = cardMap.mapValues { it.value.size }
-    override fun cards(player: Player): List<HandCard> = cardMap.getValue(player).toList()
+    override fun cards(player: EPlayer): List<HandCard> = cardMap.getValue(player).toList()
     override fun getCardMap() = cardMap.mapValues { (_, v) -> v.toList() }
 
     override fun roundEnded(): Boolean {
@@ -106,12 +106,12 @@ class MutableDeck private constructor(
         return s
     }
 
-    fun playCards(player: Player, playedCards: Collection<PlayCard>) {
+    fun playCards(player: EPlayer, playedCards: Collection<PlayCard>) {
         cardMap.getValue(player).removeAll(playedCards.map { it.asHandcard() })
         _goneCards.addAll(playedCards)
     }
 
-    override fun leftovers(): Map<Player, List<HandCard>> = cardMap.mapValues { (_, v) -> v.toList() }
+    override fun leftovers(): Map<EPlayer, List<HandCard>> = cardMap.mapValues { (_, v) -> v.toList() }
     override fun goneCards(): Set<PlayCard> = _goneCards
     override fun copy(): MutableDeck {
         return MutableDeck(cardMap, initialPlayer, _goneCards)

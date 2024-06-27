@@ -4,40 +4,27 @@ import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.fulldeck
 import ch.taburett.tichu.game.core.*
 import ch.taburett.tichu.game.core.common.ETichu
-import ch.taburett.tichu.game.core.common.Player
-import ch.taburett.tichu.game.core.common.TichuGameStage
+import ch.taburett.tichu.game.core.common.EPlayer
+import ch.taburett.tichu.game.core.common.ITichuGameStage
 import ch.taburett.tichu.game.core.common.playerList
-import ch.taburett.tichu.game.gamelog.IPlayLogEntry
-import ch.taburett.tichu.game.protocol.Message.*
-import ch.taburett.tichu.game.protocol.WrappedPlayerMessage
-import ch.taburett.tichu.game.protocol.WrappedServerMessage
+import ch.taburett.tichu.game.communication.Message.*
+import ch.taburett.tichu.game.communication.WrappedPlayerMessage
+import ch.taburett.tichu.game.communication.WrappedServerMessage
 import kotlin.reflect.KClass
 
-interface State {
-    fun complete(): Boolean
-    fun reactsTo(value: PlayerMessage): Boolean
-    fun react(
-        u: Player,
-        s: PlayerMessage,
-        cardMap: Map<Player, MutableList<HandCard>>,
-        tichuMap: PlayerETichuMutableMap,
-        name: String?
-    ): WrappedServerMessage?
-}
 
+class PrepareRound(val com: Out, override val name: String? = null) : ITichuGameStage {
 
-class PrepareRound(val com: Out, override val name: String? = null) : TichuGameStage {
-
-    private lateinit var cards6: Map<Player, List<HandCard>>
-    private lateinit var cards8: Map<Player, MutableList<HandCard>>
+    private lateinit var cards6: Map<EPlayer, List<HandCard>>
+    private lateinit var cards8: Map<EPlayer, MutableList<HandCard>>
     private lateinit var schupfInfo: PreparationInfo.SchupfLog
 
-    private val tichuMap: PlayerETichuMutableMap = Player.entries
+    private val tichuMap: PlayerETichuMutableMap = EPlayer.entries
         .associateWith { ETichu.NONE }.toMutableMap()
 
-    sealed class AckState(val name: String, private vararg val reactsTo: KClass<out PlayerMessage>) : State {
+    sealed class AckState(val name: String, private vararg val reactsTo: KClass<out PlayerMessage>) : IPreparationState {
 
-        private val ack = mutableSetOf<Player>()
+        private val ack = mutableSetOf<EPlayer>()
 
         override fun complete(): Boolean {
             return ack.size == playerList.size
@@ -49,9 +36,9 @@ class PrepareRound(val com: Out, override val name: String? = null) : TichuGameS
         }
 
         override fun react(
-            u: Player,
+            u: EPlayer,
             s: PlayerMessage,
-            cardMap: Map<Player, MutableList<HandCard>>,
+            cardMap: Map<EPlayer, MutableList<HandCard>>,
             tichuMap: PlayerETichuMutableMap,
             name: String?,
         ): WrappedServerMessage? {
@@ -76,9 +63,9 @@ class PrepareRound(val com: Out, override val name: String? = null) : TichuGameS
     class schupfed : AckState("AfterSchupf", Ack.SchupfcardReceived::class, Announce.SmallTichu::class)
     class preGame : AckState("PreGame", Ack.TichuBeforePlay::class, Announce.SmallTichu::class)
 
-    class SchupfState : State {
+    class SchupfState : IPreparationState {
         //                           <from, Map<to, handcar>>
-        val schupfBuffer: MutableMap<Player, Map<Player, HandCard>> = mutableMapOf()
+        val schupfBuffer: MutableMap<EPlayer, Map<EPlayer, HandCard>> = mutableMapOf()
         override fun complete(): Boolean {
             return schupfBuffer.size == playerList.size
         }
@@ -88,15 +75,15 @@ class PrepareRound(val com: Out, override val name: String? = null) : TichuGameS
         }
 
         override fun react(
-            u: Player,
+            u: EPlayer,
             s: PlayerMessage,
-            cardMap: Map<Player, MutableList<HandCard>>,
+            cardMap: Map<EPlayer, MutableList<HandCard>>,
             tichuMap: PlayerETichuMutableMap,
             name: String?,
         ): WrappedServerMessage? {
             if (s is Schupf) {
-                if (checkCardsLegal(u, s, cardMap.getValue(u))) {
-                    schupfBuffer[u] = mapSchupfEvent(u, s)
+                if (Companion.checkCardsLegal(u, s, cardMap.getValue(u))) {
+                    schupfBuffer[u] = Companion.mapSchupfEvent(u, s)
                 } else {
                     return WrappedServerMessage(u, Rejected("Cheating!"))
                 }
@@ -104,14 +91,24 @@ class PrepareRound(val com: Out, override val name: String? = null) : TichuGameS
             return null
         }
 
-        private fun checkCardsLegal(u: Player, s: Schupf, value: List<HandCard>): Boolean {
-            val avCards = value.toMutableList()
-            return avCards.remove(s.re) && avCards.remove(s.li) && avCards.remove(s.partner)
+        companion object {
+            private fun mapSchupfEvent(u: EPlayer, schupf: Schupf): Map<EPlayer, HandCard> {
+                return mapOf(
+                    u.partner to schupf.partner,
+                    u.li to schupf.li,
+                    u.re to schupf.re,
+                )
+            }
+
+            private fun checkCardsLegal(u: EPlayer, s: Schupf, value: List<HandCard>): Boolean {
+                val avCards = value.toMutableList()
+                return avCards.remove(s.re) && avCards.remove(s.li) && avCards.remove(s.partner)
+            }
         }
     }
 
     var isFinished: Boolean = false
-    lateinit var currentState: State
+    lateinit var currentPreparationState: IPreparationState
     val schupfState = SchupfState()
     val states = listOf(
         bTichu() to {
@@ -136,7 +133,7 @@ class PrepareRound(val com: Out, override val name: String? = null) : TichuGameS
 
     fun start() {
         val (state, transition) = stateIterator.next()
-        currentState = state
+        currentPreparationState = state
         transition()
     }
 
@@ -151,24 +148,24 @@ class PrepareRound(val com: Out, override val name: String? = null) : TichuGameS
         }
     }
 
-    lateinit var cardMap: Map<Player, MutableList<HandCard>>
+    lateinit var cardMap: Map<EPlayer, MutableList<HandCard>>
 
-    fun react(u: Player, s: PlayerMessage) {
-        if (currentState.reactsTo(s)) {
-            val error = currentState.react(u, s, cardMap, tichuMap, name)
+    fun react(u: EPlayer, s: PlayerMessage) {
+        if (currentPreparationState.reactsTo(s)) {
+            val error = currentPreparationState.react(u, s, cardMap, tichuMap, name)
             if (error != null) {
                 sendMessage(error)
-            } else if (currentState.complete()) {
+            } else if (currentPreparationState.complete()) {
                 if (stateIterator.hasNext()) {
                     val (state, transition) = stateIterator.next()
-                    currentState = state
+                    currentPreparationState = state
                     transition()
                 } else {
                     isFinished = true
                 }
             }
         } else {
-            sendMessage(WrappedServerMessage(u, Rejected("Current State is ${currentState}", s)))
+            sendMessage(WrappedServerMessage(u, Rejected("Current State is ${currentPreparationState}", s)))
         }
     }
 
@@ -182,11 +179,11 @@ class PrepareRound(val com: Out, override val name: String? = null) : TichuGameS
     }
 
     fun switchCards(
-        schupfBuffer: MutableMap<Player, Map<Player, HandCard>>,
+        schupfBuffer: MutableMap<EPlayer, Map<EPlayer, HandCard>>,
     ) {
         val copy = cardMap.toMutableMap()
         // hm... maybe tables?
-        val received: Map<Player, MutableMap<Player, HandCard>> =
+        val received: Map<EPlayer, MutableMap<EPlayer, HandCard>> =
             cardMap.keys.associateBy({ k -> k }, { mutableMapOf() })
 
         for ((from, cards) in schupfBuffer) {
@@ -230,23 +227,3 @@ class PrepareRound(val com: Out, override val name: String? = null) : TichuGameS
 
 }
 
-data class PreparationInfo(
-    val cards8: Map<Player, List<HandCard>>,
-    val cards6: Map<Player, List<HandCard>>,
-    val schupf: SchupfLog,
-    val tichuLog: List<IPlayLogEntry>,
-    val tichuMap: Map<Player, ETichu>,
-) {
-    data class SchupfLog(
-        val to: Map<Player, Map<Player, HandCard>>,
-        val from: Map<Player, Map<Player, HandCard>>,
-    )
-}
-
-fun mapSchupfEvent(u: Player, schupf: Schupf): Map<Player, HandCard> {
-    return mapOf(
-        u.partner to schupf.partner,
-        u.li to schupf.li,
-        u.re to schupf.re,
-    )
-}

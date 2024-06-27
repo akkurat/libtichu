@@ -9,7 +9,7 @@ import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.assertAll
 import kotlin.test.Test
 
-class PlayerUtilsKtTest {
+class EPlayerUtilsKtTest {
 
     @Test
     fun test() {
