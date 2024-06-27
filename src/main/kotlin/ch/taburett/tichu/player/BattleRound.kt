@@ -1,11 +1,11 @@
 @file:OptIn(ExperimentalStdlibApi::class)
 
-package ch.taburett.tichu.game.player
+package ch.taburett.tichu.player
 
 import ch.taburett.tichu.cards.fulldeck
 import ch.taburett.tichu.game.*
-import ch.taburett.tichu.game.player.BattleRound.AutoPlayer
-import ch.taburett.tichu.game.player.SimpleBattle.BattleResult
+import ch.taburett.tichu.player.BattleRound.AutoPlayer
+import ch.taburett.tichu.player.SimpleBattle.BattleResult
 import ch.taburett.tichu.game.protocol.Message
 import ch.taburett.tichu.game.protocol.Message.ServerMessage
 import kotlinx.coroutines.*

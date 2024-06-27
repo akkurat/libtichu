@@ -1,7 +1,7 @@
 package ch.taburett.tichu.player
 
 import ch.taburett.tichu.cards.*
-import ch.taburett.tichu.game.player.weightPossibilitesNoRec
+import ch.taburett.tichu.player.weightPossibilitesNoRec
 import ch.taburett.tichu.patterns.FullHouse
 import ch.taburett.tichu.patterns.Single
 import ch.taburett.tichu.patterns.Straight

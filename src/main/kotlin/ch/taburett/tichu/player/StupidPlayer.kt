@@ -1,4 +1,4 @@
-package ch.taburett.tichu.game.player
+package ch.taburett.tichu.player
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.ETichu
@@ -37,7 +37,7 @@ class StupidPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoPlay
             }
 
             is Schupf -> listOf(Ack.SchupfcardReceived())
-            is WhosMove -> ch.taburett.tichu.game.player.stupidMove(message)
+            is WhosMove -> ch.taburett.tichu.player.stupidMove(message)
             else -> listOf()
         }
     }

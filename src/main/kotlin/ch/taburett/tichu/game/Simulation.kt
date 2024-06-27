@@ -2,10 +2,10 @@
 
 package ch.taburett.tichu.game
 
-import ch.taburett.tichu.game.player.BattleRound.AutoPlayer
-import ch.taburett.tichu.game.player.SimpleBattle
-import ch.taburett.tichu.game.player.StupidPlayer
-import ch.taburett.tichu.game.player.hexhex
+import ch.taburett.tichu.player.BattleRound.AutoPlayer
+import ch.taburett.tichu.player.SimpleBattle
+import ch.taburett.tichu.player.StupidPlayer
+import ch.taburett.tichu.player.hexhex
 import ch.taburett.tichu.game.protocol.Message
 import ch.taburett.tichu.game.protocol.Message.PlayerMessage
 
