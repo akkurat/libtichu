@@ -1,3 +1,5 @@
+package ch.taburett.tichu.patterns
+
 import java.util.*
 
 fun <T> permutations(input: List<T>): List<List<T>> {

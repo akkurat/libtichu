@@ -1,4 +1,4 @@
-package tichu.game
+package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.fulldeck
 import ch.taburett.tichu.game.*

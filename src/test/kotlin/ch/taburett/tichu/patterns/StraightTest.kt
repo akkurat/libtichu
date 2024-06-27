@@ -1,4 +1,4 @@
-package tichu.patterns
+package ch.taburett.tichu.patterns
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.patterns.Straight

@@ -1,4 +1,4 @@
-package tichu.game
+package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.MAH
 import ch.taburett.tichu.cards.S2

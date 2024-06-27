@@ -1,4 +1,4 @@
-package tichu.player
+package ch.taburett.tichu.player
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.player.weightPossibilitesNoRec

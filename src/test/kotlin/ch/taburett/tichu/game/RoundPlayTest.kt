@@ -1,4 +1,4 @@
-package tichu.game
+package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.MutableDeck
@@ -10,7 +10,7 @@ import ch.taburett.tichu.game.protocol.Message.*
 import ch.taburett.tichu.game.protocol.createMove as move
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertAll
-import tichu.player.play
+import ch.taburett.tichu.player.play
 import kotlin.test.Test
 import kotlin.test.assertTrue
 

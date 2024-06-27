@@ -1,7 +1,7 @@
-package tichu.game
+package ch.taburett.tichu.game
 
 import org.junit.jupiter.api.Assertions.*
-import pickK
+import ch.taburett.tichu.patterns.pickK
 import kotlin.test.Test
 
 internal class PermuteKtTest
