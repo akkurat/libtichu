@@ -1,20 +1,9 @@
 package ch.taburett.tichu.game.core
 
 import ch.taburett.tichu.cards.*
-
-interface Deck {
-    val initialPlayer: Player
-    fun goneCards(): Set<PlayCard>
-    fun activePlayers(): Set<Player>
-    fun finishedPlayers(): Set<Player>
-    fun nextPlayer(lastPlayer: Player, step: Int = 1, cnt: Int = 0): Player
-    fun deckSizes(): Map<Player, Int>
-    fun cards(player: Player): List<HandCard>
-    fun roundEnded(): Boolean
-    fun leftovers(): Map<Player, List<HandCard>>
-    fun getCardMap(): Map<Player, List<HandCard>>
-    fun copy(): Deck
-}
+import ch.taburett.tichu.game.core.common.Deck
+import ch.taburett.tichu.game.core.common.Player
+import ch.taburett.tichu.game.core.common.playerList
 
 class MutableDeck private constructor(
     _cardMap: Map<Player, Collection<HandCard>>,

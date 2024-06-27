@@ -1,7 +1,7 @@
-package ch.taburett.tichu.game.core
+package ch.taburett.tichu.game.core.common
 
-import ch.taburett.tichu.game.core.Player.*
-import ch.taburett.tichu.game.core.PlayerGroup.*
+import ch.taburett.tichu.game.core.common.Player.*
+import ch.taburett.tichu.game.core.common.PlayerGroup.*
 
 enum class PlayerGroup(vararg _players: Player) {
 

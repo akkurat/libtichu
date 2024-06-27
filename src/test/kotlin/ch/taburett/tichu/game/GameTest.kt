@@ -1,7 +1,8 @@
 package ch.taburett.tichu.game
 
 import ch.taburett.tichu.game.core.Game
-import ch.taburett.tichu.game.core.playerList
+import ch.taburett.tichu.game.core.gameplay.RoundPlay
+import ch.taburett.tichu.game.core.common.playerList
 import ch.taburett.tichu.game.protocol.Message.*
 import ch.taburett.tichu.game.protocol.WrappedPlayerMessage
 import kotlinx.coroutines.delay

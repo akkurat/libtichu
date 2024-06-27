@@ -2,10 +2,10 @@ package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.core.MutableDeck
-import ch.taburett.tichu.game.core.Player
+import ch.taburett.tichu.game.core.common.Player
 import ch.taburett.tichu.game.gamelog.IPlayLogEntry.*
-import ch.taburett.tichu.game.core.Player.*
-import ch.taburett.tichu.game.core.playerList
+import ch.taburett.tichu.game.core.common.Player.*
+import ch.taburett.tichu.game.core.common.playerList
 import ch.taburett.tichu.game.gamelog.MutableTricks
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals

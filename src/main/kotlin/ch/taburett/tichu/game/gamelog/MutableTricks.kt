@@ -1,10 +1,10 @@
 package ch.taburett.tichu.game.gamelog
 
 import ch.taburett.tichu.cards.DOG
-import ch.taburett.tichu.game.core.Deck
-import ch.taburett.tichu.game.core.MutableTichuTable
-import ch.taburett.tichu.game.core.TichuTable
-import ch.taburett.tichu.game.core.Player
+import ch.taburett.tichu.game.core.common.Deck
+import ch.taburett.tichu.game.core.gameplay.MutableTichuTable
+import ch.taburett.tichu.game.core.gameplay.TichuTable
+import ch.taburett.tichu.game.core.common.Player
 import ch.taburett.tichu.game.gamelog.IPlayLogEntry.*
 
 class MutableTricks(tricks: Tricks?) :

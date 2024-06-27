@@ -3,8 +3,12 @@
 package ch.taburett.tichu.player
 
 import ch.taburett.tichu.cards.fulldeck
-import ch.taburett.tichu.game.*
-import ch.taburett.tichu.game.core.*
+import ch.taburett.tichu.game.core.common.ETichu
+import ch.taburett.tichu.game.core.common.Player
+import ch.taburett.tichu.game.core.common.PlayerGroup
+import ch.taburett.tichu.game.core.common.TichuGameStage
+import ch.taburett.tichu.game.core.gameplay.RoundPlay
+import ch.taburett.tichu.game.core.preparation.PrepareRound
 import ch.taburett.tichu.player.BattleRound.AutoPlayer
 import ch.taburett.tichu.player.SimpleBattle.BattleResult
 import ch.taburett.tichu.game.protocol.Message

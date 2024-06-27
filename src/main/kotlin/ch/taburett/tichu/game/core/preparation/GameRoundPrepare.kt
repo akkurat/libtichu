@@ -1,7 +1,12 @@
-package ch.taburett.tichu.game.core
+package ch.taburett.tichu.game.core.preparation
 
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.fulldeck
+import ch.taburett.tichu.game.core.*
+import ch.taburett.tichu.game.core.common.ETichu
+import ch.taburett.tichu.game.core.common.Player
+import ch.taburett.tichu.game.core.common.TichuGameStage
+import ch.taburett.tichu.game.core.common.playerList
 import ch.taburett.tichu.game.gamelog.IPlayLogEntry
 import ch.taburett.tichu.game.protocol.Message.*
 import ch.taburett.tichu.game.protocol.WrappedPlayerMessage

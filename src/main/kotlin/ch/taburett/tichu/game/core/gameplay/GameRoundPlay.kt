@@ -1,9 +1,11 @@
-package ch.taburett.tichu.game
+package ch.taburett.tichu.game.core.gameplay
 
 import ch.taburett.tichu.cards.*
-import ch.taburett.tichu.game.gamelog.IPlayLogEntry.*
-import ch.taburett.tichu.game.RoundPlay.State.INIT
 import ch.taburett.tichu.game.core.*
+import ch.taburett.tichu.game.core.common.*
+import ch.taburett.tichu.game.gamelog.IPlayLogEntry.*
+import ch.taburett.tichu.game.core.gameplay.RoundPlay.State.INIT
+import ch.taburett.tichu.game.core.preparation.PreparationInfo
 import ch.taburett.tichu.game.gamelog.MutableTricks
 import ch.taburett.tichu.game.gamelog.RoundInfo
 import ch.taburett.tichu.game.gamelog.Tricks
@@ -75,7 +77,7 @@ class RoundPlay(
 
 
     @VisibleForTesting
-    internal fun determineCurrentPlayer(): Player {
+    fun determineCurrentPlayer(): Player {
         return tricks.nextPlayer(mutableDeck)
     }
 

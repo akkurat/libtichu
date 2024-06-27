@@ -1,9 +1,9 @@
 package ch.taburett.tichu.player
 
 import ch.taburett.tichu.cards.*
-import ch.taburett.tichu.game.core.ETichu
+import ch.taburett.tichu.game.core.common.ETichu
 import ch.taburett.tichu.game.core.MutableDeck
-import ch.taburett.tichu.game.core.Player
+import ch.taburett.tichu.game.core.common.Player
 import ch.taburett.tichu.game.gamelog.IPlayLogEntry
 import ch.taburett.tichu.game.gamelog.MutableTricks
 import ch.taburett.tichu.game.gamelog.Tricks

@@ -2,12 +2,12 @@
 
 package ch.taburett.tichu.player
 
-import ch.taburett.tichu.game.core.Deck
+import ch.taburett.tichu.game.core.common.Deck
 import ch.taburett.tichu.game.core.MutableDeck
 import ch.taburett.tichu.game.gamelog.MutableTricks
-import ch.taburett.tichu.game.RoundPlay
-import ch.taburett.tichu.game.core.Player
-import ch.taburett.tichu.game.core.PlayerGroup
+import ch.taburett.tichu.game.core.gameplay.RoundPlay
+import ch.taburett.tichu.game.core.common.Player
+import ch.taburett.tichu.game.core.common.PlayerGroup
 import ch.taburett.tichu.player.BattleRound.AutoPlayer
 import ch.taburett.tichu.game.protocol.Message.PlayerMessage
 import ch.taburett.tichu.game.protocol.WrappedMessage

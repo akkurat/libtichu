@@ -1,6 +1,7 @@
-package ch.taburett.tichu.game.core
+package ch.taburett.tichu.game.core.gameplay
 
 import ch.taburett.tichu.cards.PlayCard
+import ch.taburett.tichu.game.core.common.Player
 import ch.taburett.tichu.game.gamelog.IPlayLogEntry
 import ch.taburett.tichu.game.gamelog.IPlayLogEntry.*
 import ch.taburett.tichu.game.gamelog.Trick

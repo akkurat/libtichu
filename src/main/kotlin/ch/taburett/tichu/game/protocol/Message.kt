@@ -3,9 +3,9 @@ package ch.taburett.tichu.game.protocol
 import ch.taburett.tichu.cards.DRG
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.PlayCard
-import ch.taburett.tichu.game.core.ETichu
-import ch.taburett.tichu.game.core.Player
-import ch.taburett.tichu.game.core.TichuTable
+import ch.taburett.tichu.game.core.common.ETichu
+import ch.taburett.tichu.game.core.common.Player
+import ch.taburett.tichu.game.core.gameplay.TichuTable
 import ch.taburett.tichu.game.gamelog.Trick
 import ch.taburett.tichu.game.gamelog.Tricks
 import ch.taburett.tichu.game.protocol.Message.Move

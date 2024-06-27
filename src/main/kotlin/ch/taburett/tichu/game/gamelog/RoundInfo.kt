@@ -2,10 +2,10 @@ package ch.taburett.tichu.game.gamelog
 
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.fulldeck
-import ch.taburett.tichu.game.core.PreparationInfo
-import ch.taburett.tichu.game.core.ETichu
-import ch.taburett.tichu.game.core.Player
-import ch.taburett.tichu.game.core.PlayerGroup
+import ch.taburett.tichu.game.core.preparation.PreparationInfo
+import ch.taburett.tichu.game.core.common.ETichu
+import ch.taburett.tichu.game.core.common.Player
+import ch.taburett.tichu.game.core.common.PlayerGroup
 
 data class RoundInfo(
     val prepareLog: PreparationInfo?,

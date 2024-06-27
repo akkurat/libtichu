@@ -1,13 +1,13 @@
 package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.fulldeck
-import ch.taburett.tichu.game.core.Player.*
-import ch.taburett.tichu.game.core.PrepareRound.preGame
-import ch.taburett.tichu.game.core.PrepareRound.schupfed
+import ch.taburett.tichu.game.core.common.Player.*
+import ch.taburett.tichu.game.core.preparation.PrepareRound.preGame
+import ch.taburett.tichu.game.core.preparation.PrepareRound.schupfed
 import ch.taburett.tichu.game.core.Out
-import ch.taburett.tichu.game.core.Player
-import ch.taburett.tichu.game.core.PrepareRound
-import ch.taburett.tichu.game.core.playerList
+import ch.taburett.tichu.game.core.common.Player
+import ch.taburett.tichu.game.core.preparation.PrepareRound
+import ch.taburett.tichu.game.core.common.playerList
 import ch.taburett.tichu.game.protocol.Message
 import ch.taburett.tichu.game.protocol.Message.Ack
 import ch.taburett.tichu.game.protocol.Message.Schupf
