@@ -8,7 +8,7 @@ import ch.taburett.tichu.game.gamelog.Trick
 /**
  * Current open trick
  */
-class MutableTable(moves: ImmutableTable? = null) : ImmutableTable {
+class MutableTichuTable(moves: TichuTable? = null) : TichuTable {
 
     override val moves = moves?.moves?.toMutableList() ?: mutableListOf()
 
@@ -16,8 +16,8 @@ class MutableTable(moves: ImmutableTable? = null) : ImmutableTable {
         moves.add(played)
     }
 
-    fun immutable(): ImmutableTable {
-        return ImmutableTableImpl(moves)
+    fun immutable(): TichuTable {
+        return TichuTableImpl(moves)
     }
 
     override fun toString(): String {
@@ -25,14 +25,14 @@ class MutableTable(moves: ImmutableTable? = null) : ImmutableTable {
     }
 }
 
-open class ImmutableTableImpl(moves: List<IPlayLogEntry>) : ImmutableTable {
+open class TichuTableImpl(moves: List<IPlayLogEntry>) : TichuTable {
     override val moves = moves.toList()
     override fun toString(): String {
         return moves.joinToString("|")
     }
 }
 
-interface ImmutableTable {
+interface TichuTable {
     val moves: List<IPlayLogEntry>
 
     fun toTrick(): Trick = Trick(moves.toList())

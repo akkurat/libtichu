@@ -8,10 +8,10 @@ import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class MutableTableTest {
+class MutableTichuTableTest {
     @Test
     fun allPassTrue() {
-        val table = MutableTable()
+        val table = MutableTichuTable()
         table.add(IPlayLogEntry.RegularMoveEntry(A1, MAH))
         table.add(IPlayLogEntry.PassMoveEntry(B1))
         table.add(IPlayLogEntry.PassMoveEntry(A2))
@@ -22,7 +22,7 @@ class MutableTableTest {
 
     @Test
     fun allPassFalse() {
-        val table = MutableTable()
+        val table = MutableTichuTable()
         table.add(IPlayLogEntry.RegularMoveEntry(A1, MAH))
         table.add(IPlayLogEntry.PassMoveEntry(B1))
         table.add(IPlayLogEntry.PassMoveEntry(A2))

@@ -13,7 +13,7 @@ class RoundPlay(
     val com: Out,
     deck: Deck,
     val preparationInfo: PreparationInfo?,
-    soFar: ImmutableTricks?,
+    soFar: ch.taburett.tichu.game.Tricks?,
     override val name: String? = null,
 ) : TichuGameStage {
     constructor(

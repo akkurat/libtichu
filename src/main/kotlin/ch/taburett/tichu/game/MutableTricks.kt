@@ -6,19 +6,20 @@ import ch.taburett.tichu.game.gamelog.IPlayLogEntry.*
 import ch.taburett.tichu.game.gamelog.Trick
 import ch.taburett.tichu.game.gamelog.Tricks
 
-class MutableTricks(tricks: ImmutableTricks?) : ImmutableTricks {
+class MutableTricks(tricks: ch.taburett.tichu.game.Tricks?) :
+    ch.taburett.tichu.game.Tricks {
 
     private val _tricks = tricks?.tricks?.toMutableList() ?: mutableListOf()
     override val tricks: List<Trick>
         get() = _tricks
-    private var _Mutable_table = MutableTable(tricks?.table)
-    override val table: ImmutableTable
+    private var _Mutable_table = MutableTichuTable(tricks?.table)
+    override val table: TichuTable
         get() = _Mutable_table.immutable()
 
     fun endTrick() {
         if (table.toTrick().moves.isNotEmpty()) {
             _tricks.add(table.toTrick())
-            _Mutable_table = MutableTable()
+            _Mutable_table = MutableTichuTable()
         }
     }
 

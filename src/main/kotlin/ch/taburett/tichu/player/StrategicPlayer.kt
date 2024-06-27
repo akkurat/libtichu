@@ -135,7 +135,7 @@ class StrategicPlayer(val listener: (PlayerMessage) -> Unit) : BattleRound.AutoP
         goneCards: Set<PlayCard>,
         cardCounts: Map<Player, Int>,
         iam: Player,
-        imTable: ImmutableTricks,
+        imTable: Tricks,
     ): Map<TichuPattern, Double> {
 
         val restcards = fulldeck - goneCards.map { it.asHandcard() } - handcards
