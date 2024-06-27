@@ -84,15 +84,5 @@ val lookupByCode = fulldeck.associateBy { k -> k.getCode() }
 
 
 
-fun parsePlayCard(code: String): PlayCard {
-    if (code.startsWith(PHX.getCode(), true)) {
-        val rank = code.substring(3).toDouble()
-        return PHX.asPlayCard(rank);
-    } else {
-        return lookupByCode.getValue(code) as PlayCard
-    }
-}
-
-
 
 

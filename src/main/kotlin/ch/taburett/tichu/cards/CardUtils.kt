@@ -35,6 +35,16 @@ fun allSameValue(cards: Collection<PlayCard>): Int? {
 }
 
 
+
+fun parsePlayCard(code: String): PlayCard {
+    if (code.startsWith(PHX.getCode(), true)) {
+        val rank = code.substring(3).toDouble()
+        return PHX.asPlayCard(rank);
+    } else {
+        return lookupByCode.getValue(code) as PlayCard
+    }
+}
+
 fun parseCards(cardsString: String): Set<HandCard> {
     return cardsString.split(",")
         .map { c -> parseCard(c) }
