@@ -1,4 +1,4 @@
-package ch.taburett.tichu.game
+package ch.taburett.tichu.game.core
 
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.NumberCard

@@ -1,6 +1,8 @@
-package ch.taburett.tichu.game
+package ch.taburett.tichu.game.core
 
 import ch.taburett.tichu.cards.*
+import ch.taburett.tichu.game.*
+import ch.taburett.tichu.game.gamelog.RoundInfo
 import ch.taburett.tichu.game.protocol.*
 import java.util.concurrent.Executors
 

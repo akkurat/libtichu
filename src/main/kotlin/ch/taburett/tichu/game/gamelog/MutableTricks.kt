@@ -1,13 +1,14 @@
-package ch.taburett.tichu.game
+package ch.taburett.tichu.game.gamelog
 
 import ch.taburett.tichu.cards.DOG
-import ch.taburett.tichu.game.gamelog.IPlayLogEntry
+import ch.taburett.tichu.game.core.Deck
+import ch.taburett.tichu.game.core.MutableTichuTable
+import ch.taburett.tichu.game.core.TichuTable
+import ch.taburett.tichu.game.core.Player
 import ch.taburett.tichu.game.gamelog.IPlayLogEntry.*
-import ch.taburett.tichu.game.gamelog.Trick
-import ch.taburett.tichu.game.gamelog.Tricks
 
-class MutableTricks(tricks: ch.taburett.tichu.game.Tricks?) :
-    ch.taburett.tichu.game.Tricks {
+class MutableTricks(tricks: Tricks?) :
+    Tricks {
 
     private val _tricks = tricks?.tricks?.toMutableList() ?: mutableListOf()
     override val tricks: List<Trick>
@@ -54,8 +55,8 @@ class MutableTricks(tricks: ch.taburett.tichu.game.Tricks?) :
         _Mutable_table.add(logEntry)
     }
 
-    fun immutable(): Tricks {
-        return Tricks(tricks, table)
+    fun immutable(): TricksImpl {
+        return TricksImpl(tricks, table)
     }
 
 }

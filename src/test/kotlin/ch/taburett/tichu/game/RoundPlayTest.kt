@@ -1,11 +1,10 @@
 package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.*
-import ch.taburett.tichu.game.MutableDeck
-import ch.taburett.tichu.game.Player
-import ch.taburett.tichu.game.RoundPlay
-import ch.taburett.tichu.game.Player.*
-import ch.taburett.tichu.game.WrappedServerMessage
+import ch.taburett.tichu.game.core.MutableDeck
+import ch.taburett.tichu.game.core.Player
+import ch.taburett.tichu.game.core.Player.*
+import ch.taburett.tichu.game.protocol.WrappedServerMessage
 import ch.taburett.tichu.game.protocol.Message.*
 import ch.taburett.tichu.game.protocol.createMove as move
 import org.assertj.core.api.Assertions.assertThat

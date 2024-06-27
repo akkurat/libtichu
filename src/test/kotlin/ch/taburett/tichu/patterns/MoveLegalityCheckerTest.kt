@@ -1,11 +1,8 @@
 package ch.taburett.tichu.patterns
 
 import ch.taburett.tichu.cards.*
-import ch.taburett.tichu.game.playedCardsValid
-import ch.taburett.tichu.patterns.LegalType
+import ch.taburett.tichu.game.core.playedCardsValid
 import ch.taburett.tichu.patterns.LegalType.*
-import ch.taburett.tichu.patterns.LegalityAnswer
-import ch.taburett.tichu.patterns.ok
 import org.junit.jupiter.api.Assertions.assertAll
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest

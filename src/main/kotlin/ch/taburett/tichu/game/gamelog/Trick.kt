@@ -1,7 +1,7 @@
 package ch.taburett.tichu.game.gamelog
 
 import ch.taburett.tichu.cards.PlayCard
-import ch.taburett.tichu.game.Player
+import ch.taburett.tichu.game.core.Player
 
 /**
  *  log

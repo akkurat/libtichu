@@ -1,7 +1,8 @@
 package ch.taburett.tichu.game.gamelog
 
-import ch.taburett.tichu.game.TichuTable
-import ch.taburett.tichu.game.Tricks
+import ch.taburett.tichu.game.core.TichuTable
 
-class Tricks(override val tricks: List<Trick>, override val table: TichuTable):
-    Tricks
+interface Tricks {
+    val tricks: List<Trick>
+    val table: TichuTable
+}

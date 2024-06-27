@@ -1,8 +1,12 @@
 package ch.taburett.tichu.player
 
 import ch.taburett.tichu.cards.*
-import ch.taburett.tichu.game.*
+import ch.taburett.tichu.game.core.ETichu
+import ch.taburett.tichu.game.core.MutableDeck
+import ch.taburett.tichu.game.core.Player
 import ch.taburett.tichu.game.gamelog.IPlayLogEntry
+import ch.taburett.tichu.game.gamelog.MutableTricks
+import ch.taburett.tichu.game.gamelog.Tricks
 import ch.taburett.tichu.game.protocol.CardsMessage
 import ch.taburett.tichu.game.protocol.Message.*
 import ch.taburett.tichu.game.protocol.Message.GiftDragon.ReLi.LI

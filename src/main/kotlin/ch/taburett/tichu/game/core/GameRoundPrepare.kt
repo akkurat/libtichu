@@ -1,9 +1,11 @@
-package ch.taburett.tichu.game
+package ch.taburett.tichu.game.core
 
 import ch.taburett.tichu.cards.HandCard
 import ch.taburett.tichu.cards.fulldeck
 import ch.taburett.tichu.game.gamelog.IPlayLogEntry
 import ch.taburett.tichu.game.protocol.Message.*
+import ch.taburett.tichu.game.protocol.WrappedPlayerMessage
+import ch.taburett.tichu.game.protocol.WrappedServerMessage
 import kotlin.reflect.KClass
 
 interface State {

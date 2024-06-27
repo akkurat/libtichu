@@ -1,5 +1,6 @@
-package ch.taburett.tichu.game
+package ch.taburett.tichu.game.protocol
 
+import ch.taburett.tichu.game.core.Player
 import ch.taburett.tichu.game.protocol.Message.PlayerMessage
 import ch.taburett.tichu.game.protocol.Message.ServerMessage
 

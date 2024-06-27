@@ -1,8 +1,8 @@
 package ch.taburett.tichu.player
 
 import ch.taburett.tichu.cards.*
-import ch.taburett.tichu.game.ETichu
-import ch.taburett.tichu.game.Player
+import ch.taburett.tichu.game.core.ETichu
+import ch.taburett.tichu.game.core.Player
 import ch.taburett.tichu.game.protocol.CardsMessage
 import ch.taburett.tichu.game.protocol.Message.*
 import ch.taburett.tichu.game.protocol.createMove

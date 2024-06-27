@@ -2,8 +2,13 @@ package ch.taburett.tichu.game
 
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.gamelog.IPlayLogEntry.*
-import ch.taburett.tichu.game.Player.*
+import ch.taburett.tichu.game.core.Player.*
+import ch.taburett.tichu.game.core.ETichu
+import ch.taburett.tichu.game.core.Player
+import ch.taburett.tichu.game.core.PlayerGroup
 import ch.taburett.tichu.game.gamelog.IPlayLogEntry
+import ch.taburett.tichu.game.gamelog.MutableTricks
+import ch.taburett.tichu.game.gamelog.RoundInfo
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertAll
 import kotlin.test.Test
@@ -54,7 +59,7 @@ class TestBattleRoundInfo {
                 tichuPointsPerPlayerTricksToObj(tricks),
                 initMap,
                 laterMap,
-                Player.entries.associateWith { ETichu.NONE },
+                entries.associateWith { ETichu.NONE },
                 "test"
             )
         val points = ri.cardPoints
@@ -124,7 +129,7 @@ class TestBattleRoundInfo {
                 tichuPointsPerPlayerTricksToObj(tricks),
                 initMap,
                 laterMap,
-                Player.entries.associateWith { ETichu.NONE },
+                entries.associateWith { ETichu.NONE },
                 "test"
             )
         val cardPoints = ri.cardPoints

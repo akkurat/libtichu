@@ -3,8 +3,14 @@ package ch.taburett.tichu.game
 import ch.taburett.tichu.cards.*
 import ch.taburett.tichu.game.gamelog.IPlayLogEntry.*
 import ch.taburett.tichu.game.RoundPlay.State.INIT
+import ch.taburett.tichu.game.core.*
+import ch.taburett.tichu.game.gamelog.MutableTricks
+import ch.taburett.tichu.game.gamelog.RoundInfo
 import ch.taburett.tichu.game.gamelog.Tricks
+import ch.taburett.tichu.game.gamelog.TricksImpl
 import ch.taburett.tichu.game.protocol.Message.*
+import ch.taburett.tichu.game.protocol.WrappedPlayerMessage
+import ch.taburett.tichu.game.protocol.WrappedServerMessage
 import ch.taburett.tichu.patterns.LegalType
 import org.jetbrains.annotations.VisibleForTesting
 
@@ -13,14 +19,14 @@ class RoundPlay(
     val com: Out,
     deck: Deck,
     val preparationInfo: PreparationInfo?,
-    soFar: ch.taburett.tichu.game.Tricks?,
+    soFar: Tricks?,
     override val name: String? = null,
 ) : TichuGameStage {
     constructor(
         com: Out,
         cardMap: Map<Player, Collection<HandCard>>,
         preparationInfo: PreparationInfo?,
-        soFar: Tricks?, // hm.. how about outsourcing all logic inside a trick to the trick class?
+        soFar: TricksImpl?, // hm.. how about outsourcing all logic inside a trick to the trick class?
         name: String? = null,
     ) : this(com, MutableDeck.createInitial(cardMap), preparationInfo, soFar, name)
 

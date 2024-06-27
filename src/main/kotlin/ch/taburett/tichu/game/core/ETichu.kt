@@ -1,4 +1,4 @@
-package ch.taburett.tichu.game
+package ch.taburett.tichu.game.core
 
 enum class ETichu(val points: Int) {
 

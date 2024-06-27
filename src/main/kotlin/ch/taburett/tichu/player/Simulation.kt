@@ -1,13 +1,18 @@
 @file:OptIn(ExperimentalStdlibApi::class)
 
-package ch.taburett.tichu.game
+package ch.taburett.tichu.player
 
+import ch.taburett.tichu.game.core.Deck
+import ch.taburett.tichu.game.core.MutableDeck
+import ch.taburett.tichu.game.gamelog.MutableTricks
+import ch.taburett.tichu.game.RoundPlay
+import ch.taburett.tichu.game.core.Player
+import ch.taburett.tichu.game.core.PlayerGroup
 import ch.taburett.tichu.player.BattleRound.AutoPlayer
-import ch.taburett.tichu.player.SimpleBattle
-import ch.taburett.tichu.player.StupidPlayer
-import ch.taburett.tichu.player.hexhex
-import ch.taburett.tichu.game.protocol.Message
 import ch.taburett.tichu.game.protocol.Message.PlayerMessage
+import ch.taburett.tichu.game.protocol.WrappedMessage
+import ch.taburett.tichu.game.protocol.WrappedPlayerMessage
+import ch.taburett.tichu.game.protocol.WrappedServerMessage
 
 class SimulationRound(
 

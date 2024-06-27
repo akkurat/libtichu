@@ -4,10 +4,13 @@ package ch.taburett.tichu.player
 
 import ch.taburett.tichu.cards.fulldeck
 import ch.taburett.tichu.game.*
+import ch.taburett.tichu.game.core.*
 import ch.taburett.tichu.player.BattleRound.AutoPlayer
 import ch.taburett.tichu.player.SimpleBattle.BattleResult
 import ch.taburett.tichu.game.protocol.Message
 import ch.taburett.tichu.game.protocol.Message.ServerMessage
+import ch.taburett.tichu.game.protocol.WrappedPlayerMessage
+import ch.taburett.tichu.game.protocol.WrappedServerMessage
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
